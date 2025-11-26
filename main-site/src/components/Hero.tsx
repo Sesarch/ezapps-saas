@@ -6,82 +6,78 @@ export default function Hero() {
   return (
     <section className="pt-32 pb-20 section-padding bg-gradient-to-br from-gray-50 via-white to-blue-50/30 overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           
-          {/* Platform Logos - Large Display */}
+          {/* Platform Logos - All in ONE Line */}
           <div className="mb-12 animate-fade-in">
             <p className="text-sm text-gray-500 mb-8 font-medium uppercase tracking-wider">Works seamlessly with all major platforms</p>
             
-            {/* Main Row: WooCommerce - Wix - SHOPIFY - SquareSpace - BigCommerce */}
-            <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 flex-wrap">
+            {/* All 7 Logos in One Row */}
+            <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
+              
+              {/* OpenCart - Small */}
+              <div className="hover:scale-110 transition-all duration-300">
+                <img 
+                  src="/opencart.png" 
+                  alt="OpenCart"
+                  className="h-12 md:h-14 w-auto object-contain drop-shadow-md"
+                />
+              </div>
+              
+              {/* Magento - Small */}
+              <div className="hover:scale-110 transition-all duration-300">
+                <img 
+                  src="/MagentoCommerce.png" 
+                  alt="Magento"
+                  className="h-12 md:h-14 w-auto object-contain drop-shadow-md"
+                />
+              </div>
+              
               {/* WooCommerce - Medium */}
-              <div className="px-4 py-3 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="hover:scale-110 transition-all duration-300">
                 <img 
                   src="/wooCommerce.png" 
                   alt="WooCommerce"
-                  className="h-12 md:h-14 w-auto object-contain"
+                  className="h-14 md:h-17 w-auto object-contain drop-shadow-md"
                 />
               </div>
               
               {/* Wix - Larger */}
-              <div className="px-5 py-4 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="hover:scale-110 transition-all duration-300">
                 <img 
                   src="/Wix.png" 
                   alt="Wix"
-                  className="h-14 md:h-16 w-auto object-contain"
+                  className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
                 />
               </div>
               
               {/* SHOPIFY - BIGGEST (Center) */}
-              <div className="px-8 py-6 bg-white rounded-2xl shadow-xl border-2 border-green-200 hover:shadow-2xl transition-all duration-300 hover:scale-110 relative">
-                <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                  #1
-                </div>
+              <div className="hover:scale-115 transition-all duration-300 relative">
                 <img 
                   src="/Shopify.png" 
                   alt="Shopify"
-                  className="h-20 md:h-24 w-auto object-contain"
+                  className="h-24 md:h-32 w-auto object-contain drop-shadow-xl"
                 />
               </div>
               
               {/* SquareSpace - Larger */}
-              <div className="px-5 py-4 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="hover:scale-110 transition-all duration-300">
                 <img 
                   src="/squarespace.png" 
                   alt="SquareSpace"
-                  className="h-14 md:h-16 w-auto object-contain"
+                  className="h-16 md:h-20 w-auto object-contain drop-shadow-lg"
                 />
               </div>
               
               {/* BigCommerce - Medium */}
-              <div className="px-4 py-3 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 hover:scale-105">
+              <div className="hover:scale-110 transition-all duration-300">
                 <img 
                   src="/BigCommerce.png" 
                   alt="BigCommerce"
-                  className="h-12 md:h-14 w-auto object-contain"
-                />
-              </div>
-            </div>
-            
-            {/* Second Row: Magento - OpenCart (Smaller) */}
-            <div className="flex items-center justify-center gap-4 md:gap-6">
-              {/* Magento - Smaller */}
-              <div className="px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 hover:scale-105">
-                <img 
-                  src="/MagentoCommerce.png" 
-                  alt="Magento"
-                  className="h-10 md:h-12 w-auto object-contain"
+                  className="h-14 md:h-17 w-auto object-contain drop-shadow-md"
                 />
               </div>
               
-              {/* OpenCart - Smaller */}
-              <div className="px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 hover:scale-105">
-                <img 
-                  src="/opencart.png" 
-                  alt="OpenCart"
-                  className="h-10 md:h-12 w-auto object-contain"
-                />
-              </div>
             </div>
           </div>
 
