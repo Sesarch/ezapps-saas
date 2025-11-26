@@ -15,16 +15,7 @@ export default function Hero() {
             {/* All 7 Logos in One Row */}
             <div className="flex items-center justify-center gap-3 md:gap-5 flex-wrap">
               
-              {/* OpenCart - Small */}
-              <div className="hover:scale-110 transition-all duration-300">
-                <img 
-                  src="/opencart.png" 
-                  alt="OpenCart"
-                  className="h-12 md:h-14 w-auto object-contain drop-shadow-md"
-                />
-              </div>
-              
-              {/* Magento - Small */}
+              {/* Magento - Small (Left End) */}
               <div className="hover:scale-110 transition-all duration-300">
                 <img 
                   src="/MagentoCommerce.png" 
@@ -78,6 +69,15 @@ export default function Hero() {
                 />
               </div>
               
+              {/* OpenCart - Small (Right End) */}
+              <div className="hover:scale-110 transition-all duration-300">
+                <img 
+                  src="/opencart.png" 
+                  alt="OpenCart"
+                  className="h-12 md:h-14 w-auto object-contain drop-shadow-md"
+                />
+              </div>
+              
             </div>
           </div>
 
@@ -118,3 +118,11 @@ export default function Hero() {
     </section>
   )
 }
+```
+
+---
+
+## ✅ Correct Order Now:
+```
+[Magento] [WooCommerce] [Wix] [SHOPIFY] [SquareSpace] [BigCommerce] [OpenCart]
+   ←                          CENTER                                    →
