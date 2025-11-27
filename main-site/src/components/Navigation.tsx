@@ -21,23 +21,23 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#features" className="text-navy hover:text-teal transition-colors font-medium">
+            <Link href="#features" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
               Features
             </Link>
-            <Link href="#platforms" className="text-navy hover:text-teal transition-colors font-medium">
+            <Link href="#platforms" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
               Platforms
             </Link>
-            <Link href="#pricing" className="text-navy hover:text-teal transition-colors font-medium">
+            <Link href="#pricing" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
               Pricing
             </Link>
           </div>
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/login" className="text-navy hover:text-teal transition-colors font-medium">
+            <Link href="/login" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
               Sign In
             </Link>
-            <Link href="/signup" className="px-6 py-2.5 bg-teal text-white rounded-lg font-medium hover:bg-cyan transition-all duration-200 shadow-md">
+            <Link href="/signup" className="px-6 py-2.5 bg-turquoise text-dark rounded-lg font-medium hover:bg-turquoise-dark transition-all duration-200 shadow-md">
               Get Started
             </Link>
           </div>
@@ -45,7 +45,7 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-navy hover:bg-ice transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-turquoise-light transition-colors"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {isMenuOpen ? (
@@ -61,20 +61,20 @@ export default function Navigation() {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col space-y-4">
-              <Link href="#features" className="text-navy hover:text-teal transition-colors font-medium">
+              <Link href="#features" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
                 Features
               </Link>
-              <Link href="#platforms" className="text-navy hover:text-teal transition-colors font-medium">
+              <Link href="#platforms" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
                 Platforms
               </Link>
-              <Link href="#pricing" className="text-navy hover:text-teal transition-colors font-medium">
+              <Link href="#pricing" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
                 Pricing
               </Link>
               <hr className="border-gray-200" />
-              <Link href="/login" className="text-navy hover:text-teal transition-colors font-medium">
+              <Link href="/login" className="text-gray-700 hover:text-turquoise-dark transition-colors font-medium">
                 Sign In
               </Link>
-              <Link href="/signup" className="px-6 py-3 bg-teal text-white rounded-lg font-medium hover:bg-cyan transition-all duration-200 text-center">
+              <Link href="/signup" className="px-6 py-3 bg-turquoise text-dark rounded-lg font-medium hover:bg-turquoise-dark transition-all duration-200 text-center">
                 Get Started
               </Link>
             </div>
