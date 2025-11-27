@@ -48,7 +48,6 @@ export const metadata: Metadata = {
     shortcut: '/favicon.png',
     apple: '/favicon.png',
   },
-  manifest: '/manifest.json',
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -70,15 +69,10 @@ export const metadata: Metadata = {
     title: 'EZ Apps - E-commerce Apps for Every Platform',
     description: 'Powerful e-commerce apps for Shopify, WooCommerce, Wix & more. Start your free trial today!',
     images: ['/og-image.png'],
-    creator: '@ezapps',
-  },
-  verification: {
-    google: 'your-google-verification-code',
   },
   alternates: {
     canonical: 'https://ezapps.app',
   },
-  category: 'technology',
 }
 
 export default function RootLayout({
