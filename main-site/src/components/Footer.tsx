@@ -7,11 +7,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-teal to-cyan rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">EZ</span>
-              </div>
-              <span className="text-2xl font-bold text-white">Apps</span>
+            <Link href="/" className="flex items-center mb-4">
+              <img 
+                src="/logo.png" 
+                alt="EZ Apps" 
+                className="h-10 w-auto object-contain brightness-0 invert"
+              />
             </Link>
             <p className="text-gray-400 max-w-md">
               Powerful e-commerce apps that work across all major platforms. Manage inventory, boost loyalty, collect reviews, and grow your business.
