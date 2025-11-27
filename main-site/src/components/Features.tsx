@@ -6,37 +6,37 @@ export default function Features() {
       icon: '📦',
       title: 'Inventory Management',
       description: 'Track stock levels, manage multiple locations, and automate reordering with real-time sync across all platforms.',
-      gradient: 'from-deepblue to-navy',
+      gradient: 'from-turquoise to-turquoise-dark',
     },
     {
       icon: '🎁',
       title: 'Loyalty Program',
       description: 'Reward customers with points, create VIP tiers, and run automated campaigns to boost repeat purchases.',
-      gradient: 'from-teal to-cyan',
+      gradient: 'from-peach to-peach-dark',
     },
     {
       icon: '⭐',
       title: 'Review Manager',
       description: 'Collect, display, and respond to customer reviews. Automate review requests and boost social proof.',
-      gradient: 'from-navy to-deepblue',
+      gradient: 'from-gold to-gold-dark',
     },
     {
       icon: '📈',
       title: 'Upsell Engine',
       description: 'Increase average order value with smart product recommendations, bundles, and checkout upsells.',
-      gradient: 'from-cyan to-teal',
+      gradient: 'from-turquoise-dark to-turquoise',
     },
     {
       icon: '🎨',
       title: '3D Model Viewer',
       description: 'Showcase products in stunning 3D. Let customers interact and view from every angle before buying.',
-      gradient: 'from-deepblue to-teal',
+      gradient: 'from-peach-dark to-peach',
     },
     {
       icon: '📝',
       title: 'EZ Form Builder',
       description: 'Create powerful forms with conditional logic. Perfect for surveys, quizzes, and custom order forms.',
-      gradient: 'from-teal to-deepblue',
+      gradient: 'from-gold-dark to-gold',
     },
   ]
 
@@ -45,10 +45,10 @@ export default function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-dark mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Six Powerful Apps
           </h2>
-          <p className="text-xl text-navy">
+          <p className="text-xl text-gray-600">
             Everything you need to run and grow your e-commerce business, available across all major platforms.
           </p>
         </div>
@@ -66,12 +66,12 @@ export default function Features() {
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl font-bold text-dark mb-3">
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
                 {feature.title}
               </h3>
 
               {/* Description */}
-              <p className="text-navy leading-relaxed">
+              <p className="text-gray-600 leading-relaxed">
                 {feature.description}
               </p>
             </div>
