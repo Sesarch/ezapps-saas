@@ -13,8 +13,56 @@ export const metadata: Metadata = {
 }
 
 export default function Home() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'EZ Apps',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    description: 'Powerful e-commerce apps for Shopify, WooCommerce, Wix, BigCommerce, SquareSpace, Magento & OpenCart.',
+    offers: {
+      '@type': 'AggregateOffer',
+      lowPrice: '29',
+      highPrice: '149',
+      priceCurrency: 'USD',
+      offerCount: '3',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '1000',
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'EZ Apps',
+      url: 'https://ezapps.app',
+    },
+  }
+
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'EZ Apps',
+    url: 'https://ezapps.app',
+    logo: 'https://ezapps.app/logo.png',
+    description: 'E-commerce apps for every platform',
+    sameAs: [
+      'https://twitter.com/ezapps',
+      'https://facebook.com/ezapps',
+      'https://linkedin.com/company/ezapps',
+    ],
+  }
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       <Hero />
       <Features />
       <Platforms />
@@ -22,27 +70,3 @@ export default function Home() {
     </>
   )
 }
-```
-
-**Commit message:** `Add SEO metadata to homepage`
-
----
-
-## 📋 Step 3: Create `robots.txt`
-
-Go to GitHub → `main-site/public` → **Add file** → **Create new file**
-
-**File name:** `robots.txt`
-
-**Content:**
-```
-# https://www.robotstxt.org/robotstxt.html
-User-agent: *
-Allow: /
-
-# Sitemaps
-Sitemap: https://ezapps.app/sitemap.xml
-
-# Disallow admin and API routes
-Disallow: /api/
-Disallow: /dashboard/
