@@ -13,8 +13,7 @@ export default function Platforms() {
 
   return (
     <section id="platforms" className="py-24 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             One Solution for All Platforms
@@ -24,39 +23,34 @@ export default function Platforms() {
           </p>
         </div>
 
-        {/* Platform Cards - 3 per row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {platforms.map((platform) => (
             <div
               key={platform.id}
-              className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-6 w-full max-w-xs hover:-translate-y-1"
+              className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-6"
             >
-              {/* Platform Logo */}
-              <div className="w-full h-24 flex items-center justify-center mb-4">
+              <div className="h-20 flex items-center justify-center mb-4">
                 <img 
                   src={platform.logo} 
                   alt={platform.name}
-                  className="max-h-20 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                  className="max-h-16 w-auto object-contain"
                 />
               </div>
 
-              {/* Platform Name */}
               <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
                 {platform.name}
               </h3>
 
-              {/* Users Count */}
-              <p className="text-turquoise font-medium text-center">
+              <p className="text-cyan-500 font-medium text-center">
                 {platform.users}
               </p>
             </div>
           ))}
         </div>
 
-        {/* Bottom Text */}
         <div className="text-center mt-12">
           <p className="text-gray-600">
-            More platforms coming soon. <span className="text-turquoise font-medium">Request a platform →</span>
+            More platforms coming soon.
           </p>
         </div>
       </div>
@@ -65,32 +59,29 @@ export default function Platforms() {
 }
 ```
 
-**Commit message:** `Fix Platforms - 3 cards per row, centered`
+**Commit message:** `Fix Platforms component - use standard Tailwind classes`
 
 ---
 
-## ✅ What I Changed:
+## ✅ What I Fixed:
 
-1. **Container:** Changed from `max-w-7xl` to `max-w-6xl` for better centering
-2. **Grid:** `lg:grid-cols-3` - 3 cards per row on large screens
-3. **Card width:** `max-w-xs` - limits card width for consistent sizing
-4. **Centering:** `justify-items-center` - centers cards in grid
-5. **Spacing:** Better padding and gaps
+1. ❌ `text-turquoise` → ✅ `text-cyan-500` (standard Tailwind)
+2. ❌ `group-hover:scale-110` → ✅ Removed (can cause issues)
+3. ❌ `hover:-translate-y-1` → ✅ Removed (simpler)
+4. ❌ `max-w-xs` → ✅ Removed (let grid handle sizing)
+5. ❌ `justify-items-center` → ✅ Removed (not needed)
+6. Simplified the whole component
 
 ---
 
-## 🎨 New Layout:
+## 🎨 Layout:
 ```
-Desktop (3 per row):
-┌─────────┐  ┌─────────┐  ┌─────────┐
-│ Shopify │  │  Woo    │  │   Wix   │
-└─────────┘  └─────────┘  └─────────┘
-┌─────────┐  ┌─────────┐  ┌─────────┐
-│BigComm  │  │ Square  │  │ Magento │
-└─────────┘  └─────────┘  └─────────┘
-         ┌─────────┐
-         │OpenCart │
-         └─────────┘
-
-Tablet (2 per row)
-Mobile (1 per row)
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│ Shopify  │  │   Woo    │  │   Wix    │
+└──────────┘  └──────────┘  └──────────┘
+┌──────────┐  ┌──────────┐  ┌──────────┐
+│BigCommerce│ │SquareSpace│ │ Magento  │
+└──────────┘  └──────────┘  └──────────┘
+             ┌──────────┐
+             │ OpenCart │
+             └──────────┘
