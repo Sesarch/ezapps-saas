@@ -11,11 +11,12 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-deepblue to-teal rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">EZ</span>
-            </div>
-            <span className="text-2xl font-bold text-dark">Apps</span>
+          <Link href="/" className="flex items-center">
+            <img 
+              src="/logo.png" 
+              alt="EZ Apps" 
+              className="h-10 md:h-12 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}
