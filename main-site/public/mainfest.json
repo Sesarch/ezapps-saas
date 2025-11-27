@@ -1,0 +1,21 @@
+{
+  "name": "EZ Apps - E-commerce Apps for Every Platform",
+  "short_name": "EZ Apps",
+  "description": "Powerful e-commerce apps for Shopify, WooCommerce, Wix & more",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7fe1e5",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
