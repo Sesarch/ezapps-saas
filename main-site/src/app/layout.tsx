@@ -1,21 +1,15 @@
-import './globals.css'
 import type { Metadata } from 'next'
-import { Inter, Sora } from 'next/font/google'
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
-
-const sora = Sora({ 
-  subsets: ['latin'],
-  variable: '--font-sora',
-})
+import './globals.css'
+import Navigation from '@/components/Navigation'
+import Footer from '@/components/Footer'
 
 export const metadata: Metadata = {
   title: 'EZ Apps - E-commerce Apps for Every Platform',
-  description: 'Powerful apps for Shopify, WooCommerce, Wix, and more. Manage inventory, boost loyalty, and grow your store.',
-  keywords: 'e-commerce apps, shopify apps, woocommerce, inventory management, loyalty program',
+  description: 'Powerful tools to manage inventory, boost loyalty, collect reviews, and grow your online store across Shopify, WooCommerce, Wix, and more.',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 }
 
 export default function RootLayout({
@@ -24,9 +18,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${sora.variable}`}>
-      <body className="font-sans antialiased">
-        {children}
+    <html lang="en">
+      <body className="antialiased">
+        <Navigation />
+        <main>{children}</main>
+        <Footer />
       </body>
     </html>
   )
