@@ -1,16 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 
 export default function Pricing() {
+  const [selectedPlatform, setSelectedPlatform] = useState('shopify')
+
   const platforms = [
-    { name: 'Shopify', logo: '/Shopify.png' },
-    { name: 'WooCommerce', logo: '/wooCommerce.png' },
-    { name: 'Wix', logo: '/Wix.png' },
-    { name: 'BigCommerce', logo: '/BigCommerce.png' },
-    { name: 'SquareSpace', logo: '/squarespace.png' },
-    { name: 'Magento', logo: '/MagentoCommerce.png' },
-    { name: 'OpenCart', logo: '/opencart.png' },
+    { id: 'shopify', name: 'Shopify', logo: '/Shopify.png' },
+    { id: 'woocommerce', name: 'WooCommerce', logo: '/wooCommerce.png' },
+    { id: 'wix', name: 'Wix', logo: '/Wix.png' },
+    { id: 'bigcommerce', name: 'BigCommerce', logo: '/BigCommerce.png' },
+    { id: 'squarespace', name: 'SquareSpace', logo: '/squarespace.png' },
+    { id: 'magento', name: 'Magento', logo: '/MagentoCommerce.png' },
+    { id: 'opencart', name: 'OpenCart', logo: '/opencart.png' },
   ]
 
   const apps = [
@@ -22,12 +25,14 @@ export default function Pricing() {
     'Form Builder',
   ]
 
+  const selectedPlatformData = platforms.find(p => p.id === selectedPlatform)
+
   return (
     <section id="pricing" className="py-24 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-12">
           <span className="inline-block px-4 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
             Simple Pricing
           </span>
@@ -37,6 +42,62 @@ export default function Pricing() {
           <p className="text-xl text-gray-600">
             Start with one app or get everything. All plans include 14-day free trial.
           </p>
+        </div>
+
+        {/* Platform Selection */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="text-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 1: Select Your Platform</h3>
+            <p className="text-gray-500 text-sm">Choose the e-commerce platform you use</p>
+          </div>
+          
+          <div className="flex flex-wrap justify-center gap-3">
+            {platforms.map((platform) => (
+              <button
+                key={platform.id}
+                onClick={() => setSelectedPlatform(platform.id)}
+                className={`flex items-center px-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                  selectedPlatform === platform.id
+                    ? 'border-teal-400 bg-teal-50 shadow-md scale-105'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                }`}
+              >
+                <img 
+                  src={platform.logo} 
+                  alt={platform.name} 
+                  className="w-8 h-8 object-contain mr-2"
+                />
+                <span className={`font-medium ${
+                  selectedPlatform === platform.id ? 'text-teal-700' : 'text-gray-700'
+                }`}>
+                  {platform.name}
+                </span>
+                {selectedPlatform === platform.id && (
+                  <svg className="w-5 h-5 text-teal-500 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Selected Platform Indicator */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center px-4 py-2 bg-teal-100 text-teal-800 rounded-full">
+            <img 
+              src={selectedPlatformData?.logo} 
+              alt={selectedPlatformData?.name} 
+              className="w-6 h-6 object-contain mr-2"
+            />
+            <span className="font-medium">Showing plans for {selectedPlatformData?.name}</span>
+          </div>
+        </div>
+
+        {/* Step 2 Header */}
+        <div className="text-center mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Step 2: Choose Your Plan</h3>
+          <p className="text-gray-500 text-sm">Select how many apps you need</p>
         </div>
 
         {/* Per Platform Plans */}
@@ -54,16 +115,14 @@ export default function Pricing() {
               <span className="text-gray-500">/month</span>
             </div>
 
-            {/* Platform Icons */}
-            <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {platforms.map((platform) => (
-                  <div key={platform.name} className="w-8 h-8 bg-gray-50 rounded-lg p-1 hover:bg-gray-100 transition-colors" title={platform.name}>
-                    <img src={platform.logo} alt={platform.name} className="w-full h-full object-contain" />
-                  </div>
-                ))}
-              </div>
+            {/* Selected Platform */}
+            <div className="flex items-center justify-center mb-6 p-3 bg-gray-50 rounded-xl">
+              <img 
+                src={selectedPlatformData?.logo} 
+                alt={selectedPlatformData?.name} 
+                className="w-8 h-8 object-contain mr-2"
+              />
+              <span className="font-medium text-gray-700">{selectedPlatformData?.name}</span>
             </div>
 
             <ul className="space-y-3 mb-8">
@@ -72,12 +131,6 @@ export default function Pricing() {
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 <span><strong>1 App</strong> of your choice</span>
-              </li>
-              <li className="flex items-center text-gray-600">
-                <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -93,7 +146,10 @@ export default function Pricing() {
               </li>
             </ul>
 
-            <Link href="/signup" className="block w-full py-3 bg-gray-100 text-gray-800 rounded-xl font-semibold text-center hover:bg-gray-200 transition-all duration-200">
+            <Link 
+              href={`/signup?platform=${selectedPlatform}&plan=starter`} 
+              className="block w-full py-3 bg-gray-100 text-gray-800 rounded-xl font-semibold text-center hover:bg-gray-200 transition-all duration-200"
+            >
               Start Free Trial
             </Link>
           </div>
@@ -116,16 +172,14 @@ export default function Pricing() {
               <p className="text-teal-600 text-sm font-medium mt-1">Save $6/month</p>
             </div>
 
-            {/* Platform Icons */}
-            <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {platforms.map((platform) => (
-                  <div key={platform.name} className="w-8 h-8 bg-teal-50 rounded-lg p-1 hover:bg-teal-100 transition-colors" title={platform.name}>
-                    <img src={platform.logo} alt={platform.name} className="w-full h-full object-contain" />
-                  </div>
-                ))}
-              </div>
+            {/* Selected Platform */}
+            <div className="flex items-center justify-center mb-6 p-3 bg-teal-50 rounded-xl">
+              <img 
+                src={selectedPlatformData?.logo} 
+                alt={selectedPlatformData?.name} 
+                className="w-8 h-8 object-contain mr-2"
+              />
+              <span className="font-medium text-teal-700">{selectedPlatformData?.name}</span>
             </div>
 
             <ul className="space-y-3 mb-8">
@@ -134,12 +188,6 @@ export default function Pricing() {
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 <span><strong>3 Apps</strong> of your choice</span>
-              </li>
-              <li className="flex items-center text-gray-600">
-                <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -155,7 +203,10 @@ export default function Pricing() {
               </li>
             </ul>
 
-            <Link href="/signup" className="block w-full py-3 bg-gradient-to-r from-teal-400 to-cyan-400 text-white rounded-xl font-semibold text-center hover:from-teal-500 hover:to-cyan-500 transition-all duration-200 shadow-lg">
+            <Link 
+              href={`/signup?platform=${selectedPlatform}&plan=growth`} 
+              className="block w-full py-3 bg-gradient-to-r from-teal-400 to-cyan-400 text-white rounded-xl font-semibold text-center hover:from-teal-500 hover:to-cyan-500 transition-all duration-200 shadow-lg"
+            >
               Start Free Trial
             </Link>
           </div>
@@ -168,7 +219,7 @@ export default function Pricing() {
 
             <div className="text-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 mb-1">Pro</h3>
-              <p className="text-gray-500 text-sm">All apps, one platform</p>
+              <p className="text-gray-500 text-sm">All apps included</p>
             </div>
             
             <div className="text-center mb-6">
@@ -177,16 +228,14 @@ export default function Pricing() {
               <p className="text-amber-600 text-sm font-medium mt-1">Save $15/month</p>
             </div>
 
-            {/* Platform Icons */}
-            <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {platforms.map((platform) => (
-                  <div key={platform.name} className="w-8 h-8 bg-gray-50 rounded-lg p-1 hover:bg-gray-100 transition-colors" title={platform.name}>
-                    <img src={platform.logo} alt={platform.name} className="w-full h-full object-contain" />
-                  </div>
-                ))}
-              </div>
+            {/* Selected Platform */}
+            <div className="flex items-center justify-center mb-6 p-3 bg-gray-50 rounded-xl">
+              <img 
+                src={selectedPlatformData?.logo} 
+                alt={selectedPlatformData?.name} 
+                className="w-8 h-8 object-contain mr-2"
+              />
+              <span className="font-medium text-gray-700">{selectedPlatformData?.name}</span>
             </div>
 
             <ul className="space-y-3 mb-8">
@@ -195,12 +244,6 @@ export default function Pricing() {
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
                 <span><strong>All 6 Apps</strong> included</span>
-              </li>
-              <li className="flex items-center text-gray-600">
-                <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -216,7 +259,10 @@ export default function Pricing() {
               </li>
             </ul>
 
-            <Link href="/signup" className="block w-full py-3 bg-gray-100 text-gray-800 rounded-xl font-semibold text-center hover:bg-gray-200 transition-all duration-200">
+            <Link 
+              href={`/signup?platform=${selectedPlatform}&plan=pro`} 
+              className="block w-full py-3 bg-gray-100 text-gray-800 rounded-xl font-semibold text-center hover:bg-gray-200 transition-all duration-200"
+            >
               Start Free Trial
             </Link>
           </div>
@@ -237,13 +283,13 @@ export default function Pricing() {
                   <span className="inline-block px-3 py-1 bg-amber-400 text-amber-900 rounded-full text-sm font-semibold mb-3">
                     Enterprise
                   </span>
-                  <h3 className="text-3xl md:text-4xl font-bold mb-2">All Platforms. All Apps.</h3>
-                  <p className="text-gray-300">The complete solution for serious e-commerce businesses</p>
+                  <h3 className="text-3xl md:text-4xl font-bold mb-2">Need All Platforms?</h3>
+                  <p className="text-gray-300">Get everything - all apps on all platforms</p>
                 </div>
                 <div className="mt-6 md:mt-0 text-center md:text-right">
                   <div className="text-5xl md:text-6xl font-bold">$299</div>
                   <div className="text-gray-400">/month</div>
-                  <p className="text-teal-400 text-sm font-medium mt-1">Save $226/month vs separate plans</p>
+                  <p className="text-teal-400 text-sm font-medium mt-1">Save $226/month</p>
                 </div>
               </div>
 
@@ -252,7 +298,7 @@ export default function Pricing() {
                 <p className="text-gray-400 text-sm mb-4">All 7 platforms included:</p>
                 <div className="flex flex-wrap gap-3">
                   {platforms.map((platform) => (
-                    <div key={platform.name} className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
+                    <div key={platform.id} className="flex items-center bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2">
                       <img src={platform.logo} alt={platform.name} className="w-6 h-6 object-contain mr-2" />
                       <span className="text-sm font-medium">{platform.name}</span>
                     </div>
@@ -303,18 +349,18 @@ export default function Pricing() {
                 </div>
               </div>
 
-              <Link href="/signup" className="inline-block px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 rounded-xl font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-lg">
+              <Link href="/signup?plan=enterprise" className="inline-block px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 rounded-xl font-semibold hover:from-amber-500 hover:to-amber-600 transition-all duration-200 shadow-lg">
                 Start Free Trial
               </Link>
             </div>
           </div>
         </div>
 
-        {/* Simplified Comparison Table */}
+        {/* Comparison Table */}
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">Compare All Plans</h3>
-            <p className="text-gray-600">See what's included in each plan</p>
+            <p className="text-gray-600">See what is included in each plan</p>
           </div>
 
           <div className="overflow-x-auto">
@@ -423,22 +469,22 @@ export default function Pricing() {
                 <tr>
                   <td className="py-6 px-4"></td>
                   <td className="py-6 px-4 text-center">
-                    <Link href="/signup" className="inline-block px-6 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                    <Link href={`/signup?platform=${selectedPlatform}&plan=starter`} className="inline-block px-6 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                       Start Free
                     </Link>
                   </td>
                   <td className="py-6 px-4 text-center bg-teal-50 rounded-b-xl">
-                    <Link href="/signup" className="inline-block px-6 py-2 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition-colors">
+                    <Link href={`/signup?platform=${selectedPlatform}&plan=growth`} className="inline-block px-6 py-2 bg-teal-500 text-white rounded-lg font-medium hover:bg-teal-600 transition-colors">
                       Start Free
                     </Link>
                   </td>
                   <td className="py-6 px-4 text-center">
-                    <Link href="/signup" className="inline-block px-6 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                    <Link href={`/signup?platform=${selectedPlatform}&plan=pro`} className="inline-block px-6 py-2 bg-gray-100 text-gray-800 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                       Start Free
                     </Link>
                   </td>
                   <td className="py-6 px-4 text-center">
-                    <Link href="/signup" className="inline-block px-6 py-2 bg-amber-400 text-gray-900 rounded-lg font-medium hover:bg-amber-500 transition-colors">
+                    <Link href="/signup?plan=enterprise" className="inline-block px-6 py-2 bg-amber-400 text-gray-900 rounded-lg font-medium hover:bg-amber-500 transition-colors">
                       Start Free
                     </Link>
                   </td>
@@ -452,7 +498,7 @@ export default function Pricing() {
         <div className="max-w-3xl mx-auto mt-16 text-center">
           <div className="bg-teal-50 rounded-2xl p-8">
             <h4 className="text-xl font-bold text-gray-900 mb-2">14-Day Money-Back Guarantee</h4>
-            <p className="text-gray-600">Try any plan risk-free. If you're not satisfied, get a full refund within 14 days. No questions asked.</p>
+            <p className="text-gray-600">Try any plan risk-free. If you are not satisfied, get a full refund within 14 days.</p>
           </div>
         </div>
 
