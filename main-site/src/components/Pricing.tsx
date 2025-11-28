@@ -56,7 +56,7 @@ export default function Pricing() {
 
             {/* Platform Icons */}
             <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Choose 1 platform:</p>
+              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {platforms.map((platform) => (
                   <div key={platform.name} className="w-8 h-8 bg-gray-50 rounded-lg p-1 hover:bg-gray-100 transition-colors" title={platform.name}>
@@ -77,7 +77,7 @@ export default function Pricing() {
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span><strong>1 Platform</strong></span>
+                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -102,7 +102,7 @@ export default function Pricing() {
           <div className="relative bg-white rounded-2xl border-2 border-teal-400 shadow-xl hover:shadow-2xl transition-all duration-300 p-8 scale-105">
             {/* Popular Badge */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-teal-400 to-cyan-400 text-white px-4 py-1 rounded-full text-sm font-semibold">
-              ⭐ Most Popular
+              Most Popular
             </div>
 
             <div className="text-center mb-6">
@@ -118,7 +118,7 @@ export default function Pricing() {
 
             {/* Platform Icons */}
             <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Choose 1 platform:</p>
+              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {platforms.map((platform) => (
                   <div key={platform.name} className="w-8 h-8 bg-teal-50 rounded-lg p-1 hover:bg-teal-100 transition-colors" title={platform.name}>
@@ -139,7 +139,7 @@ export default function Pricing() {
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span><strong>1 Platform</strong></span>
+                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -161,7 +161,7 @@ export default function Pricing() {
           </div>
 
           {/* Pro Plan */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-8">
+          <div className="relative bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 p-8">
             <div className="absolute -top-3 right-4 bg-amber-400 text-amber-900 px-3 py-0.5 rounded-full text-xs font-semibold">
               Best Value
             </div>
@@ -179,7 +179,7 @@ export default function Pricing() {
 
             {/* Platform Icons */}
             <div className="mb-6">
-              <p className="text-xs text-gray-500 text-center mb-3">Choose 1 platform:</p>
+              <p className="text-xs text-gray-500 text-center mb-3">Works with any platform:</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {platforms.map((platform) => (
                   <div key={platform.name} className="w-8 h-8 bg-gray-50 rounded-lg p-1 hover:bg-gray-100 transition-colors" title={platform.name}>
@@ -200,7 +200,7 @@ export default function Pricing() {
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
-                <span><strong>1 Platform</strong></span>
+                <span><strong>1 Platform</strong> of your choice</span>
               </li>
               <li className="flex items-center text-gray-600">
                 <svg className="w-5 h-5 text-teal-500 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -235,7 +235,7 @@ export default function Pricing() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
                 <div>
                   <span className="inline-block px-3 py-1 bg-amber-400 text-amber-900 rounded-full text-sm font-semibold mb-3">
-                    ⚡ Enterprise
+                    Enterprise
                   </span>
                   <h3 className="text-3xl md:text-4xl font-bold mb-2">All Platforms. All Apps.</h3>
                   <p className="text-gray-300">The complete solution for serious e-commerce businesses</p>
@@ -310,7 +310,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* Comparison Table */}
+        {/* Simplified Comparison Table */}
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h3 className="text-3xl font-bold text-gray-900 mb-4">Compare All Plans</h3>
@@ -341,173 +341,82 @@ export default function Pricing() {
                 </tr>
               </thead>
               <tbody>
-                {/* Apps Section */}
+                {/* Apps & Platforms Section */}
                 <tr className="bg-gray-50">
-                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Apps Included</td>
+                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Apps & Platforms</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Number of Apps</td>
-                  <td className="py-3 px-4 text-center">1 app</td>
-                  <td className="py-3 px-4 text-center bg-teal-50">3 apps</td>
-                  <td className="py-3 px-4 text-center">All 6 apps</td>
-                  <td className="py-3 px-4 text-center font-medium text-teal-600">All 6 apps</td>
+                  <td className="py-4 px-4 text-gray-600">Number of Apps</td>
+                  <td className="py-4 px-4 text-center font-medium">1 app</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 font-medium">3 apps</td>
+                  <td className="py-4 px-4 text-center font-medium text-teal-600">All 6 apps</td>
+                  <td className="py-4 px-4 text-center font-medium text-teal-600">All 6 apps</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Inventory Management</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Loyalty Program</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Review Manager</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Upsell Engine</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">3D Model Viewer</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Form Builder</td>
-                  <td className="py-3 px-4 text-center text-gray-400">Pick 1</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-400">Pick 3</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-
-                {/* Platforms Section */}
-                <tr className="bg-gray-50">
-                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Platforms</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Number of Platforms</td>
-                  <td className="py-3 px-4 text-center">1 platform</td>
-                  <td className="py-3 px-4 text-center bg-teal-50">1 platform</td>
-                  <td className="py-3 px-4 text-center">1 platform</td>
-                  <td className="py-3 px-4 text-center font-medium text-teal-600">All 7 platforms</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Shopify</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">WooCommerce</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Wix</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">BigCommerce</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">SquareSpace</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Magento</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                </tr>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">OpenCart</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">Number of Platforms</td>
+                  <td className="py-4 px-4 text-center font-medium">1 platform</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 font-medium">1 platform</td>
+                  <td className="py-4 px-4 text-center font-medium">1 platform</td>
+                  <td className="py-4 px-4 text-center font-medium text-amber-600">All 7 platforms</td>
                 </tr>
 
                 {/* Support Section */}
                 <tr className="bg-gray-50">
-                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Support & Features</td>
+                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Support</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Email Support</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">Email Support</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Priority Support</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">Priority Support</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">24/7 Support</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">24/7 Support</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Dedicated Manager</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">Dedicated Manager</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                </tr>
+
+                {/* Features Section */}
+                <tr className="bg-gray-50">
+                  <td colSpan={5} className="py-3 px-4 font-semibold text-gray-700">Features</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">Analytics</td>
-                  <td className="py-3 px-4 text-center text-gray-600">Basic</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-600">Advanced</td>
-                  <td className="py-3 px-4 text-center text-gray-600">Advanced</td>
-                  <td className="py-3 px-4 text-center text-teal-600">Enterprise</td>
+                  <td className="py-4 px-4 text-gray-600">Analytics</td>
+                  <td className="py-4 px-4 text-center text-gray-600">Basic</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-gray-600">Advanced</td>
+                  <td className="py-4 px-4 text-center text-gray-600">Advanced</td>
+                  <td className="py-4 px-4 text-center text-amber-600">Enterprise</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">API Access</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">API Access</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
                 </tr>
                 <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 text-gray-600">White-label Options</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center bg-teal-50 text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-gray-300">—</td>
-                  <td className="py-3 px-4 text-center text-teal-500">✓</td>
+                  <td className="py-4 px-4 text-gray-600">White-label Options</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center bg-teal-50 text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-gray-300">—</td>
+                  <td className="py-4 px-4 text-center text-teal-500">✓</td>
                 </tr>
 
                 {/* CTA Row */}
@@ -539,7 +448,7 @@ export default function Pricing() {
           </div>
         </div>
 
-        {/* FAQ or Money Back */}
+        {/* Money Back Guarantee */}
         <div className="max-w-3xl mx-auto mt-16 text-center">
           <div className="bg-teal-50 rounded-2xl p-8">
             <h4 className="text-xl font-bold text-gray-900 mb-2">14-Day Money-Back Guarantee</h4>
