@@ -11,7 +11,7 @@ export default function Footer() {
               <img 
                 src="/logo.png" 
                 alt="EZ Apps" 
-                className="h-10 w-auto object-contain"
+                className="h-8 w-auto object-contain"
               />
             </Link>
             <p className="text-gray-400 max-w-md">
@@ -23,9 +23,21 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Product</h4>
             <ul className="space-y-2">
-              <li><Link href="#features" className="text-gray-400 hover:text-turquoise transition-colors">Features</Link></li>
-              <li><Link href="#pricing" className="text-gray-400 hover:text-turquoise transition-colors">Pricing</Link></li>
-              <li><Link href="#platforms" className="text-gray-400 hover:text-turquoise transition-colors">Platforms</Link></li>
+              <li>
+                <Link href="/#features" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Features
+                </Link>
+              </li>
+              <li>
+                <Link href="/#pricing" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link href="/#platforms" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Platforms
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -33,19 +45,43 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-4">Company</h4>
             <ul className="space-y-2">
-              <li><Link href="/about" className="text-gray-400 hover:text-turquoise transition-colors">About</Link></li>
-              <li><Link href="/contact" className="text-gray-400 hover:text-turquoise transition-colors">Contact</Link></li>
-              <li><Link href="/privacy" className="text-gray-400 hover:text-turquoise transition-colors">Privacy</Link></li>
-              <li><Link href="/terms" className="text-gray-400 hover:text-turquoise transition-colors">Terms</Link></li>
+              <li>
+                <Link href="/about" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Contact
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Privacy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-400 hover:text-teal-400 transition-colors">
+                  Terms
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-8 text-center">
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
             © 2024 EZ Apps. All rights reserved.
           </p>
+          <div className="flex space-x-6 mt-4 md:mt-0">
+            <Link href="/privacy" className="text-gray-400 hover:text-teal-400 text-sm transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="text-gray-400 hover:text-teal-400 text-sm transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
