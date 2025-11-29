@@ -1,27 +1,18 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
-  const { user, loading, signOut } = useAuth()
-  const router = useRouter()
+  const { user } = useAuth()
   const [profile, setProfile] = useState<any>(null)
   const [apps, setApps] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
-
-  useEffect(() => {
     if (user) {
-      // Fetch profile
       supabase
         .from('profiles')
         .select('*')
@@ -29,7 +20,6 @@ export default function DashboardPage() {
         .single()
         .then(({ data }) => setProfile(data))
 
-      // Fetch apps
       supabase
         .from('apps')
         .select('*')
@@ -38,97 +28,98 @@ export default function DashboardPage() {
     }
   }, [user])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Dashboard Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/dashboard">
-              <img src="/logo.png" alt="EZ Apps" className="h-8" />
-            </Link>
-            <div className="flex items-center gap-6">
-              <Link href="/dashboard" className="text-teal-600 text-sm font-medium">
-                Dashboard
-              </Link>
-              <Link href="/dashboard/billing" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
-                Billing
-              </Link>
-              <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
-                <span className="text-gray-600 text-sm">{profile?.full_name || user.email}</span>
-                <button 
-                  onClick={signOut}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
+    <div className="p-6 lg:p-8">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+          Welcome{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
+        </h1>
+        <p className="text-gray-600 mt-1">Here's what's happening with your store</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Connected Stores</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
             </div>
+            <div className="text-3xl">🏪</div>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}! 👋
-          </h1>
-          <p className="text-gray-600 mt-1">Manage your e-commerce apps from one place</p>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Active Apps</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">0</p>
+            </div>
+            <div className="text-3xl">📦</div>
+          </div>
         </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Plan</p>
+              <p className="text-2xl font-bold text-teal-600 mt-1">Trial</p>
+            </div>
+            <div className="text-3xl">⭐</div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Days Left</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">14</p>
+            </div>
+            <div className="text-3xl">📅</div>
+          </div>
+        </div>
+      </div>
 
-        {/* Trial Banner */}
-        <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-6 mb-8 text-white">
-          <h2 className="text-xl font-bold mb-2">Your Free Trial is Active</h2>
-          <p className="mb-4 opacity-90">You have 14 days to explore all features. No credit card required.</p>
-          <Link href="/dashboard/billing" className="inline-block px-6 py-3 bg-white text-teal-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-            View Plans
+      {/* Quick Actions */}
+      <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-6 mb-8 text-white">
+        <h2 className="text-xl font-bold mb-2">Get Started</h2>
+        <p className="mb-4 opacity-90">Connect your first store to start using EZ Apps</p>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/dashboard/stores" className="inline-block px-5 py-2.5 bg-white text-teal-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+            Connect Store
+          </Link>
+          <Link href="/dashboard/apps" className="inline-block px-5 py-2.5 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-colors">
+            Browse Apps
           </Link>
         </div>
+      </div>
 
-        {/* Apps Grid */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Apps</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {apps.map((app) => (
-            <div key={app.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      {/* Available Apps Preview */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Available Apps</h2>
+          <Link href="/dashboard/apps" className="text-teal-600 hover:text-teal-700 text-sm font-medium">
+            View All →
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {apps.slice(0, 3).map((app) => (
+            <div key={app.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
               <div className="text-3xl mb-3">{app.icon}</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">{app.name}</h3>
-              <p className="text-gray-600 text-sm mb-4">{app.description}</p>
-              <button className="w-full py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
-                Coming Soon
-              </button>
+              <h3 className="font-semibold text-gray-900 mb-1">{app.name}</h3>
+              <p className="text-gray-600 text-sm">{app.description}</p>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Connect Store */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Connected Stores</h2>
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="text-center py-8">
-            <div className="text-4xl mb-3">🏪</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No stores connected yet</h3>
-            <p className="text-gray-600 mb-4">Connect your first store to get started</p>
-            <button className="px-6 py-3 bg-teal-500 text-white rounded-lg font-semibold hover:bg-teal-600 transition-colors">
-              Connect Store
-            </button>
-          </div>
+      {/* Recent Activity */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+        <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+          <div className="text-4xl mb-3">📋</div>
+          <p className="text-gray-600">No recent activity yet</p>
+          <p className="text-gray-400 text-sm mt-1">Connect a store to get started</p>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
