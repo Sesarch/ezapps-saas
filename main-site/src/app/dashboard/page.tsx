@@ -3,14 +3,18 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
   
-  if (!user) {
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
     redirect('/login')
   }
+
+  const user = session.user
 
   // Get user profile
   const { data: profile } = await supabase
@@ -35,7 +39,7 @@ export default async function DashboardPage() {
               <img src="/logo.png" alt="EZ Apps" className="h-8" />
             </Link>
             <div className="flex items-center gap-6">
-              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+              <Link href="/dashboard" className="text-teal-600 text-sm font-medium">
                 Dashboard
               </Link>
               <Link href="/dashboard/billing" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
