@@ -1,13 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 export const dynamic = 'force-dynamic'
 
 export default async function BillingPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  
+const { data: { session } } = await supabase.auth.getSession()
+
+if (!session) {
+  redirect('/login')
+}  
   if (!user) {
     redirect('/login')
   }
