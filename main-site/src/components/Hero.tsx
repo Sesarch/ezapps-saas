@@ -8,76 +8,40 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto text-center">
           
-          {/* Platform Logos - Fixed Layout: 3 + Shopify + 3 */}
+          {/* Platform Logos - ALWAYS ONE LINE */}
           <div className="mb-12">
             <p className="text-sm text-gray-600 mb-8 font-medium uppercase tracking-wider">Works seamlessly with all major platforms</p>
             
-            {/* Desktop: All 7 in one row */}
-            <div className="hidden md:flex items-center justify-center gap-4">
+            {/* All 7 logos in ONE row - NEVER wraps */}
+            <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-4">
+              
               {/* Left 3 logos */}
-              <div className="flex items-center gap-4">
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/MagentoCommerce.png" alt="Magento" className="h-10 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/wooCommerce.png" alt="WooCommerce" className="h-12 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/Wix.png" alt="Wix" className="h-14 w-auto object-contain" />
-                </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/MagentoCommerce.png" alt="Magento" className="h-6 sm:h-8 md:h-10 w-auto object-contain" />
+              </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/wooCommerce.png" alt="WooCommerce" className="h-7 sm:h-9 md:h-12 w-auto object-contain" />
+              </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/Wix.png" alt="Wix" className="h-8 sm:h-10 md:h-14 w-auto object-contain" />
               </div>
 
               {/* Center: Shopify (Biggest) */}
-              <div className="hover:scale-110 transition-all duration-300 mx-4">
-                <img src="/Shopify.png" alt="Shopify" className="h-20 w-auto object-contain" />
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300 mx-1 sm:mx-2 md:mx-4">
+                <img src="/Shopify.png" alt="Shopify" className="h-12 sm:h-16 md:h-20 w-auto object-contain" />
               </div>
 
               {/* Right 3 logos */}
-              <div className="flex items-center gap-4">
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/squarespace.png" alt="SquareSpace" className="h-14 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/BigCommerce.png" alt="BigCommerce" className="h-12 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/opencart.png" alt="OpenCart" className="h-10 w-auto object-contain" />
-                </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/squarespace.png" alt="SquareSpace" className="h-8 sm:h-10 md:h-14 w-auto object-contain" />
               </div>
-            </div>
-
-            {/* Mobile: 3 rows layout */}
-            <div className="md:hidden flex flex-col items-center gap-4">
-              {/* Top row: 3 logos */}
-              <div className="flex items-center justify-center gap-4">
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/MagentoCommerce.png" alt="Magento" className="h-8 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/wooCommerce.png" alt="WooCommerce" className="h-9 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/Wix.png" alt="Wix" className="h-10 w-auto object-contain" />
-                </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/BigCommerce.png" alt="BigCommerce" className="h-7 sm:h-9 md:h-12 w-auto object-contain" />
               </div>
-
-              {/* Middle row: Shopify (Biggest, Centered) */}
-              <div className="hover:scale-110 transition-all duration-300">
-                <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto object-contain" />
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/opencart.png" alt="OpenCart" className="h-6 sm:h-8 md:h-10 w-auto object-contain" />
               </div>
-
-              {/* Bottom row: 3 logos */}
-              <div className="flex items-center justify-center gap-4">
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/squarespace.png" alt="SquareSpace" className="h-10 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/BigCommerce.png" alt="BigCommerce" className="h-9 w-auto object-contain" />
-                </div>
-                <div className="hover:scale-110 transition-all duration-300">
-                  <img src="/opencart.png" alt="OpenCart" className="h-8 w-auto object-contain" />
-                </div>
-              </div>
+              
             </div>
           </div>
 
