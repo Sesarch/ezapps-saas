@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -25,21 +27,29 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Dashboard Header - Different from main site */}
+      {/* Dashboard Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/dashboard">
               <img src="/logo.png" alt="EZ Apps" className="h-8" />
             </Link>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600 text-sm">{profile?.full_name || user.email}</span>
-              <Link 
-                href="/auth/signout"
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 text-sm font-medium"
-              >
-                Sign Out
+            <div className="flex items-center gap-6">
+              <Link href="/dashboard" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                Dashboard
               </Link>
+              <Link href="/dashboard/billing" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                Billing
+              </Link>
+              <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
+                <span className="text-gray-600 text-sm">{profile?.full_name || user.email}</span>
+                <Link 
+                  href="/auth/signout"
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Sign Out
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -58,7 +68,7 @@ export default async function DashboardPage() {
         <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-6 mb-8 text-white">
           <h2 className="text-xl font-bold mb-2">Your Free Trial is Active</h2>
           <p className="mb-4 opacity-90">You have 14 days to explore all features. No credit card required.</p>
-          <Link href="/#pricing" className="inline-block px-6 py-3 bg-white text-teal-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+          <Link href="/dashboard/billing" className="inline-block px-6 py-3 bg-white text-teal-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
             View Plans
           </Link>
         </div>
