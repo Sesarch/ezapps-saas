@@ -1,33 +1,57 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useAuth } from '@/components/AuthProvider'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+export default function DashboardPage() {
+  const { user, loading, signOut } = useAuth()
+  const router = useRouter()
+  const [profile, setProfile] = useState<any>(null)
+  const [apps, setApps] = useState<any[]>([])
+  const supabase = createClient()
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    redirect('/login')
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+    }
+  }, [user, loading, router])
+
+  useEffect(() => {
+    if (user) {
+      // Fetch profile
+      supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => setProfile(data))
+
+      // Fetch apps
+      supabase
+        .from('apps')
+        .select('*')
+        .eq('is_active', true)
+        .then(({ data }) => setApps(data || []))
+    }
+  }, [user])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
   }
 
-  const user = session.user
-
-  // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  // Get available apps
-  const { data: apps } = await supabase
-    .from('apps')
-    .select('*')
-    .eq('is_active', true)
+  if (!user) {
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,12 +71,12 @@ export default async function DashboardPage() {
               </Link>
               <div className="flex items-center gap-3 pl-6 border-l border-gray-200">
                 <span className="text-gray-600 text-sm">{profile?.full_name || user.email}</span>
-                <Link 
-                  href="/auth/signout"
+                <button 
+                  onClick={signOut}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign Out
-                </Link>
+                </button>
               </div>
             </div>
           </div>
@@ -80,7 +104,7 @@ export default async function DashboardPage() {
         {/* Apps Grid */}
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Available Apps</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {apps?.map((app) => (
+          {apps.map((app) => (
             <div key={app.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
               <div className="text-3xl mb-3">{app.icon}</div>
               <h3 className="text-lg font-semibold text-gray-900 mb-1">{app.name}</h3>
