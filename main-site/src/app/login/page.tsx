@@ -25,10 +25,26 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message)
-    } else if (data.user) {
-      router.push('/dashboard')
+      setLoading(false)
+      return
+    }
+    
+    if (data.user) {
+      // Check if user is admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profile?.is_admin) {
+        router.push('/admin')
+      } else {
+        router.push('/dashboard')
+      }
       router.refresh()
     }
+    
     setLoading(false)
   }
 
