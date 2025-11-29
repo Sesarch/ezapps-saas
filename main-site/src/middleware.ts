@@ -1,20 +1,14 @@
-import { type NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  // Skip middleware if Supabase is not configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    return NextResponse.next()
-  }
-
-  // Only protect dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    // For now, just let it through - auth check happens in the page
-    return NextResponse.next()
-  }
-
-  return NextResponse.next()
+  return await updateSession(request)
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/login',
+    '/signup',
+  ],
 }
