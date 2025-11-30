@@ -25,7 +25,6 @@ export default function AdminLayout({
     }
 
     if (user) {
-      // Check if user is admin
       supabase
         .from('profiles')
         .select('is_admin')
@@ -127,18 +126,6 @@ export default function AdminLayout({
                   </Link>
                 )
               })}
-
-              {/* Divider */}
-              <div className="my-4 border-t border-gray-700"></div>
-
-              {/* Back to Dashboard */}
-              <Link
-                href="/dashboard"
-                className="flex items-center px-4 py-3 rounded-xl text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white transition-colors"
-              >
-                <span className="mr-3 text-lg">← </span>
-                Back to Dashboard
-              </Link>
             </nav>
 
             {/* User Section */}
