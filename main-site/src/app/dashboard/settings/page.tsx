@@ -15,7 +15,6 @@ export default function SettingsPage() {
   const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   
   // Password state
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
@@ -29,6 +28,7 @@ export default function SettingsPage() {
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteText, setDeleteText] = useState('')
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Load profile data
   useEffect(() => {
@@ -96,7 +96,6 @@ export default function SettingsPage() {
       setPasswordMessage({ type: 'error', text: error.message })
     } else {
       setPasswordMessage({ type: 'success', text: 'Password changed successfully!' })
-      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
     }
@@ -107,9 +106,24 @@ export default function SettingsPage() {
   const handleDeleteAccount = async () => {
     if (deleteText !== 'DELETE') return
     
-    // In production, you'd call a server function to delete the user
-    alert('Account deletion would be processed. This feature requires backend implementation.')
-    setShowDeleteConfirm(false)
+    setDeleteLoading(true)
+    
+    try {
+      // Delete profile from database
+      await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user?.id)
+
+      // Sign out
+      await supabase.auth.signOut()
+      
+      // Redirect to home
+      window.location.href = '/?deleted=true'
+    } catch (error) {
+      alert('Error deleting account. Please contact support.')
+      setDeleteLoading(false)
+    }
   }
 
   return (
@@ -308,28 +322,14 @@ export default function SettingsPage() {
                 <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-xl">⭐</div>
                 <div>
                   <p className="text-sm text-gray-500">Current Plan</p>
-                  <p className="font-medium text-teal-600">Free Trial (14 days left)</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-xl">🏪</div>
-                <div>
-                  <p className="text-sm text-gray-500">Connected Stores</p>
-                  <p className="font-medium text-gray-900">0 stores</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-xl">📦</div>
-                <div>
-                  <p className="text-sm text-gray-500">Active Apps</p>
-                  <p className="font-medium text-gray-900">0 apps</p>
+                  <p className="font-medium text-teal-600">Free Trial</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Sessions */}
+        {/* Active Sessions */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-gray-900">Active Sessions</h2>
@@ -405,10 +405,10 @@ export default function SettingsPage() {
                   </button>
                   <button
                     onClick={handleDeleteAccount}
-                    disabled={deleteText !== 'DELETE'}
+                    disabled={deleteText !== 'DELETE' || deleteLoading}
                     className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Delete My Account
+                    {deleteLoading ? 'Deleting...' : 'Delete My Account'}
                   </button>
                 </div>
               </div>
