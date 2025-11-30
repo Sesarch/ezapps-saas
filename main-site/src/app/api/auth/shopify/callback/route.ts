@@ -47,20 +47,18 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Get Shopify platform ID
-    const { data: platform } = await supabase
-      .from('platforms')
+    // Get admin user to associate the store
+    const { data: adminUser } = await supabase
+      .from('profiles')
       .select('id')
-      .eq('slug', 'shopify')
+      .eq('is_admin', true)
+      .limit(1)
       .single()
 
-    if (!platform) {
-      throw new Error('Shopify platform not found in database')
+    if (!adminUser) {
+      throw new Error('No admin user found')
     }
 
-    // Get user from cookie/session (we'll use shop email for now)
-    // In production, you'd get the user_id from the session
-    
     // Check if store already exists
     const { data: existingStore } = await supabase
       .from('stores')
@@ -80,30 +78,22 @@ export async function GET(request: NextRequest) {
         })
         .eq('id', existingStore.id)
     } else {
-      // For now, we'll get the first admin user to associate the store
-      // In production, you'd get this from the session
-      const { data: adminUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('is_admin', true)
-        .limit(1)
-        .single()
-
-      if (!adminUser) {
-        throw new Error('No admin user found')
-      }
-
-      // Insert new store
-      await supabase
+      // Insert new store - use 'shopify' as platform_id since that's the slug/id
+      const { error: insertError } = await supabase
         .from('stores')
         .insert({
           user_id: adminUser.id,
-          platform_id: platform.id,
+          platform_id: 'shopify',
           store_name: shopInfo.name,
           store_url: shop,
           access_token: accessToken,
           is_active: true,
         })
+
+      if (insertError) {
+        console.error('Insert error:', insertError)
+        throw new Error('Failed to save store: ' + insertError.message)
+      }
     }
 
     return NextResponse.redirect(
