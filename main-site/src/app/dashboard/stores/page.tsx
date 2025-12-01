@@ -28,14 +28,18 @@ export default function StoresPage() {
   }, [searchParams])
 
   // Fetch user's stores
-  useEffect(() => {
+  const fetchStores = async () => {
     if (user) {
-      supabase
+      const { data } = await supabase
         .from('stores')
         .select('*, platforms(*)')
         .eq('user_id', user.id)
-        .then(({ data }) => setStores(data || []))
+      setStores(data || [])
     }
+  }
+
+  useEffect(() => {
+    fetchStores()
   }, [user])
 
   const connectShopify = () => {
@@ -57,6 +61,24 @@ export default function StoresPage() {
 
     // Redirect to Shopify OAuth
     window.location.href = `/api/auth/shopify?shop=${shop}`
+  }
+
+  const disconnectStore = async (storeId: string, storeName: string) => {
+    if (!confirm(`Are you sure you want to disconnect "${storeName}"?`)) {
+      return
+    }
+
+    const { error } = await supabase
+      .from('stores')
+      .delete()
+      .eq('id', storeId)
+
+    if (error) {
+      setMessage({ type: 'error', text: 'Failed to disconnect store. Please try again.' })
+    } else {
+      setMessage({ type: 'success', text: `${storeName} has been disconnected.` })
+      fetchStores()
+    }
   }
 
   return (
@@ -96,7 +118,10 @@ export default function StoresPage() {
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
                   Connected
                 </span>
-                <button className="text-sm text-gray-500 hover:text-red-600">
+                <button 
+                  onClick={() => disconnectStore(store.id, store.store_name)}
+                  className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+                >
                   Disconnect
                 </button>
               </div>
