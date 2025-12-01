@@ -1,52 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
-  const storeId = searchParams.get('storeId')
-
-  if (!storeId) {
-    return NextResponse.json({ error: 'Missing storeId' }, { status: 400 })
+  const shop = searchParams.get('shop')
+  
+  console.log('Auth route called with shop:', shop)
+  
+  if (!shop) {
+    return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
   }
 
-  try {
-    // Get store from database
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('*')
-      .eq('id', storeId)
-      .single()
-
-    if (storeError || !store) {
-      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
-    }
-
-    // Fetch products from Shopify
-    const response = await fetch(
-      `https://${store.store_url}/admin/api/2024-01/products.json?limit=50`,
-      {
-        headers: {
-          'X-Shopify-Access-Token': store.access_token,
-        },
-      }
-    )
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Shopify API error:', errorText)
-      return NextResponse.json({ error: 'Failed to fetch products from Shopify' }, { status: 500 })
-    }
-
-    const data = await response.json()
-    return NextResponse.json({ products: data.products })
-
-  } catch (error) {
-    console.error('Error fetching products:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  // Validate shop format (must be *.myshopify.com)
+  const shopRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/
+  if (!shopRegex.test(shop)) {
+    return NextResponse.json({ error: 'Invalid shop format' }, { status: 400 })
   }
+
+  const clientId = process.env.SHOPIFY_CLIENT_ID
+  const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_inventory,write_inventory'
+  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/shopify/callback`
+  
+  // Generate a random state for CSRF protection
+  const state = Math.random().toString(36).substring(7)
+  
+  // Build the authorization URL
+  const authUrl = `https://${shop}/admin/oauth/authorize?` +
+    `client_id=${clientId}` +
+    `&scope=${scopes}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&state=${state}`
+
+  console.log('Redirecting to:', authUrl)
+
+  // Redirect to Shopify authorization page
+  return NextResponse.redirect(authUrl)
 }
