@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
   }
 
-  // Validate shop format (must be *.myshopify.com)
   const shopRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/
   if (!shopRegex.test(shop)) {
     return NextResponse.json({ error: 'Invalid shop format' }, { status: 400 })
@@ -53,7 +52,6 @@ export async function GET(request: NextRequest) {
   // Include user ID in state for the callback
   const state = `${user.id}_${Math.random().toString(36).substring(7)}`
   
-  // Build the authorization URL
   const authUrl = `https://${shop}/admin/oauth/authorize?` +
     `client_id=${clientId}` +
     `&scope=${scopes}` +
@@ -62,6 +60,5 @@ export async function GET(request: NextRequest) {
 
   console.log('Redirecting to:', authUrl)
 
-  // Redirect to Shopify authorization page
   return NextResponse.redirect(authUrl)
 }
