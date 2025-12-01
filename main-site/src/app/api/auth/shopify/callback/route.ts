@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Exchange code for access token
     console.log('Exchanging code for token...')
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
@@ -39,7 +38,6 @@ export async function GET(request: NextRequest) {
     const accessToken = tokenData.access_token
     console.log('Got access token')
 
-    // Get shop info from Shopify
     console.log('Getting shop info...')
     const shopResponse = await fetch(`https://${shop}/admin/api/2024-01/shop.json`, {
       headers: {
@@ -51,13 +49,11 @@ export async function GET(request: NextRequest) {
     const shopInfo = shopData.shop
     console.log('Shop info:', shopInfo?.name)
 
-    // Create Supabase admin client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Check if store already exists BY URL
     const { data: existingStore } = await supabase
       .from('stores')
       .select('id, user_id')
@@ -67,7 +63,6 @@ export async function GET(request: NextRequest) {
     console.log('Existing store:', existingStore)
 
     if (existingStore) {
-      // Update existing store with new access token
       const { error: updateError } = await supabase
         .from('stores')
         .update({
@@ -84,7 +79,6 @@ export async function GET(request: NextRequest) {
       }
       console.log('Store updated with new access token')
     } else {
-      // No existing store - try to get user ID from state
       const userId = state?.split('_')[0]
       
       if (!userId || userId.length < 30) {
@@ -92,7 +86,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stores?error=no_user`)
       }
 
-      // Insert new store
       const { error: insertError } = await supabase
         .from('stores')
         .insert({
