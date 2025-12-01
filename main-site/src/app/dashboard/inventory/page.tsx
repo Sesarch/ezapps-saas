@@ -12,20 +12,26 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
   const supabase = createClient()
 
   // Fetch user's stores
   useEffect(() => {
     if (user) {
+      console.log('Fetching stores for user:', user.id)
       supabase
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
         .eq('platform_id', 'shopify')
-        .then(({ data }) => {
+        .then(({ data, error }) => {
+          console.log('Stores result:', data, error)
           setStores(data || [])
           if (data && data.length > 0) {
             setSelectedStore(data[0])
+            setDebugInfo(`Found ${data.length} store(s). Selected: ${data[0].store_name}`)
+          } else {
+            setDebugInfo(`No stores found for user ${user.id}`)
           }
           setLoading(false)
         })
@@ -44,19 +50,26 @@ export default function InventoryPage() {
     
     setLoadingProducts(true)
     setError(null)
+    setDebugInfo(`Fetching products for store: ${selectedStore.store_name} (ID: ${selectedStore.id})`)
     
     try {
       const response = await fetch(`/api/shopify/products?storeId=${selectedStore.id}`)
       const data = await response.json()
       
+      console.log('Products API response:', data)
+      
       if (data.error) {
         setError(data.error)
+        setDebugInfo(`Error: ${data.error}`)
         setProducts([])
       } else {
         setProducts(data.products || [])
+        setDebugInfo(`Found ${data.products?.length || 0} products`)
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Fetch error:', err)
       setError('Failed to fetch products')
+      setDebugInfo(`Fetch error: ${err.message}`)
       setProducts([])
     }
     
@@ -81,6 +94,12 @@ export default function InventoryPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Inventory Management</h1>
           <p className="text-gray-600 mt-1">Manage your product inventory</p>
         </div>
+        
+        {/* Debug Info */}
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+          Debug: {debugInfo || 'No debug info'} | User ID: {user?.id}
+        </div>
+        
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="text-5xl mb-4">🏪</div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No stores connected</h3>
@@ -117,6 +136,11 @@ export default function InventoryPage() {
             ))}
           </select>
         )}
+      </div>
+
+      {/* Debug Info */}
+      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+        Debug: {debugInfo} | Store URL: {selectedStore?.store_url}
       </div>
 
       {/* Stats */}
