@@ -14,16 +14,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stores?error=missing_params`)
   }
 
-  // Extract user ID from state (format: "userId_randomString")
-  const userId = state?.split('_')[0]
-  
-  if (!userId) {
-    console.error('No user ID in state:', state)
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stores?error=no_user`)
-  }
-
-  console.log('User ID from state:', userId)
-
   try {
     // Exchange code for access token
     console.log('Exchanging code for token...')
@@ -67,17 +57,17 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Check if store already exists
+    // Check if store already exists BY URL
     const { data: existingStore } = await supabase
       .from('stores')
-      .select('id')
+      .select('id, user_id')
       .eq('store_url', shop)
       .single()
 
     console.log('Existing store:', existingStore)
 
     if (existingStore) {
-      // Update existing store
+      // Update existing store with new access token
       const { error: updateError } = await supabase
         .from('stores')
         .update({
@@ -92,8 +82,16 @@ export async function GET(request: NextRequest) {
         console.error('Update error:', updateError)
         throw new Error('Failed to update store')
       }
-      console.log('Store updated')
+      console.log('Store updated with new access token')
     } else {
+      // No existing store - try to get user ID from state
+      const userId = state?.split('_')[0]
+      
+      if (!userId || userId.length < 30) {
+        console.error('Invalid user ID in state:', userId)
+        return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stores?error=no_user`)
+      }
+
       // Insert new store
       const { error: insertError } = await supabase
         .from('stores')
