@@ -38,7 +38,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Apps', href: '/dashboard/apps', icon: '📦' },
+    { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
     { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
@@ -106,7 +106,7 @@ export default function DashboardLayout({
               {/* Divider */}
               <div className="my-4 border-t border-gray-200"></div>
 
-              {/* User Section - Right after Settings */}
+              {/* User Section */}
               <div className="px-4 py-3">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-semibold">
