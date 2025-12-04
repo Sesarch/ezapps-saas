@@ -15,20 +15,32 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get store from database
+    // Get store from database - check both store_name and shop_url
     const { data: store, error: storeError } = await supabase
       .from('stores')
       .select('*')
-      .eq('store_name', storeName)
+      .or(`store_name.eq.${storeName},shop_url.ilike.${storeName}%`)
+      .limit(1)
       .single()
 
     if (storeError || !store) {
+      console.error('Store lookup error:', storeError)
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
     }
 
+    // Extract shop domain from shop_url or construct from store_name
+    let shopDomain = store.shop_url
+    if (!shopDomain) {
+      shopDomain = `${store.store_name}.myshopify.com`
+    }
+    // Remove protocol if present
+    shopDomain = shopDomain.replace('https://', '').replace('http://', '')
+
     // Fetch orders from Shopify
-    const shopifyUrl = `https://${store.store_name}.myshopify.com/admin/api/2024-01/orders.json?status=any&limit=50`
+    const shopifyUrl = `https://${shopDomain}/admin/api/2024-01/orders.json?status=any&limit=50`
     
+    console.log('Fetching orders from:', shopifyUrl)
+
     const response = await fetch(shopifyUrl, {
       headers: {
         'X-Shopify-Access-Token': store.access_token,
@@ -38,8 +50,12 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('Shopify API error:', errorText)
-      return NextResponse.json({ error: 'Failed to fetch orders from Shopify' }, { status: response.status })
+      console.error('Shopify API error:', response.status, errorText)
+      return NextResponse.json({ 
+        error: 'Failed to fetch orders from Shopify',
+        details: errorText,
+        status: response.status 
+      }, { status: response.status })
     }
 
     const data = await response.json()
