@@ -15,25 +15,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get store from database - check both store_name and shop_url
+    // Get store from database by store_name
     const { data: store, error: storeError } = await supabase
       .from('stores')
       .select('*')
-      .or(`store_name.eq.${storeName},shop_url.ilike.${storeName}%`)
-      .limit(1)
+      .eq('store_name', storeName)
       .single()
 
     if (storeError || !store) {
       console.error('Store lookup error:', storeError)
-      return NextResponse.json({ error: 'Store not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Store not found', storeName }, { status: 404 })
     }
 
-    // Extract shop domain from shop_url or construct from store_name
-    let shopDomain = store.shop_url
-    if (!shopDomain) {
-      shopDomain = `${store.store_name}.myshopify.com`
-    }
-    // Remove protocol if present
+    // Use shop_url if available, otherwise construct from store_name
+    let shopDomain = store.shop_url || `${store.store_name}.myshopify.com`
     shopDomain = shopDomain.replace('https://', '').replace('http://', '')
 
     // Fetch orders from Shopify
@@ -53,8 +48,7 @@ export async function GET(request: NextRequest) {
       console.error('Shopify API error:', response.status, errorText)
       return NextResponse.json({ 
         error: 'Failed to fetch orders from Shopify',
-        details: errorText,
-        status: response.status 
+        details: errorText 
       }, { status: response.status })
     }
 
