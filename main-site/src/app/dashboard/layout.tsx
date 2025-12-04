@@ -39,6 +39,12 @@ export default function DashboardLayout({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
     { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
+    { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
+    { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
+    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
+    { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
+    { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
+    { name: 'Build Orders', href: '/dashboard/builds', icon: '🏭' },
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
     { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
@@ -83,7 +89,7 @@ export default function DashboardLayout({
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-1">
+            <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
               {navigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
