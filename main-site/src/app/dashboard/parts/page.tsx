@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Part {
   id: string
-  sku: string
+  sku: string | null
   name: string
-  description: string
-  image_url: string
-  category: string
+  description: string | null
+  image_url: string | null
+  category: string | null
   in_stock: number
   committed: number
   on_order: number
@@ -112,11 +112,11 @@ export default function PartsPage() {
         const { error } = await supabase
           .from('parts')
           .update({
-            sku: formData.sku,
+            sku: formData.sku || null,
             name: formData.name,
-            description: formData.description,
-            image_url: formData.image_url,
-            category: formData.category,
+            description: formData.description || null,
+            image_url: formData.image_url || null,
+            category: formData.category || null,
             in_stock: formData.in_stock,
             min_threshold: formData.min_threshold,
             unit: formData.unit,
@@ -130,11 +130,11 @@ export default function PartsPage() {
           .from('parts')
           .insert({
             store_id: store.id,
-            sku: formData.sku,
+            sku: formData.sku || null,
             name: formData.name,
-            description: formData.description,
-            image_url: formData.image_url,
-            category: formData.category,
+            description: formData.description || null,
+            image_url: formData.image_url || null,
+            category: formData.category || null,
             in_stock: formData.in_stock,
             min_threshold: formData.min_threshold,
             unit: formData.unit
@@ -203,12 +203,12 @@ export default function PartsPage() {
     setEditingPart(null)
   }
 
-  const categories = [...new Set(parts.map(p => p.category).filter(Boolean))]
+  const categories = [...new Set(parts.map(p => p.category).filter((c): c is string => c !== null && c !== ''))]
 
   const filteredParts = parts.filter(part => {
     const matchesSearch = !searchTerm || 
       part.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      part.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+      (part.sku && part.sku.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesCategory = !categoryFilter || part.category === categoryFilter
     return matchesSearch && matchesCategory
   })
@@ -391,7 +391,7 @@ export default function PartsPage() {
                       <td className="py-4 px-6">
                         {part.category ? (
                           <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">{part.category}</span>
-                        ) : '-'}
+                        ) : <span>-</span>}
                       </td>
                       <td className="py-4 px-6 text-center font-medium">{part.in_stock} {part.unit}</td>
                       <td className="py-4 px-6 text-center">
@@ -400,3 +400,166 @@ export default function PartsPage() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-center font-medium text-gray-900">{available} {part.unit}</td>
+                      <td className="py-4 px-6 text-center">
+                        {status === 'out' && (
+                          <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-medium">Out of Stock</span>
+                        )}
+                        {status === 'low' && (
+                          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">Low Stock</span>
+                        )}
+                        {status === 'ok' && (
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">In Stock</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => openEditModal(part)}
+                          className="text-teal-600 hover:text-teal-800 mr-3"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deletePart(part.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">
+                {editingPart ? 'Edit Part' : 'Add New Part'}
+              </h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Part Name *</label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., RAM Stick 8GB DDR4"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                  <input
+                    type="text"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({...formData, sku: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., RAM-8GB-DDR4"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <input
+                    type="text"
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="e.g., Memory"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    rows={2}
+                    placeholder="Optional description..."
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <input
+                    type="text"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">In Stock</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.in_stock}
+                    onChange={(e) => setFormData({...formData, in_stock: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Min. Threshold</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.min_threshold}
+                    onChange={(e) => setFormData({...formData, min_threshold: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <select
+                    value={formData.unit}
+                    onChange={(e) => setFormData({...formData, unit: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="pcs">Pieces (pcs)</option>
+                    <option value="kg">Kilograms (kg)</option>
+                    <option value="g">Grams (g)</option>
+                    <option value="m">Meters (m)</option>
+                    <option value="cm">Centimeters (cm)</option>
+                    <option value="L">Liters (L)</option>
+                    <option value="mL">Milliliters (mL)</option>
+                    <option value="box">Boxes</option>
+                    <option value="set">Sets</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={closeModal}
+                className="px-6 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={savePart}
+                className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+              >
+                {editingPart ? 'Update Part' : 'Add Part'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
