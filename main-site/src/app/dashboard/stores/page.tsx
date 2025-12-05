@@ -51,13 +51,11 @@ export default function StoresPage() {
     setConnecting(true)
     setMessage(null)
 
-    // Format the shop domain
+    // Just clean up the input - let the API handle the domain formatting
     let shop = shopDomain.trim().toLowerCase()
     
-    // Add .myshopify.com if not present
-    if (!shop.includes('.myshopify.com')) {
-      shop = shop.replace('.myshopify.com', '') + '.myshopify.com'
-    }
+    // Remove .myshopify.com if user included it (API will add it back)
+    shop = shop.replace(/\.myshopify\.com$/i, '')
 
     // Redirect to Shopify OAuth
     window.location.href = `/api/auth/shopify?shop=${shop}`
