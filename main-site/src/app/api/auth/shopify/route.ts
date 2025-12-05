@@ -4,11 +4,14 @@ import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const shop = searchParams.get('shop')
+  let shop = searchParams.get('shop')
   
   if (!shop) {
     return NextResponse.redirect(new URL('/dashboard/stores?error=missing_shop', request.url))
   }
+
+  // Clean up shop name - remove .myshopify.com if user included it
+  shop = shop.replace(/\.myshopify\.com$/i, '').trim()
 
   const cookieStore = cookies()
   
