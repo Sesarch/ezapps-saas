@@ -6,17 +6,19 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
 
+  console.log('DEBUG - Raw shop param:', shop)
+
   if (!shop) {
     return NextResponse.redirect(new URL('/dashboard/stores?error=missing_shop', request.url))
   }
 
-  // shop should already be just the store name (e.g., "ezapps-2")
-  // but clean it up just in case
   const storeName = shop
     .trim()
     .toLowerCase()
     .replace(/\.myshopify\.com$/i, '')
     .replace(/^https?:\/\//i, '')
+
+  console.log('DEBUG - Cleaned storeName:', storeName)
 
   const cookieStore = cookies()
 
@@ -48,6 +50,8 @@ export async function GET(request: Request) {
   const scopes = 'read_orders,read_products,read_inventory'
   const state = crypto.randomUUID()
 
+  console.log('DEBUG - redirectUri:', redirectUri)
+
   cookieStore.set('shopify_oauth_state', state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -56,8 +60,9 @@ export async function GET(request: Request) {
     path: '/',
   })
 
-  // Build URL with ONLY storeName + .myshopify.com
   const shopifyAuthUrl = `https://${storeName}.myshopify.com/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
+
+  console.log('DEBUG - Final shopifyAuthUrl:', shopifyAuthUrl)
 
   return NextResponse.redirect(shopifyAuthUrl)
 }
