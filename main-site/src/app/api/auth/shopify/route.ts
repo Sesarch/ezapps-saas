@@ -1,24 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
   
-  console.log('Auth route called with shop:', shop)
-  
   if (!shop) {
-    return NextResponse.json({ error: 'Missing shop parameter' }, { status: 400 })
+    return NextResponse.redirect(new URL('/dashboard/stores?error=missing_shop', request.url))
   }
 
-  const shopRegex = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/
-  if (!shopRegex.test(shop)) {
-    return NextResponse.json({ error: 'Invalid shop format' }, { status: 400 })
-  }
-
-  // Get the current user from Supabase session
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
+  
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,7 +20,7 @@ export async function GET(request: NextRequest) {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)
           )
@@ -36,29 +29,29 @@ export async function GET(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // Verify user is authenticated
+  const { data: { user }, error } = await supabase.auth.getUser()
   
-  if (!user) {
-    console.log('No user session found, redirecting to login')
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/login?redirect=/dashboard/stores`)
+  if (error || !user) {
+    return NextResponse.redirect(new URL('/login?error=not_authenticated', request.url))
   }
 
-  console.log('User found:', user.id)
-
-  const clientId = process.env.SHOPIFY_CLIENT_ID
-  const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_inventory,write_inventory'
+  // Build Shopify OAuth URL
+  const clientId = process.env.SHOPIFY_CLIENT_ID!
   const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/shopify/callback`
+  const scopes = 'read_orders,read_products,read_inventory'
+  const state = crypto.randomUUID()
   
-  // Include user ID in state for the callback
-  const state = `${user.id}_${Math.random().toString(36).substring(7)}`
-  
-  const authUrl = `https://${shop}/admin/oauth/authorize?` +
-    `client_id=${clientId}` +
-    `&scope=${scopes}` +
-    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-    `&state=${state}`
+  // Store state in cookie for CSRF protection
+  cookieStore.set('shopify_oauth_state', state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 60 * 10, // 10 minutes
+    path: '/',
+  })
 
-  console.log('Redirecting to:', authUrl)
+  const shopifyAuthUrl = `https://${shop}.myshopify.com/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`
 
-  return NextResponse.redirect(authUrl)
+  return NextResponse.redirect(shopifyAuthUrl)
 }
