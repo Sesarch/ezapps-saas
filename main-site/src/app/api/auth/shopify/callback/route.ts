@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -6,7 +7,6 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const shop = searchParams.get('shop')
   const code = searchParams.get('code')
-  const state = searchParams.get('state')
 
   console.log('CALLBACK - shop:', shop)
   console.log('CALLBACK - code:', code)
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
 
   console.log('CALLBACK - shopDomain:', shopDomain)
 
+  // Use regular client for auth check
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -70,8 +71,14 @@ export async function GET(request: Request) {
 
   console.log('CALLBACK - Got access token')
 
-  // Save store to database - only use columns that exist
-  const { data, error: dbError } = await supabase
+  // Use service role client to bypass RLS
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Save store to database
+  const { data, error: dbError } = await supabaseAdmin
     .from('stores')
     .insert({
       user_id: user.id,
