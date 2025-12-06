@@ -85,9 +85,9 @@ export async function GET(request: Request) {
       user_id: user.id,
       platform_id: 'shopify',
       store_url: shopDomain,
-      store_name: storeName,
       access_token: accessToken,
       is_active: true,
+      connected_at: new Date().toISOString(),
     }, {
       onConflict: 'user_id,store_url'
     })
