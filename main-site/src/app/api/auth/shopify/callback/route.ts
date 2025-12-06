@@ -10,7 +10,6 @@ export async function GET(request: Request) {
 
   console.log('CALLBACK - shop:', shop)
   console.log('CALLBACK - code:', code)
-  console.log('CALLBACK - state:', state)
 
   if (!shop || !code) {
     return NextResponse.redirect(new URL('/dashboard/stores?error=missing_params', request.url))
@@ -68,11 +67,10 @@ export async function GET(request: Request) {
 
   const tokenData = await tokenResponse.json()
   const accessToken = tokenData.access_token
-  const scope = tokenData.scope
 
-  console.log('CALLBACK - Got access token, scope:', scope)
+  console.log('CALLBACK - Got access token')
 
-  // Save store to database - simple insert
+  // Save store to database - only use columns that exist
   const { data, error: dbError } = await supabase
     .from('stores')
     .insert({
@@ -80,7 +78,6 @@ export async function GET(request: Request) {
       platform_id: 'shopify',
       store_url: shopDomain,
       access_token: accessToken,
-      scope: scope,
     })
     .select()
 
