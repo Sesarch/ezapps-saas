@@ -18,22 +18,10 @@ export async function GET(request: Request) {
 
   const cookieStore = cookies()
   
-  // Log state for debugging
-  const savedState = cookieStore.get('shopify_oauth_state')?.value
-  console.log('CALLBACK - savedState from cookie:', savedState)
-  
-  // Skip state validation for now (we'll fix this later)
-  // The important security is that we exchange the code with Shopify
-  if (state && savedState && state !== savedState) {
-    console.log('CALLBACK - State mismatch, but continuing...')
-  }
-
   // Clean the shop domain - Shopify sends "store.myshopify.com"
   const shopDomain = shop.replace(/^https?:\/\//, '').replace(/\/$/, '')
-  const storeName = shopDomain.replace(/\.myshopify\.com$/i, '')
 
   console.log('CALLBACK - shopDomain:', shopDomain)
-  console.log('CALLBACK - storeName:', storeName)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -73,33 +61,35 @@ export async function GET(request: Request) {
   })
 
   if (!tokenResponse.ok) {
-    console.error('Token exchange failed:', await tokenResponse.text())
+    const errorText = await tokenResponse.text()
+    console.error('Token exchange failed:', errorText)
     return NextResponse.redirect(new URL('/dashboard/stores?error=token_exchange_failed', request.url))
   }
 
   const tokenData = await tokenResponse.json()
   const accessToken = tokenData.access_token
+  const scope = tokenData.scope
 
-  console.log('CALLBACK - Got access token')
+  console.log('CALLBACK - Got access token, scope:', scope)
 
-  // Save store to database
-  const { error: dbError } = await supabase
+  // Save store to database - simple insert
+  const { data, error: dbError } = await supabase
     .from('stores')
-    .upsert({
+    .insert({
       user_id: user.id,
       platform_id: 'shopify',
       store_url: shopDomain,
       access_token: accessToken,
-      is_active: true,
-      connected_at: new Date().toISOString(),
-    }, {
-      onConflict: 'user_id,store_url'
+      scope: scope,
     })
+    .select()
 
   if (dbError) {
-    console.error('Database error:', dbError)
+    console.error('Database error:', JSON.stringify(dbError))
     return NextResponse.redirect(new URL('/dashboard/stores?error=database_error', request.url))
   }
+
+  console.log('CALLBACK - Store saved:', data)
 
   // Clear the state cookie
   cookieStore.delete('shopify_oauth_state')
