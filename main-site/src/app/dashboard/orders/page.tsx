@@ -20,7 +20,7 @@ interface Order {
 
 interface Store {
   id: string
-  store_name: string
+  store_url: string
   access_token: string
 }
 
@@ -91,7 +91,7 @@ export default function OrdersPage() {
     setSyncing(true)
     
     try {
-      const response = await fetch(`/api/shopify/orders?store=${store.store_name}`)
+      const response = await fetch(`/api/shopify/orders?store=${store.store_url}`)
       const data = await response.json()
       
       if (data.error) {
