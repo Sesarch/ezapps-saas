@@ -439,9 +439,9 @@ export default function PartsPage() {
                     <tr key={part.id} className="hover:bg-gray-50">
                       <td className="py-4 px-6">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
-                            {part.image_url ? (
-                              <img src={part.image_url} alt={part.name} className="w-10 h-10 rounded-lg object-cover" />
+                          <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+  {part.image_url ? (
+    <img src={part.image_url} alt={part.name} className="w-14 h-14 rounded-lg object-cover" />
                             ) : (
                               <span className="text-xl">🔧</span>
                             )}
