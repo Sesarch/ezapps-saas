@@ -106,11 +106,9 @@ export default function PartsPage() {
     try {
       setUploading(true)
       
-      // Create unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${store?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       
-      // Upload to Supabase Storage
       const { data, error } = await supabase.storage
         .from('part-images')
         .upload(fileName, file, {
@@ -120,7 +118,6 @@ export default function PartsPage() {
 
       if (error) throw error
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('part-images')
         .getPublicUrl(fileName)
@@ -139,13 +136,11 @@ export default function PartsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file')
       return
     }
 
-    // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('Image must be less than 5MB')
       return
@@ -440,10 +435,10 @@ export default function PartsPage() {
                       <td className="py-4 px-6">
                         <div className="flex items-center">
                           <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
-  {part.image_url ? (
-    <img src={part.image_url} alt={part.name} className="w-14 h-14 rounded-lg object-cover" />
+                            {part.image_url ? (
+                              <img src={part.image_url} alt={part.name} className="w-14 h-14 rounded-lg object-cover" />
                             ) : (
-                              <span className="text-xl">🔧</span>
+                              <span className="text-2xl">🔧</span>
                             )}
                           </div>
                           <div>
@@ -556,7 +551,6 @@ export default function PartsPage() {
                   />
                 </div>
 
-                {/* Image Upload Section */}
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Part Image</label>
                   
@@ -592,7 +586,7 @@ export default function PartsPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="text-3xl mb-2">📷</div>
+                          <div className="text-4xl mb-2">📷</div>
                           <p className="text-sm text-gray-600">Click to upload image</p>
                           <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
                         </>
