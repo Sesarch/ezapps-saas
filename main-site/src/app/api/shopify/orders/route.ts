@@ -53,10 +53,165 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
-    
-    return NextResponse.json({ orders: data.orders || [] })
+    const orders = data.orders || []
+
+    // Save orders and line items to database
+    for (const order of orders) {
+      // Upsert order
+      const orderData = {
+        store_id: store.id,
+        shopify_order_id: order.id.toString(),
+        order_number: order.order_number?.toString() || '',
+        order_name: order.name || '',
+        customer_name: order.customer?.first_name 
+          ? `${order.customer.first_name} ${order.customer.last_name || ''}`.trim()
+          : null,
+        customer_email: order.customer?.email || null,
+        total_price: parseFloat(order.total_price) || 0,
+        fulfillment_status: order.fulfillment_status || 'unfulfilled',
+        financial_status: order.financial_status || null,
+        order_date: order.created_at,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: savedOrder, error: orderError } = await supabase
+        .from('shopify_orders')
+        .upsert(orderData, { onConflict: 'store_id,shopify_order_id' })
+        .select()
+        .single()
+
+      if (orderError) {
+        console.error('Error saving order:', orderError)
+        continue
+      }
+
+      // Save line items for this order
+      if (order.line_items && order.line_items.length > 0) {
+        for (const item of order.line_items) {
+          const lineItemData = {
+            store_id: store.id,
+            order_id: savedOrder.id,
+            shopify_line_item_id: item.id.toString(),
+            shopify_product_id: item.product_id?.toString() || null,
+            shopify_variant_id: item.variant_id?.toString() || null,
+            product_title: item.title || '',
+            variant_title: item.variant_title || null,
+            quantity: item.quantity || 1,
+            price: parseFloat(item.price) || 0
+          }
+
+          await supabase
+            .from('order_line_items')
+            .upsert(lineItemData, { onConflict: 'order_id,shopify_line_item_id' })
+        }
+      }
+    }
+
+    // Recalculate committed inventory for all parts
+    await recalculateCommitted(store.id)
+
+    return NextResponse.json({ orders })
   } catch (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
+async function recalculateCommitted(storeId: string) {
+  try {
+    // Get all unfulfilled orders for this store
+    const { data: unfulfilledOrders } = await supabase
+      .from('shopify_orders')
+      .select('id')
+      .eq('store_id', storeId)
+      .or('fulfillment_status.is.null,fulfillment_status.eq.unfulfilled,fulfillment_status.eq.partial')
+
+    if (!unfulfilledOrders || unfulfilledOrders.length === 0) {
+      // No unfulfilled orders, reset all parts committed to 0
+      await supabase
+        .from('parts')
+        .update({ committed: 0 })
+        .eq('store_id', storeId)
+      return
+    }
+
+    const orderIds = unfulfilledOrders.map(o => o.id)
+
+    // Get all line items from unfulfilled orders
+    const { data: lineItems } = await supabase
+      .from('order_line_items')
+      .select('shopify_product_id, shopify_variant_id, quantity')
+      .in('order_id', orderIds)
+
+    if (!lineItems || lineItems.length === 0) {
+      await supabase
+        .from('parts')
+        .update({ committed: 0 })
+        .eq('store_id', storeId)
+      return
+    }
+
+    // Get all BOM items for this store
+    const { data: bomItems } = await supabase
+      .from('bom_items')
+      .select('shopify_product_id, shopify_variant_id, part_id, quantity_needed')
+      .eq('store_id', storeId)
+
+    if (!bomItems || bomItems.length === 0) {
+      await supabase
+        .from('parts')
+        .update({ committed: 0 })
+        .eq('store_id', storeId)
+      return
+    }
+
+    // Calculate committed for each part
+    const partCommitted: Record<string, number> = {}
+
+    for (const lineItem of lineItems) {
+      // Find BOM entries that match this product/variant
+      const matchingBom = bomItems.filter(bom => 
+        bom.shopify_product_id === lineItem.shopify_product_id &&
+        bom.shopify_variant_id === lineItem.shopify_variant_id
+      )
+
+      for (const bom of matchingBom) {
+        const committed = lineItem.quantity * bom.quantity_needed
+        partCommitted[bom.part_id] = (partCommitted[bom.part_id] || 0) + committed
+      }
+    }
+
+    // Reset all parts committed to 0 first
+    await supabase
+      .from('parts')
+      .update({ committed: 0 })
+      .eq('store_id', storeId)
+
+    // Update committed for each part that has committed inventory
+    for (const [partId, committed] of Object.entries(partCommitted)) {
+      await supabase
+        .from('parts')
+        .update({ committed })
+        .eq('id', partId)
+    }
+
+    console.log('Committed inventory recalculated:', partCommitted)
+  } catch (error) {
+    console.error('Error recalculating committed:', error)
+  }
+}
+```
+
+**What this does:**
+
+1. **Saves orders** to `shopify_orders` table (same as before)
+2. **Saves line items** to `order_line_items` table (NEW)
+3. **Recalculates committed** for all parts based on:
+   - Unfulfilled orders → line items → BOM → parts
+
+**Flow:**
+```
+Order (unfulfilled) has line items
+  → Line item: 2x "Snowboard Pro" (variant_id: 123)
+  → BOM says variant 123 needs: 1x Board, 2x Bindings, 8x Screws
+  → Committed: Board=2, Bindings=4, Screws=16
