@@ -8,27 +8,27 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const storeName = searchParams.get('store')
+  const storeUrl = searchParams.get('store')
 
-  if (!storeName) {
-    return NextResponse.json({ error: 'Store name required' }, { status: 400 })
+  if (!storeUrl) {
+    return NextResponse.json({ error: 'Store URL required' }, { status: 400 })
   }
 
   try {
-    // Get store from database by store_name
+    // Get store from database by store_url
     const { data: store, error: storeError } = await supabase
       .from('stores')
       .select('*')
-      .eq('store_name', storeName)
+      .eq('store_url', storeUrl)
       .single()
 
     if (storeError || !store) {
       console.error('Store lookup error:', storeError)
-      return NextResponse.json({ error: 'Store not found', storeName }, { status: 404 })
+      return NextResponse.json({ error: 'Store not found', storeUrl }, { status: 404 })
     }
 
-    // Use shop_url if available, otherwise construct from store_name
-    let shopDomain = store.shop_url || `${store.store_name}.myshopify.com`
+    // Use store_url for the shop domain
+    let shopDomain = store.store_url
     shopDomain = shopDomain.replace('https://', '').replace('http://', '')
 
     // Fetch orders from Shopify
