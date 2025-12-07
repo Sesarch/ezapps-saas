@@ -434,11 +434,11 @@ export default function PartsPage() {
                     <tr key={part.id} className="hover:bg-gray-50">
                       <td className="py-4 px-6">
                         <div className="flex items-center">
-                          <div className="w-14 h-14 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
+                          <div style={{ width: '80px', height: '80px' }} className="bg-gray-100 rounded-lg flex items-center justify-center mr-4 overflow-hidden flex-shrink-0">
                             {part.image_url ? (
-                              <img src={part.image_url} alt={part.name} className="w-14 h-14 rounded-lg object-cover" />
+                              <img src={part.image_url} alt={part.name} style={{ width: '80px', height: '80px' }} className="rounded-lg object-cover" />
                             ) : (
-                              <span className="text-2xl">🔧</span>
+                              <span className="text-3xl">🔧</span>
                             )}
                           </div>
                           <div>
@@ -556,7 +556,7 @@ export default function PartsPage() {
                   
                   {formData.image_url ? (
                     <div className="flex items-center gap-4">
-                      <div className="w-28 h-28 rounded-lg overflow-hidden border border-gray-200">
+                      <div style={{ width: '120px', height: '120px' }} className="rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
                         <img 
                           src={formData.image_url} 
                           alt="Part preview" 
