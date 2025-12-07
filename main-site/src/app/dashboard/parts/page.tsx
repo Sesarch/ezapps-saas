@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Part {
@@ -20,7 +20,7 @@ interface Part {
 
 interface Store {
   id: string
-  store_name: string
+  store_url: string
 }
 
 export default function PartsPage() {
@@ -32,6 +32,8 @@ export default function PartsPage() {
   const [editingPart, setEditingPart] = useState<Part | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [formData, setFormData] = useState({
     sku: '',
@@ -97,6 +99,61 @@ export default function PartsPage() {
       setError('Failed to load parts')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function uploadImage(file: File): Promise<string | null> {
+    try {
+      setUploading(true)
+      
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${store?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('part-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('part-images')
+        .getPublicUrl(fileName)
+
+      return publicUrl
+    } catch (err) {
+      console.error('Error uploading image:', err)
+      alert('Failed to upload image')
+      return null
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    const url = await uploadImage(file)
+    if (url) {
+      setFormData({ ...formData, image_url: url })
     }
   }
 
@@ -201,6 +258,16 @@ export default function PartsPage() {
   function closeModal() {
     setShowModal(false)
     setEditingPart(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  function removeImage() {
+    setFormData({ ...formData, image_url: '' })
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   const categories = [...new Set(parts.map(p => p.category).filter((c): c is string => c !== null && c !== ''))]
@@ -372,7 +439,7 @@ export default function PartsPage() {
                     <tr key={part.id} className="hover:bg-gray-50">
                       <td className="py-4 px-6">
                         <div className="flex items-center">
-                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3">
+                          <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-3 overflow-hidden">
                             {part.image_url ? (
                               <img src={part.image_url} alt={part.name} className="w-10 h-10 rounded-lg object-cover" />
                             ) : (
@@ -489,14 +556,56 @@ export default function PartsPage() {
                   />
                 </div>
 
+                {/* Image Upload Section */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Part Image</label>
+                  
+                  {formData.image_url ? (
+                    <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                        <img 
+                          src={formData.image_url} 
+                          alt="Part preview" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500 truncate mb-2">{formData.image_url.split('/').pop()}</p>
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="text-sm text-red-600 hover:text-red-800"
+                        >
+                          Remove image
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-teal-500 hover:bg-teal-50 transition-colors"
+                    >
+                      {uploading ? (
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                          <p className="text-sm text-gray-600">Uploading...</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="text-3xl mb-2">📷</div>
+                          <p className="text-sm text-gray-600">Click to upload image</p>
+                          <p className="text-xs text-gray-400 mt-1">PNG, JPG up to 5MB</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  
                   <input
-                    type="text"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData({...formData, image_url: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="https://..."
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
                   />
                 </div>
 
@@ -552,7 +661,8 @@ export default function PartsPage() {
               </button>
               <button
                 onClick={savePart}
-                className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                disabled={uploading}
+                className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors disabled:opacity-50"
               >
                 {editingPart ? 'Update Part' : 'Add Part'}
               </button>
