@@ -15,7 +15,17 @@ interface Part {
   on_order: number
   min_threshold: number
   unit: string
+  supplier_id: string | null
+  cost: number
+  lead_time_days: number
   created_at: string
+  supplier?: Supplier
+}
+
+interface Supplier {
+  id: string
+  name: string
+  email: string | null
 }
 
 interface Store {
@@ -25,6 +35,7 @@ interface Store {
 
 export default function PartsPage() {
   const [parts, setParts] = useState<Part[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,7 +54,10 @@ export default function PartsPage() {
     category: '',
     in_stock: 0,
     min_threshold: 5,
-    unit: 'pcs'
+    unit: 'pcs',
+    supplier_id: '',
+    cost: 0,
+    lead_time_days: 7
   })
 
   const supabase = createClient()
@@ -55,6 +69,7 @@ export default function PartsPage() {
   useEffect(() => {
     if (store) {
       fetchParts()
+      fetchSuppliers()
     }
   }, [store])
 
@@ -88,7 +103,7 @@ export default function PartsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('parts')
-        .select('*')
+        .select('*, supplier:suppliers(id, name, email)')
         .eq('store_id', store.id)
         .order('name')
 
@@ -99,6 +114,22 @@ export default function PartsPage() {
       setError('Failed to load parts')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function fetchSuppliers() {
+    if (!store) return
+    
+    try {
+      const { data } = await supabase
+        .from('suppliers')
+        .select('id, name, email')
+        .eq('store_id', store.id)
+        .order('name')
+
+      setSuppliers(data || [])
+    } catch (err) {
+      console.error('Error fetching suppliers:', err)
     }
   }
 
@@ -172,6 +203,9 @@ export default function PartsPage() {
             in_stock: formData.in_stock,
             min_threshold: formData.min_threshold,
             unit: formData.unit,
+            supplier_id: formData.supplier_id || null,
+            cost: formData.cost,
+            lead_time_days: formData.lead_time_days,
             updated_at: new Date().toISOString()
           })
           .eq('id', editingPart.id)
@@ -189,7 +223,10 @@ export default function PartsPage() {
             category: formData.category || null,
             in_stock: formData.in_stock,
             min_threshold: formData.min_threshold,
-            unit: formData.unit
+            unit: formData.unit,
+            supplier_id: formData.supplier_id || null,
+            cost: formData.cost,
+            lead_time_days: formData.lead_time_days
           })
 
         if (error) throw error
@@ -230,7 +267,10 @@ export default function PartsPage() {
       category: '',
       in_stock: 0,
       min_threshold: 5,
-      unit: 'pcs'
+      unit: 'pcs',
+      supplier_id: '',
+      cost: 0,
+      lead_time_days: 7
     })
     setShowModal(true)
   }
@@ -245,7 +285,10 @@ export default function PartsPage() {
       category: part.category || '',
       in_stock: part.in_stock,
       min_threshold: part.min_threshold,
-      unit: part.unit || 'pcs'
+      unit: part.unit || 'pcs',
+      supplier_id: part.supplier_id || '',
+      cost: part.cost || 0,
+      lead_time_days: part.lead_time_days || 7
     })
     setShowModal(true)
   }
@@ -278,6 +321,7 @@ export default function PartsPage() {
   const totalParts = parts.length
   const lowStockParts = parts.filter(p => p.in_stock <= p.min_threshold && p.in_stock > 0).length
   const outOfStockParts = parts.filter(p => p.in_stock === 0).length
+  const totalValue = parts.reduce((sum, p) => sum + (p.in_stock * (p.cost || 0)), 0)
 
   if (loading && !store) {
     return (
@@ -307,7 +351,7 @@ export default function PartsPage() {
         <p className="text-gray-600 mt-1">Manage your inventory parts and components</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -345,6 +389,16 @@ export default function PartsPage() {
               <p className="text-3xl font-bold text-red-600 mt-1">{outOfStockParts}</p>
             </div>
             <div className="text-3xl">❌</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Inventory Value</p>
+              <p className="text-2xl font-bold text-teal-600 mt-1">${totalValue.toFixed(2)}</p>
+            </div>
+            <div className="text-3xl">💰</div>
           </div>
         </div>
       </div>
@@ -414,7 +468,8 @@ export default function PartsPage() {
                 <tr>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">PART</th>
                   <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">SKU</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">CATEGORY</th>
+                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">SUPPLIER</th>
+                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">COST</th>
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">IN STOCK</th>
                   <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">
                     <span className="bg-red-100 text-red-700 px-2 py-1 rounded">COMMITTED</span>
@@ -443,17 +498,22 @@ export default function PartsPage() {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{part.name}</p>
-                            {part.description && (
-                              <p className="text-sm text-gray-500 truncate max-w-xs">{part.description}</p>
+                            {part.category && (
+                              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{part.category}</span>
                             )}
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-6 text-gray-600">{part.sku || '-'}</td>
                       <td className="py-4 px-6">
-                        {part.category ? (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-sm">{part.category}</span>
-                        ) : <span>-</span>}
+                        {part.supplier ? (
+                          <span className="text-sm text-gray-900">{part.supplier.name}</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">No supplier</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6 text-right font-medium text-gray-900">
+                        ${(part.cost || 0).toFixed(2)}
                       </td>
                       <td className="py-4 px-6 text-center font-medium">{part.in_stock} {part.unit}</td>
                       <td className="py-4 px-6 text-center">
@@ -537,6 +597,50 @@ export default function PartsPage() {
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     placeholder="e.g., Memory"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Supplier</label>
+                  <select
+                    value={formData.supplier_id}
+                    onChange={(e) => setFormData({...formData, supplier_id: e.target.value})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="">No supplier selected</option>
+                    {suppliers.map(supplier => (
+                      <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                    ))}
+                  </select>
+                  {suppliers.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      <a href="/dashboard/suppliers" className="text-teal-600 hover:underline">Add suppliers first</a>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost per Unit ($)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.cost}
+                    onChange={(e) => setFormData({...formData, cost: parseFloat(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Lead Time (days)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.lead_time_days}
+                    onChange={(e) => setFormData({...formData, lead_time_days: parseInt(e.target.value) || 0})}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    placeholder="7"
                   />
                 </div>
 
