@@ -562,7 +562,7 @@ export default function PartsPage() {
                   
                   {formData.image_url ? (
                     <div className="flex items-center gap-4">
-                      <div className="w-20 h-20 rounded-lg overflow-hidden border border-gray-200">
+                      <div className="w-28 h-28 rounded-lg overflow-hidden border border-gray-200">
                         <img 
                           src={formData.image_url} 
                           alt="Part preview" 
