@@ -38,7 +38,7 @@ export default function DashboardLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
+    { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
     { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
     { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
     { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
