@@ -3,6 +3,15 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+interface Part {
+  id: string
+  name: string
+  sku: string | null
+  in_stock: number
+  cost: number
+  min_threshold: number
+}
+
 interface Supplier {
   id: string
   name: string
@@ -12,11 +21,12 @@ interface Supplier {
   website: string
   notes: string
   created_at: string
+  parts?: Part[]
 }
 
 interface Store {
   id: string
-  store_name: string
+  store_url: string
 }
 
 export default function SuppliersPage() {
@@ -27,6 +37,7 @@ export default function SuppliersPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [expandedSupplier, setExpandedSupplier] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -79,7 +90,7 @@ export default function SuppliersPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
+        .select('*, parts(id, name, sku, in_stock, cost, min_threshold)')
         .eq('store_id', store.id)
         .order('name')
 
@@ -141,7 +152,7 @@ export default function SuppliersPage() {
   }
 
   async function deleteSupplier(id: string) {
-    if (!confirm('Are you sure you want to delete this supplier?')) return
+    if (!confirm('Are you sure you want to delete this supplier? Parts linked to this supplier will have their supplier removed.')) return
 
     try {
       const { error } = await supabase
@@ -188,11 +199,20 @@ export default function SuppliersPage() {
     setEditingSupplier(null)
   }
 
+  function toggleExpanded(supplierId: string) {
+    setExpandedSupplier(expandedSupplier === supplierId ? null : supplierId)
+  }
+
   const filteredSuppliers = suppliers.filter(supplier => {
     return !searchTerm || 
       supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
   })
+
+  const totalParts = suppliers.reduce((sum, s) => sum + (s.parts?.length || 0), 0)
+  const lowStockParts = suppliers.reduce((sum, s) => {
+    return sum + (s.parts?.filter(p => p.in_stock <= p.min_threshold).length || 0)
+  }, 0)
 
   if (loading && !store) {
     return (
@@ -222,7 +242,7 @@ export default function SuppliersPage() {
         <p className="text-gray-600 mt-1">Manage your parts suppliers and vendors</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -236,20 +256,30 @@ export default function SuppliersPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">With Email</p>
-              <p className="text-3xl font-bold text-teal-600 mt-1">{suppliers.filter(s => s.email).length}</p>
+              <p className="text-sm text-gray-500">Parts Linked</p>
+              <p className="text-3xl font-bold text-teal-600 mt-1">{totalParts}</p>
             </div>
-            <div className="text-3xl">📧</div>
+            <div className="text-3xl">🔧</div>
           </div>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">With Phone</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{suppliers.filter(s => s.phone).length}</p>
+              <p className="text-sm text-gray-500">Low Stock Parts</p>
+              <p className="text-3xl font-bold text-yellow-600 mt-1">{lowStockParts}</p>
             </div>
-            <div className="text-3xl">📞</div>
+            <div className="text-3xl">⚠️</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">With Email</p>
+              <p className="text-3xl font-bold text-blue-600 mt-1">{suppliers.filter(s => s.email).length}</p>
+            </div>
+            <div className="text-3xl">📧</div>
           </div>
         </div>
       </div>
@@ -276,13 +306,13 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-4">
         {loading ? (
-          <div className="col-span-full p-8 text-center">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
             <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
         ) : filteredSuppliers.length === 0 ? (
-          <div className="col-span-full bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="text-5xl mb-4">🚚</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No suppliers found</h3>
             <p className="text-gray-500 mb-4">
@@ -299,67 +329,134 @@ export default function SuppliersPage() {
           </div>
         ) : (
           filteredSuppliers.map((supplier) => (
-            <div key={supplier.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
-                  <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mr-3">
-                    <span className="text-2xl">🏭</span>
+            <div key={supplier.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              {/* Supplier Header */}
+              <div 
+                className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleExpanded(supplier.id)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center">
+                    <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center mr-4">
+                      <span className="text-2xl">🏭</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-lg">{supplier.name}</h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        {supplier.email && (
+                          <span className="text-sm text-gray-500">📧 {supplier.email}</span>
+                        )}
+                        {supplier.phone && (
+                          <span className="text-sm text-gray-500">📞 {supplier.phone}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
-                    {supplier.website && (
-                      <a 
-                        href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-teal-600 hover:underline"
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-teal-600">{supplier.parts?.length || 0}</p>
+                      <p className="text-xs text-gray-500">Parts</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openEditModal(supplier); }}
+                        className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg"
                       >
-                        {supplier.website}
-                      </a>
-                    )}
+                        ✏️
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteSupplier(supplier.id); }}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                    <span className={`transform transition-transform ${expandedSupplier === supplier.id ? 'rotate-180' : ''}`}>
+                      ▼
+                    </span>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openEditModal(supplier)}
-                    className="text-gray-400 hover:text-teal-600"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => deleteSupplier(supplier.id)}
-                    className="text-gray-400 hover:text-red-600"
-                  >
-                    🗑️
-                  </button>
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm">
-                {supplier.email && (
-                  <div className="flex items-center text-gray-600">
-                    <span className="mr-2">📧</span>
-                    <a href={`mailto:${supplier.email}`} className="hover:text-teal-600">{supplier.email}</a>
-                  </div>
-                )}
-                {supplier.phone && (
-                  <div className="flex items-center text-gray-600">
-                    <span className="mr-2">📞</span>
-                    <a href={`tel:${supplier.phone}`} className="hover:text-teal-600">{supplier.phone}</a>
-                  </div>
-                )}
-                {supplier.address && (
-                  <div className="flex items-start text-gray-600">
-                    <span className="mr-2">📍</span>
-                    <span>{supplier.address}</span>
-                  </div>
-                )}
-                {supplier.notes && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-gray-500 text-xs">{supplier.notes}</p>
-                  </div>
-                )}
-              </div>
+              {/* Expanded Parts List */}
+              {expandedSupplier === supplier.id && (
+                <div className="border-t border-gray-100">
+                  {supplier.parts && supplier.parts.length > 0 ? (
+                    <div className="divide-y divide-gray-100">
+                      <div className="px-6 py-3 bg-gray-50 grid grid-cols-5 gap-4 text-sm font-medium text-gray-500">
+                        <span>Part Name</span>
+                        <span>SKU</span>
+                        <span className="text-right">Cost</span>
+                        <span className="text-center">In Stock</span>
+                        <span className="text-center">Status</span>
+                      </div>
+                      {supplier.parts.map((part) => {
+                        const isLowStock = part.in_stock <= part.min_threshold
+                        const isOutOfStock = part.in_stock === 0
+                        
+                        return (
+                          <div key={part.id} className="px-6 py-4 grid grid-cols-5 gap-4 items-center hover:bg-gray-50">
+                            <span className="font-medium text-gray-900">{part.name}</span>
+                            <span className="text-gray-600">{part.sku || '-'}</span>
+                            <span className="text-right text-gray-900">${(part.cost || 0).toFixed(2)}</span>
+                            <span className="text-center font-medium">{part.in_stock}</span>
+                            <span className="text-center">
+                              {isOutOfStock ? (
+                                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">Out of Stock</span>
+                              ) : isLowStock ? (
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">Low Stock</span>
+                              ) : (
+                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">In Stock</span>
+                              )}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center text-gray-500">
+                      <p>No parts linked to this supplier</p>
+                      <a href="/dashboard/parts" className="text-teal-600 hover:underline text-sm mt-1 inline-block">
+                        Go to Parts to link parts
+                      </a>
+                    </div>
+                  )}
+                  
+                  {/* Supplier Details */}
+                  {(supplier.website || supplier.address || supplier.notes) && (
+                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        {supplier.website && (
+                          <div>
+                            <span className="text-gray-500">Website: </span>
+                            <a 
+                              href={supplier.website.startsWith('http') ? supplier.website : `https://${supplier.website}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-teal-600 hover:underline"
+                            >
+                              {supplier.website}
+                            </a>
+                          </div>
+                        )}
+                        {supplier.address && (
+                          <div>
+                            <span className="text-gray-500">Address: </span>
+                            <span className="text-gray-700">{supplier.address}</span>
+                          </div>
+                        )}
+                        {supplier.notes && (
+                          <div>
+                            <span className="text-gray-500">Notes: </span>
+                            <span className="text-gray-700">{supplier.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}
