@@ -31,7 +31,7 @@ interface Product {
 
 interface Store {
   id: string
-  store_name: string
+  store_url: string
   access_token: string
 }
 
@@ -115,7 +115,7 @@ export default function BomPage() {
   async function fetchProducts() {
     if (!store) return
     try {
-      const response = await fetch(`/api/shopify/products?store=${store.store_name}`)
+      const response = await fetch(`/api/shopify/products?storeId=${store.id}`)
       const data = await response.json()
       if (data.products) {
         setProducts(data.products)
