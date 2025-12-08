@@ -99,7 +99,7 @@ export default function DashboardLayout({
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-teal-50 text-teal-700'
+                        ? 'bg-[#F5DF4D]/20 text-gray-900'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
