@@ -5,14 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EZ Apps - E-commerce Tools for Shopify",
-  description: "Powerful inventory management, BOM tracking, and more for your Shopify store",
-  icons: {
-    icon: '/favicon.png',
-    shortcut: '/favicon.png',
-    apple: '/favicon.png',
-  },
-  themeColor: '#F5DF4D',
+  title: "EZ Apps - E-commerce Tools",
+  description: "Powerful tools for your e-commerce business",
 };
 
 export default function RootLayout({
@@ -22,11 +16,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <meta name="theme-color" content="#F5DF4D" />
-      </head>
-      <body className={`${inter.className} bg-[#F0EEE9]`}>{children}</body>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
