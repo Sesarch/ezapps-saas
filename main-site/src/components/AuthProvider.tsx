@@ -27,11 +27,23 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const supabase = createClient()
 
   useEffect(() => {
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      console.log('Auth timeout - setting loading to false')
+      setLoading(false)
+    }, 5000)
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      console.log('Got session:', session ? 'yes' : 'no', 'Error:', error)
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+      clearTimeout(timeout)
+    }).catch((err) => {
+      console.error('Auth error:', err)
+      setLoading(false)
+      clearTimeout(timeout)
     })
 
     // Listen for auth changes
@@ -41,7 +53,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       setLoading(false)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const signOut = async () => {
