@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     let shopDomain = store.store_url
     shopDomain = shopDomain.replace('https://', '').replace('http://', '')
 
-    const shopifyUrl = `https://${shopDomain}/admin/api/2024-01/orders.json?status=any&limit=50`
+    // Use newer API version and explicitly request fulfillment_status
+    const shopifyUrl = `https://${shopDomain}/admin/api/2024-10/orders.json?status=any&limit=50`
     
     console.log('Fetching orders from:', shopifyUrl)
 
@@ -53,22 +54,35 @@ export async function GET(request: NextRequest) {
     const orders = data.orders || []
 
     for (const order of orders) {
-      // Determine fulfillment status by checking fulfillments array
-      // This is more reliable than the fulfillment_status field
+      // Debug: Log raw fulfillment data from Shopify
+      console.log(`Order ${order.name}: fulfillment_status="${order.fulfillment_status}", fulfillments array length=${order.fulfillments?.length || 0}`)
+      if (order.fulfillments && order.fulfillments.length > 0) {
+        console.log(`Order ${order.name} fulfillments:`, JSON.stringify(order.fulfillments))
+      }
+
+      // Determine fulfillment status
       let fulfillmentStatus = 'unfulfilled'
       
-      const lineItemCount = order.line_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
-      const fulfilledCount = order.fulfillments?.reduce((sum: number, f: any) => {
-        return sum + (f.line_items?.reduce((s: number, li: any) => s + li.quantity, 0) || 0)
-      }, 0) || 0
-      
-      if (fulfilledCount > 0 && fulfilledCount >= lineItemCount) {
+      // Method 1: Check fulfillment_status field directly
+      if (order.fulfillment_status === 'fulfilled') {
         fulfillmentStatus = 'fulfilled'
-      } else if (fulfilledCount > 0) {
+      } else if (order.fulfillment_status === 'partial') {
         fulfillmentStatus = 'partial'
+      } else if (order.fulfillments && order.fulfillments.length > 0) {
+        // Method 2: Check fulfillments array
+        const lineItemCount = order.line_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
+        const fulfilledCount = order.fulfillments.reduce((sum: number, f: any) => {
+          return sum + (f.line_items?.reduce((s: number, li: any) => s + li.quantity, 0) || 0)
+        }, 0)
+        
+        if (fulfilledCount >= lineItemCount) {
+          fulfillmentStatus = 'fulfilled'
+        } else if (fulfilledCount > 0) {
+          fulfillmentStatus = 'partial'
+        }
       }
       
-      console.log(`Order ${order.name}: line_items=${lineItemCount}, fulfilled=${fulfilledCount}, status=${fulfillmentStatus}`)
+      console.log(`Order ${order.name}: final status = ${fulfillmentStatus}`)
       
       const orderData = {
         store_id: store.id,
