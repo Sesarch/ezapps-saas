@@ -3,35 +3,21 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  Package, 
-  Boxes, 
-  Truck, 
-  ShoppingCart,
-  ClipboardList,
-  Hammer,
-  Store,
-  CreditCard,
-  Settings,
-  LogOut,
-  FileText
-} from 'lucide-react'
 import { useStore } from '@/contexts/StoreContext'
 import { createClient } from '@/lib/supabase'
 
 const menuItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Products', href: '/dashboard/products', icon: Package },
-  { name: 'Parts', href: '/dashboard/parts', icon: Boxes },
-  { name: 'Suppliers', href: '/dashboard/suppliers', icon: Truck },
-  { name: 'BOM', href: '/dashboard/bom', icon: FileText },
-  { name: 'Orders', href: '/dashboard/orders', icon: ShoppingCart },
-  { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: ClipboardList },
-  { name: 'Build Orders', href: '/dashboard/build-orders', icon: Hammer },
-  { name: 'Stores', href: '/dashboard/stores', icon: Store },
-  { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+  { name: 'Products', href: '/dashboard/products', icon: '📦' },
+  { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
+  { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
+  { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
+  { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
+  { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
+  { name: 'Build Orders', href: '/dashboard/build-orders', icon: '🔨' },
+  { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
+  { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
+  { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
 ]
 
 export default function Sidebar() {
@@ -64,7 +50,6 @@ export default function Sidebar() {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
-          const Icon = item.icon
           
           return (
             <Link
@@ -76,7 +61,7 @@ export default function Sidebar() {
                   : 'text-[#97999B] hover:bg-[#F0EEE9] hover:text-gray-900'
               }`}
             >
-              <Icon size={20} />
+              <span>{item.icon}</span>
               <span>{item.name}</span>
             </Link>
           )
@@ -107,7 +92,7 @@ export default function Sidebar() {
           onClick={handleSignOut}
           className="flex items-center gap-3 w-full px-4 py-3 text-[#97999B] rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
         >
-          <LogOut size={20} />
+          <span>🚪</span>
           <span>Sign Out</span>
         </button>
       </div>
