@@ -3,8 +3,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useStore } from '@/contexts/StoreContext'
-import { createClient } from '@/lib/supabase'
 
 const menuItems = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
@@ -22,13 +20,6 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
-  const { currentStore, userEmail } = useStore()
-  const supabase = createClient()
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    window.location.href = '/login'
-  }
 
   return (
     <div className="w-64 bg-white border-r border-gray-100 min-h-screen flex flex-col">
@@ -68,33 +59,15 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User section */}
+      {/* Sign Out */}
       <div className="p-4 border-t border-gray-100">
-        {currentStore && (
-          <div className="mb-4 p-3 bg-[#F0EEE9] rounded-lg">
-            <p className="text-xs text-[#97999B] uppercase tracking-wider">Connected Store</p>
-            <p className="text-sm font-medium text-gray-900 truncate mt-1">
-              {currentStore.store_url.replace('.myshopify.com', '')}
-            </p>
-          </div>
-        )}
-        
-        {userEmail && (
-          <div className="mb-4">
-            <p className="text-xs text-[#97999B] truncate">{userEmail}</p>
-            <span className="inline-block mt-1 text-xs bg-[#F5DF4D] text-gray-900 px-2 py-0.5 rounded-full">
-              Free Trial
-            </span>
-          </div>
-        )}
-
-        <button
-          onClick={handleSignOut}
+        <Link
+          href="/login"
           className="flex items-center gap-3 w-full px-4 py-3 text-[#97999B] rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
         >
           <span>🚪</span>
           <span>Sign Out</span>
-        </button>
+        </Link>
       </div>
     </div>
   )
