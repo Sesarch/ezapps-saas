@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get store from database by store_url
     const { data: store, error: storeError } = await supabase
       .from('stores')
       .select('*')
@@ -27,11 +26,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Store not found', storeUrl }, { status: 404 })
     }
 
-    // Use store_url for the shop domain
     let shopDomain = store.store_url
     shopDomain = shopDomain.replace('https://', '').replace('http://', '')
 
-    // Fetch orders from Shopify
     const shopifyUrl = `https://${shopDomain}/admin/api/2024-01/orders.json?status=any&limit=50`
     
     console.log('Fetching orders from:', shopifyUrl)
@@ -55,9 +52,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json()
     const orders = data.orders || []
 
-    // Save orders and line items to database
     for (const order of orders) {
-      // Upsert order
       const orderData = {
         store_id: store.id,
         shopify_order_id: order.id.toString(),
@@ -85,7 +80,6 @@ export async function GET(request: NextRequest) {
         continue
       }
 
-      // Save line items for this order
       if (order.line_items && order.line_items.length > 0) {
         for (const item of order.line_items) {
           const lineItemData = {
@@ -107,7 +101,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Recalculate committed inventory for all parts
     await recalculateCommitted(store.id)
 
     return NextResponse.json({ orders })
@@ -119,7 +112,6 @@ export async function GET(request: NextRequest) {
 
 async function recalculateCommitted(storeId: string) {
   try {
-    // Get all unfulfilled orders for this store
     const { data: unfulfilledOrders } = await supabase
       .from('shopify_orders')
       .select('id')
@@ -127,7 +119,6 @@ async function recalculateCommitted(storeId: string) {
       .or('fulfillment_status.is.null,fulfillment_status.eq.unfulfilled,fulfillment_status.eq.partial')
 
     if (!unfulfilledOrders || unfulfilledOrders.length === 0) {
-      // No unfulfilled orders, reset all parts committed to 0
       await supabase
         .from('parts')
         .update({ committed: 0 })
@@ -137,7 +128,6 @@ async function recalculateCommitted(storeId: string) {
 
     const orderIds = unfulfilledOrders.map(o => o.id)
 
-    // Get all line items from unfulfilled orders
     const { data: lineItems } = await supabase
       .from('order_line_items')
       .select('shopify_product_id, shopify_variant_id, quantity')
@@ -151,7 +141,6 @@ async function recalculateCommitted(storeId: string) {
       return
     }
 
-    // Get all BOM items for this store
     const { data: bomItems } = await supabase
       .from('bom_items')
       .select('shopify_product_id, shopify_variant_id, part_id, quantity_needed')
@@ -165,11 +154,9 @@ async function recalculateCommitted(storeId: string) {
       return
     }
 
-    // Calculate committed for each part
     const partCommitted: Record<string, number> = {}
 
     for (const lineItem of lineItems) {
-      // Find BOM entries that match this product/variant
       const matchingBom = bomItems.filter(bom => 
         bom.shopify_product_id === lineItem.shopify_product_id &&
         bom.shopify_variant_id === lineItem.shopify_variant_id
@@ -181,13 +168,11 @@ async function recalculateCommitted(storeId: string) {
       }
     }
 
-    // Reset all parts committed to 0 first
     await supabase
       .from('parts')
       .update({ committed: 0 })
       .eq('store_id', storeId)
 
-    // Update committed for each part that has committed inventory
     for (const [partId, committed] of Object.entries(partCommitted)) {
       await supabase
         .from('parts')
@@ -200,18 +185,3 @@ async function recalculateCommitted(storeId: string) {
     console.error('Error recalculating committed:', error)
   }
 }
-```
-
-**What this does:**
-
-1. **Saves orders** to `shopify_orders` table (same as before)
-2. **Saves line items** to `order_line_items` table (NEW)
-3. **Recalculates committed** for all parts based on:
-   - Unfulfilled orders → line items → BOM → parts
-
-**Flow:**
-```
-Order (unfulfilled) has line items
-  → Line item: 2x "Snowboard Pro" (variant_id: 123)
-  → BOM says variant 123 needs: 1x Board, 2x Bindings, 8x Screws
-  → Committed: Board=2, Bindings=4, Screws=16
