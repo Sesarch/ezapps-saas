@@ -53,6 +53,18 @@ export async function GET(request: NextRequest) {
     const orders = data.orders || []
 
     for (const order of orders) {
+      // Log fulfillment status from Shopify for debugging
+      console.log(`Order ${order.name}: fulfillment_status from Shopify = "${order.fulfillment_status}" (type: ${typeof order.fulfillment_status})`)
+      
+      // Properly handle fulfillment status
+      // Shopify returns: null (unfulfilled), "partial", or "fulfilled"
+      let fulfillmentStatus = 'unfulfilled'
+      if (order.fulfillment_status === 'fulfilled') {
+        fulfillmentStatus = 'fulfilled'
+      } else if (order.fulfillment_status === 'partial') {
+        fulfillmentStatus = 'partial'
+      }
+      
       const orderData = {
         store_id: store.id,
         shopify_order_id: order.id.toString(),
@@ -63,11 +75,13 @@ export async function GET(request: NextRequest) {
           : null,
         customer_email: order.customer?.email || null,
         total_price: parseFloat(order.total_price) || 0,
-        fulfillment_status: order.fulfillment_status || 'unfulfilled',
+        fulfillment_status: fulfillmentStatus,
         financial_status: order.financial_status || null,
         order_date: order.created_at,
         updated_at: new Date().toISOString()
       }
+
+      console.log(`Saving order ${order.name} with fulfillment_status: ${fulfillmentStatus}`)
 
       const { data: savedOrder, error: orderError } = await supabase
         .from('shopify_orders')
