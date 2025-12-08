@@ -79,7 +79,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-6 mb-8 text-white">
+      <div className="bg-gradient-to-r from-[#97999B] to-cyan-500 rounded-2xl p-6 mb-8 text-white">
         <h2 className="text-xl font-bold mb-2">Get Started</h2>
         <p className="mb-4 opacity-90">Connect your first store to start using EZ Apps</p>
         <div className="flex flex-wrap gap-3">
