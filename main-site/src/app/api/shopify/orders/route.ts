@@ -53,17 +53,22 @@ export async function GET(request: NextRequest) {
     const orders = data.orders || []
 
     for (const order of orders) {
-      // Log fulfillment status from Shopify for debugging
-      console.log(`Order ${order.name}: fulfillment_status from Shopify = "${order.fulfillment_status}" (type: ${typeof order.fulfillment_status})`)
-      
-      // Properly handle fulfillment status
-      // Shopify returns: null (unfulfilled), "partial", or "fulfilled"
+      // Determine fulfillment status by checking fulfillments array
+      // This is more reliable than the fulfillment_status field
       let fulfillmentStatus = 'unfulfilled'
-      if (order.fulfillment_status === 'fulfilled') {
+      
+      const lineItemCount = order.line_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
+      const fulfilledCount = order.fulfillments?.reduce((sum: number, f: any) => {
+        return sum + (f.line_items?.reduce((s: number, li: any) => s + li.quantity, 0) || 0)
+      }, 0) || 0
+      
+      if (fulfilledCount > 0 && fulfilledCount >= lineItemCount) {
         fulfillmentStatus = 'fulfilled'
-      } else if (order.fulfillment_status === 'partial') {
+      } else if (fulfilledCount > 0) {
         fulfillmentStatus = 'partial'
       }
+      
+      console.log(`Order ${order.name}: line_items=${lineItemCount}, fulfilled=${fulfilledCount}, status=${fulfillmentStatus}`)
       
       const orderData = {
         store_id: store.id,
@@ -80,8 +85,6 @@ export async function GET(request: NextRequest) {
         order_date: order.created_at,
         updated_at: new Date().toISOString()
       }
-
-      console.log(`Saving order ${order.name} with fulfillment_status: ${fulfillmentStatus}`)
 
       const { data: savedOrder, error: orderError } = await supabase
         .from('shopify_orders')
