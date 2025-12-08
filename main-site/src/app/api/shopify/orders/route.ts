@@ -112,89 +112,15 @@ export async function GET(request: NextRequest) {
 
 async function recalculateCommitted(storeId: string) {
   try {
-    const { data: unfulfilledOrders } = await supabase
-      .from('shopify_orders')
-      .select('id')
-      .eq('store_id', storeId)
-      .or('fulfillment_status.is.null,fulfillment_status.eq.unfulfilled,fulfillment_status.eq.partial')
-
-    console.log('DEBUG: Unfulfilled orders count:', unfulfilledOrders?.length || 0)
-
-    if (!unfulfilledOrders || unfulfilledOrders.length === 0) {
-      await supabase
-        .from('parts')
-        .update({ committed: 0 })
-        .eq('store_id', storeId)
-      return
+    const { error } = await supabase.rpc('recalculate_committed', {
+      p_store_id: storeId
+    })
+    
+    if (error) {
+      console.error('Error calling recalculate_committed:', error)
+    } else {
+      console.log('Committed inventory recalculated successfully')
     }
-
-    const orderIds = unfulfilledOrders.map(o => o.id)
-
-    const { data: lineItems } = await supabase
-      .from('order_line_items')
-      .select('shopify_product_id, shopify_variant_id, quantity')
-      .in('order_id', orderIds)
-
-    console.log('DEBUG: Line items count:', lineItems?.length || 0)
-
-    if (!lineItems || lineItems.length === 0) {
-      await supabase
-        .from('parts')
-        .update({ committed: 0 })
-        .eq('store_id', storeId)
-      return
-    }
-
-    const { data: bomItems } = await supabase
-      .from('bom_items')
-      .select('shopify_product_id, shopify_variant_id, part_id, quantity_needed')
-      .eq('store_id', storeId)
-
-    console.log('DEBUG: BOM items count:', bomItems?.length || 0)
-
-    if (!bomItems || bomItems.length === 0) {
-      await supabase
-        .from('parts')
-        .update({ committed: 0 })
-        .eq('store_id', storeId)
-      return
-    }
-
-    const partCommitted: Record<string, number> = {}
-
-    for (const lineItem of lineItems) {
-      const matchingBom = bomItems.filter(bom => 
-        String(bom.shopify_product_id) === String(lineItem.shopify_product_id) &&
-        String(bom.shopify_variant_id) === String(lineItem.shopify_variant_id)
-      )
-
-      for (const bom of matchingBom) {
-        const committed = lineItem.quantity * bom.quantity_needed
-        partCommitted[bom.part_id] = (partCommitted[bom.part_id] || 0) + committed
-      }
-    }
-
-    console.log('DEBUG: Calculated committed:', JSON.stringify(partCommitted))
-
-    await supabase
-      .from('parts')
-      .update({ committed: 0 })
-      .eq('store_id', storeId)
-
-    for (const [partId, committed] of Object.entries(partCommitted)) {
-      const { error } = await supabase
-        .from('parts')
-        .update({ committed })
-        .eq('id', partId)
-      
-      if (error) {
-        console.error('DEBUG: Error updating part', partId, error)
-      } else {
-        console.log('DEBUG: Updated part', partId, 'to committed:', committed)
-      }
-    }
-
-    console.log('DEBUG: Final committed values:', partCommitted)
   } catch (error) {
     console.error('Error recalculating committed:', error)
   }
