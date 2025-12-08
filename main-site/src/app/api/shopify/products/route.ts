@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Get store from database
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -24,14 +23,17 @@ export async function GET(request: NextRequest) {
       .eq('id', storeId)
       .single()
 
-    console.log('Store found:', store?.store_name, 'Error:', storeError)
+    console.log('Store found:', store?.store_url, 'Error:', storeError)
 
     if (storeError || !store) {
       return NextResponse.json({ error: 'Store not found' }, { status: 404 })
     }
 
-    // Fetch products from Shopify
-    const shopifyUrl = `https://${store.store_url}/admin/api/2024-01/products.json?limit=50`
+    // Clean the store URL
+    let shopDomain = store.store_url
+    shopDomain = shopDomain.replace('https://', '').replace('http://', '')
+
+    const shopifyUrl = `https://${shopDomain}/admin/api/2024-01/products.json?limit=50`
     console.log('Fetching from Shopify:', shopifyUrl)
 
     const response = await fetch(shopifyUrl, {
@@ -52,7 +54,6 @@ export async function GET(request: NextRequest) {
     console.log('Products found:', data.products?.length)
     
     return NextResponse.json({ products: data.products })
-
   } catch (error) {
     console.error('Error fetching products:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
