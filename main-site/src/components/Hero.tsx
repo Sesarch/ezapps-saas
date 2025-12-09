@@ -39,10 +39,10 @@ export default function Hero() {
                 <img src="/opencart.png" alt="OpenCart" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/Etsy.png" alt="Etsy" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
+                <img src="/etsy.png" alt="Etsy" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/Amazon.png" alt="Amazon" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
+                <img src="/amazon.png" alt="Amazon" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
                 <img src="/MagentoCommerce.png" alt="Magento" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
