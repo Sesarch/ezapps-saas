@@ -62,7 +62,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Plan</p>
-              <p className="text-2xl font-bold text-[#F5DF4D] mt-1">Trial</p>
+              <p className="text-2xl font-bold text-[#97999B] mt-1">Trial</p>
             </div>
             <div className="text-3xl">⭐</div>
           </div>
