@@ -17,29 +17,21 @@ export default function Hero() {
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="w-full md:w-1/2 flex flex-col items-center text-center">
             
-            {/* Platform Logos - Bigger */}
+            {/* Platform Logos - All in ONE line */}
             <div className="mb-8">
               <p className="text-sm text-gray-600 mb-6 font-medium uppercase tracking-wider">Works seamlessly with all major platforms</p>
               
-              {/* Row 1 */}
-              <div className="flex flex-wrap justify-center gap-3 mb-3">
-                <img src="/Wix.png" alt="Wix" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/squarespace.png" alt="Squarespace" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/wooCommerce.png" alt="WooCommerce" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/BigCommerce.png" alt="BigCommerce" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-              </div>
-              
-              {/* Shopify - Center & Biggest */}
-              <div className="flex justify-center mb-3">
-                <img src="/Shopify.png" alt="Shopify" className="h-16 md:h-20 w-auto object-contain hover:scale-110 transition-transform" />
-              </div>
-              
-              {/* Row 2 */}
-              <div className="flex flex-wrap justify-center gap-3">
-                <img src="/opencart.png" alt="OpenCart" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/etsy.png" alt="Etsy" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/amazon.png" alt="Amazon" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
-                <img src="/MagentoCommerce.png" alt="Magento" className="h-10 md:h-12 w-auto object-contain hover:scale-110 transition-transform" />
+              {/* All 9 logos in single row */}
+              <div className="flex items-center justify-center gap-2">
+                <img src="/Wix.png" alt="Wix" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/squarespace.png" alt="Squarespace" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/wooCommerce.png" alt="WooCommerce" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/BigCommerce.png" alt="BigCommerce" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/Shopify.png" alt="Shopify" className="h-10 sm:h-12 md:h-16 w-auto object-contain hover:scale-110 transition-transform mx-1" />
+                <img src="/opencart.png" alt="OpenCart" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/etsy.png" alt="Etsy" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/amazon.png" alt="Amazon" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
+                <img src="/MagentoCommerce.png" alt="Magento" className="h-6 sm:h-8 md:h-10 w-auto object-contain hover:scale-110 transition-transform" />
               </div>
             </div>
 
