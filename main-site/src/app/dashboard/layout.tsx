@@ -115,12 +115,12 @@ export default function DashboardLayout({
               {/* User Section */}
               <div className="px-4 py-3">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center text-teal-700 font-semibold">
+                  <div className="w-10 h-10 bg-[#F5DF4D] rounded-full flex items-center justify-center text-gray-900 font-semibold">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div className="ml-3 overflow-hidden">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-                    <p className="text-xs text-teal-600">Free Trial</p>
+                    <p className="text-xs text-[#97999B]">Free Trial</p>
                   </div>
                 </div>
                 <button
