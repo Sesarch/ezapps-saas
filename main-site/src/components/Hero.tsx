@@ -44,7 +44,7 @@ export default function Hero() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
               E-commerce Apps for
               <span className="block bg-gradient-to-r from-[#97999B] to-[#F5DF4D] bg-clip-text text-transparent">Every Platform</span>
             </h1>
