@@ -12,18 +12,21 @@ export default function Hero() {
           <div className="mb-12">
             <p className="text-sm text-gray-600 mb-8 font-medium uppercase tracking-wider">Works seamlessly with all major platforms</p>
             
-            {/* All 7 logos in ONE row - NEVER wraps */}
-            <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-4">
+            {/* All 9 logos in ONE row - NEVER wraps */}
+            <div className="flex items-center justify-center gap-1 sm:gap-2 md:gap-3">
               
-              {/* Left 3 logos */}
+              {/* Left 4 logos */}
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/MagentoCommerce.png" alt="Magento" className="h-6 sm:h-8 md:h-10 w-auto object-contain" />
+                <img src="/Wix.png" alt="Wix" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/wooCommerce.png" alt="WooCommerce" className="h-7 sm:h-9 md:h-12 w-auto object-contain" />
+                <img src="/squarespace.png" alt="Squarespace" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/Wix.png" alt="Wix" className="h-8 sm:h-10 md:h-14 w-auto object-contain" />
+                <img src="/wooCommerce.png" alt="WooCommerce" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
+              </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/BigCommerce.png" alt="BigCommerce" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
 
               {/* Center: Shopify (Biggest) */}
@@ -31,15 +34,18 @@ export default function Hero() {
                 <img src="/Shopify.png" alt="Shopify" className="h-12 sm:h-16 md:h-20 w-auto object-contain" />
               </div>
 
-              {/* Right 3 logos */}
+              {/* Right 4 logos */}
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/squarespace.png" alt="SquareSpace" className="h-8 sm:h-10 md:h-14 w-auto object-contain" />
+                <img src="/opencart.png" alt="OpenCart" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/BigCommerce.png" alt="BigCommerce" className="h-7 sm:h-9 md:h-12 w-auto object-contain" />
+                <img src="/Etsy.png" alt="Etsy" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
-                <img src="/opencart.png" alt="OpenCart" className="h-6 sm:h-8 md:h-10 w-auto object-contain" />
+                <img src="/Amazon.png" alt="Amazon" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
+              </div>
+              <div className="flex-shrink-0 hover:scale-110 transition-all duration-300">
+                <img src="/MagentoCommerce.png" alt="Magento" className="h-5 sm:h-7 md:h-10 w-auto object-contain" />
               </div>
               
             </div>
@@ -56,7 +62,7 @@ export default function Hero() {
           {/* Headline */}
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             E-commerce Apps for
-            <span className="block bg-gradient-to-r from-teal-500 to-cyan-500 bg-clip-text text-transparent">Every Platform</span>
+            <span className="block bg-gradient-to-r from-[#97999B] to-[#F5DF4D] bg-clip-text text-transparent">Every Platform</span>
           </h1>
 
           {/* Subheadline */}
@@ -66,10 +72,10 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup" className="px-8 py-4 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all duration-200 shadow-lg text-lg w-full sm:w-auto text-center">
+            <Link href="/signup" className="px-8 py-4 bg-[#F5DF4D] text-gray-900 rounded-xl font-semibold hover:bg-[#e5cf3d] transition-all duration-200 shadow-lg text-lg w-full sm:w-auto text-center">
               Start Free Trial
             </Link>
-            <Link href="#pricing" className="px-8 py-4 border-2 border-teal-500 text-teal-600 rounded-xl font-semibold hover:bg-teal-50 transition-all duration-200 text-lg w-full sm:w-auto text-center">
+            <Link href="#pricing" className="px-8 py-4 border-2 border-[#97999B] text-[#97999B] rounded-xl font-semibold hover:bg-gray-50 transition-all duration-200 text-lg w-full sm:w-auto text-center">
               View Pricing
             </Link>
           </div>
