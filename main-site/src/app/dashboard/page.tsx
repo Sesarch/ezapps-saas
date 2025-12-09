@@ -62,7 +62,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Plan</p>
-              <p className="text-2xl font-bold text-teal-600 mt-1">Trial</p>
+              <p className="text-2xl font-bold text-[#F5DF4D] mt-1">Trial</p>
             </div>
             <div className="text-3xl">⭐</div>
           </div>
@@ -79,11 +79,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gradient-to-r from-[#97999B] to-cyan-500 rounded-2xl p-6 mb-8 text-white">
+      <div className="bg-gradient-to-r from-[#97999B] to-[#F5DF4D] rounded-2xl p-6 mb-8 text-white">
         <h2 className="text-xl font-bold mb-2">Get Started</h2>
         <p className="mb-4 opacity-90">Connect your first store to start using EZ Apps</p>
         <div className="flex flex-wrap gap-3">
-          <Link href="/dashboard/stores" className="inline-block px-5 py-2.5 bg-white text-teal-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+          <Link href="/dashboard/stores" className="inline-block px-5 py-2.5 bg-white text-[#97999B] rounded-lg font-semibold hover:bg-gray-100 transition-colors">
             Connect Store
           </Link>
           <Link href="/dashboard/apps" className="inline-block px-5 py-2.5 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-colors">
@@ -96,7 +96,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Available Apps</h2>
-          <Link href="/dashboard/apps" className="text-teal-600 hover:text-teal-700 text-sm font-medium">
+          <Link href="/dashboard/apps" className="text-[#97999B] hover:text-gray-700 text-sm font-medium">
             View All →
           </Link>
         </div>
