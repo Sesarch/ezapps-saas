@@ -5,10 +5,17 @@ import Link from 'next/link'
 export default function Hero() {
   return (
     <section className="relative min-h-[700px] md:min-h-[800px] overflow-hidden">
-      {/* Background Image - No overlay */}
+      {/* Desktop Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat hidden md:block"
         style={{ backgroundImage: "url('/hero_banner.jpg')" }}
+      >
+      </div>
+      
+      {/* Mobile Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-top bg-no-repeat md:hidden"
+        style={{ backgroundImage: "url('/hero_mobile_banner.jpg')" }}
       >
       </div>
 
