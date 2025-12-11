@@ -10,8 +10,8 @@ export default function Hero() {
       <div className="md:hidden">
         {/* Mobile Image */}
         <div 
-          className="h-[500px] bg-cover bg-no-repeat"
-          style={{ backgroundImage: "url('/Hero_mobile_banner.jpg')", backgroundPosition: 'center top' }}
+          className="h-[550px] bg-contain bg-no-repeat bg-top"
+          style={{ backgroundImage: "url('/Hero_mobile_banner.jpg')" }}
         >
         </div>
         
