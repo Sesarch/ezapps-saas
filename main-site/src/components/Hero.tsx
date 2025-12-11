@@ -9,7 +9,7 @@ export default function Hero() {
       {/* MOBILE LAYOUT - Image on top, content below */}
       <div className="md:hidden">
        {/* Mobile Image */}
-        <div className="w-full">
+        <div className="w-full pt-16">
           <img 
             src="/Hero_mobile_banner.jpg" 
             alt="Hero" 
