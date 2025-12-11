@@ -8,11 +8,13 @@ export default function Hero() {
       
       {/* MOBILE LAYOUT - Image on top, content below */}
       <div className="md:hidden">
-        {/* Mobile Image */}
-        <div 
-          className="h-[550px] bg-contain bg-no-repeat bg-top"
-          style={{ backgroundImage: "url('/Hero_mobile_banner.jpg')" }}
-        >
+       {/* Mobile Image */}
+        <div className="w-full">
+          <img 
+            src="/Hero_mobile_banner.jpg" 
+            alt="Hero" 
+            className="w-full h-auto object-contain"
+          />
         </div>
         
         {/* Mobile Content */}
