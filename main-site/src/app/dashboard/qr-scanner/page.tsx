@@ -3,6 +3,7 @@
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import Script from 'next/script'
 
 export default function QRScannerPage() {
   const { user } = useAuth()
@@ -10,6 +11,11 @@ export default function QRScannerPage() {
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'create' | 'scan'>('create')
+  
+  // Script loading state
+  const [scriptsLoaded, setScriptsLoaded] = useState(false)
+  const [qrScriptLoaded, setQrScriptLoaded] = useState(false)
+  const [scannerScriptLoaded, setScannerScriptLoaded] = useState(false)
   
   // Create tab state
   const [partName, setPartName] = useState('')
@@ -31,28 +37,22 @@ export default function QRScannerPage() {
   const qrHiddenRef = useRef<HTMLDivElement>(null)
   const html5QrCodeRef = useRef<any>(null)
 
-  // Load QRCode library
+  // Check if both scripts are loaded
   useEffect(() => {
-    const script1 = document.createElement('script')
-    script1.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'
-    script1.async = true
-    document.body.appendChild(script1)
-
-    const script2 = document.createElement('script')
-    script2.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
-    script2.async = true
-    document.body.appendChild(script2)
-
-    return () => {
-      document.body.removeChild(script1)
-      document.body.removeChild(script2)
+    if (qrScriptLoaded && scannerScriptLoaded) {
+      setScriptsLoaded(true)
     }
-  }, [])
+  }, [qrScriptLoaded, scannerScriptLoaded])
 
   // Generate QR Code
   const generateQR = () => {
     if (!partName.trim()) {
       alert('Please enter a part name')
+      return
+    }
+
+    if (typeof window === 'undefined' || !(window as any).QRCode) {
+      alert('QR Code library not loaded yet. Please wait a moment and try again.')
       return
     }
 
@@ -67,55 +67,73 @@ export default function QRScannerPage() {
       loc: partLocation 
     })
 
-    // @ts-ignore
-    new QRCode(qrHidden, { 
-      text: qrData, 
-      width: 180, 
-      height: 180 
-    })
+    try {
+      new (window as any).QRCode(qrHidden, { 
+        text: qrData, 
+        width: 180, 
+        height: 180 
+      })
 
-    setTimeout(() => {
-      const qrImg = qrHidden.querySelector('canvas') || qrHidden.querySelector('img')
-      const canvas = qrCanvasRef.current
-      if (!canvas || !qrImg) return
+      setTimeout(() => {
+        const qrImg = qrHidden.querySelector('canvas') || qrHidden.querySelector('img')
+        const canvas = qrCanvasRef.current
+        if (!canvas) return
 
-      const ctx = canvas.getContext('2d')
-      if (!ctx) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
 
-      // White background
-      ctx.fillStyle = '#FFFFFF'
-      ctx.fillRect(0, 0, 220, 260)
+        // White background
+        ctx.fillStyle = '#FFFFFF'
+        ctx.fillRect(0, 0, 220, 260)
 
-      // Draw QR
-      if (qrImg.tagName === 'CANVAS') {
-        ctx.drawImage(qrImg as HTMLCanvasElement, 20, 15, 180, 180)
-      }
+        // Draw QR
+        if (qrImg) {
+          if (qrImg.tagName === 'CANVAS') {
+            ctx.drawImage(qrImg as HTMLCanvasElement, 20, 15, 180, 180)
+          } else {
+            const img = new Image()
+            img.onload = () => {
+              ctx.drawImage(img, 20, 15, 180, 180)
+              finishQRDraw(ctx, canvas)
+            }
+            img.src = (qrImg as HTMLImageElement).src
+            return
+          }
+        }
 
-      // Dashed line
-      ctx.strokeStyle = '#CCCCCC'
-      ctx.setLineDash([4, 4])
-      ctx.beginPath()
-      ctx.moveTo(20, 205)
-      ctx.lineTo(200, 205)
-      ctx.stroke()
-      ctx.setLineDash([])
+        finishQRDraw(ctx, canvas)
+      }, 300)
+    } catch (err) {
+      console.error('QR generation error:', err)
+      alert('Error generating QR code')
+    }
+  }
 
-      // Part name
-      ctx.fillStyle = '#000000'
-      ctx.font = 'bold 16px Arial'
-      ctx.textAlign = 'center'
-      ctx.fillText(partName.substring(0, 18), 110, 230)
+  const finishQRDraw = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
+    // Dashed line
+    ctx.strokeStyle = '#CCCCCC'
+    ctx.setLineDash([4, 4])
+    ctx.beginPath()
+    ctx.moveTo(20, 205)
+    ctx.lineTo(200, 205)
+    ctx.stroke()
+    ctx.setLineDash([])
 
-      // Location
-      if (partLocation) {
-        ctx.fillStyle = '#666666'
-        ctx.font = '12px Arial'
-        ctx.fillText(partLocation.substring(0, 22), 110, 250)
-      }
+    // Part name
+    ctx.fillStyle = '#000000'
+    ctx.font = 'bold 16px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText(partName.substring(0, 18), 110, 230)
 
-      setCurrentQRData(canvas.toDataURL('image/png'))
-      setQrGenerated(true)
-    }, 300)
+    // Location
+    if (partLocation) {
+      ctx.fillStyle = '#666666'
+      ctx.font = '12px Arial'
+      ctx.fillText(partLocation.substring(0, 22), 110, 250)
+    }
+
+    setCurrentQRData(canvas.toDataURL('image/png'))
+    setQrGenerated(true)
   }
 
   // Save QR Label
@@ -205,12 +223,16 @@ export default function QRScannerPage() {
 
   // Start Scanner
   const startScanner = async () => {
+    if (typeof window === 'undefined' || !(window as any).Html5Qrcode) {
+      alert('Scanner library not loaded yet. Please wait a moment and try again.')
+      return
+    }
+
     const readerDiv = document.getElementById('qr-reader')
     if (!readerDiv) return
 
     try {
-      // @ts-ignore
-      html5QrCodeRef.current = new Html5Qrcode('qr-reader')
+      html5QrCodeRef.current = new (window as any).Html5Qrcode('qr-reader')
       
       await html5QrCodeRef.current.start(
         { facingMode: 'environment' },
@@ -288,6 +310,17 @@ export default function QRScannerPage() {
   }
 
   return (
+    <>
+      {/* Load external scripts */}
+      <Script 
+        src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+        onLoad={() => setQrScriptLoaded(true)}
+      />
+      <Script 
+        src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
+        onLoad={() => setScannerScriptLoaded(true)}
+      />
+      
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
@@ -482,5 +515,6 @@ export default function QRScannerPage() {
         </div>
       )}
     </div>
+    </>
   )
 }
