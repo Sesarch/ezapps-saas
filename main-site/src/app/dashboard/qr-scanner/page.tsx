@@ -4,31 +4,63 @@ import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+interface Part {
+  id: string
+  sku: string | null
+  name: string
+  category: string | null
+  in_stock: number
+  unit: string
+  image_url: string | null
+}
+
+interface Store {
+  id: string
+  store_url: string
+}
+
 export default function QRScannerPage() {
   const { user } = useAuth()
   const supabase = createClient()
+  
+  // Store & Parts
+  const [store, setStore] = useState<Store | null>(null)
+  const [parts, setParts] = useState<Part[]>([])
+  const [loadingParts, setLoadingParts] = useState(true)
   
   // Tab state
   const [activeTab, setActiveTab] = useState<'create' | 'scan'>('create')
   
   // Create tab state
-  const [partName, setPartName] = useState('')
+  const [selectedPartId, setSelectedPartId] = useState('')
   const [partLocation, setPartLocation] = useState('')
   const [qrGenerated, setQrGenerated] = useState(false)
   const [qrImageUrl, setQrImageUrl] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
+  const [selectedPart, setSelectedPart] = useState<Part | null>(null)
   
   // Scan tab state
   const [scanning, setScanning] = useState(false)
-  const [scannedPart, setScannedPart] = useState<any>(null)
+  const [scannedPart, setScannedPart] = useState<Part | null>(null)
+  const [scannedLocation, setScannedLocation] = useState('')
   const [scanQty, setScanQty] = useState(1)
+  const [adjustmentType, setAdjustmentType] = useState<'add' | 'remove'>('remove')
   const [scanHistory, setScanHistory] = useState<any[]>([])
   const [logging, setLogging] = useState(false)
   
   // Scanner ref
   const html5QrCodeRef = useRef<any>(null)
   const scannerScriptLoaded = useRef(false)
+
+  // Load store and parts on mount
+  useEffect(() => {
+    fetchStore()
+  }, [])
+
+  useEffect(() => {
+    if (store) {
+      fetchParts()
+    }
+  }, [store])
 
   // Load scanner script on mount
   useEffect(() => {
@@ -38,22 +70,66 @@ export default function QRScannerPage() {
       script.async = true
       script.onload = () => {
         scannerScriptLoaded.current = true
-        console.log('Scanner script loaded')
       }
       document.head.appendChild(script)
     }
   }, [])
 
-  // Generate QR Code using API
+  async function fetchStore() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: stores } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', user.id)
+        .limit(1)
+
+      if (stores && stores.length > 0) {
+        setStore(stores[0])
+      }
+    } catch (err) {
+      console.error('Error fetching store:', err)
+    }
+  }
+
+  async function fetchParts() {
+    if (!store) return
+    
+    try {
+      setLoadingParts(true)
+      const { data, error } = await supabase
+        .from('parts')
+        .select('id, sku, name, category, in_stock, unit, image_url')
+        .eq('store_id', store.id)
+        .order('name')
+
+      if (error) throw error
+      setParts(data || [])
+    } catch (err) {
+      console.error('Error fetching parts:', err)
+    } finally {
+      setLoadingParts(false)
+    }
+  }
+
+  // Generate QR Code for selected part
   const generateQR = () => {
-    if (!partName.trim()) {
-      alert('Please enter a part name')
+    if (!selectedPartId) {
+      alert('Please select a part')
       return
     }
 
+    const part = parts.find(p => p.id === selectedPartId)
+    if (!part) return
+
+    setSelectedPart(part)
+
     const qrData = JSON.stringify({ 
-      id: Date.now().toString(), 
-      name: partName, 
+      id: part.id,
+      name: part.name,
+      sku: part.sku,
       loc: partLocation 
     })
 
@@ -64,60 +140,19 @@ export default function QRScannerPage() {
     setQrGenerated(true)
   }
 
-  // Save QR Label
-  const saveLabel = async () => {
-    if (!qrImageUrl || !user) return
-
-    setSaving(true)
-    setSaveSuccess(false)
-
-    try {
-      // For now, just save the metadata (the QR image URL is already public)
-      const { error: dbError } = await supabase
-        .from('qr_labels')
-        .insert({
-          user_id: user.id,
-          name: partName,
-          location: partLocation,
-          image_url: qrImageUrl,
-          created_at: new Date().toISOString()
-        })
-
-      if (dbError) {
-        console.log('DB Error (table might not exist, but that is OK):', dbError)
-      }
-
-      setSaveSuccess(true)
-      
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setPartName('')
-        setPartLocation('')
-        setQrGenerated(false)
-        setQrImageUrl('')
-        setSaveSuccess(false)
-      }, 2000)
-
-    } catch (err: any) {
-      console.error('Save error:', err)
-      alert('Error saving: ' + err.message)
-    }
-
-    setSaving(false)
-  }
-
   // Print QR
   const printQR = () => {
-    if (!qrImageUrl) return
+    if (!qrImageUrl || !selectedPart) return
     const printWindow = window.open('', '_blank')
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <head><title>Print QR - ${partName}</title></head>
+          <head><title>Print QR - ${selectedPart.name}</title></head>
           <body style="text-align:center;margin-top:50px;font-family:Arial,sans-serif;">
             <img src="${qrImageUrl}" style="width:200px;height:200px;">
-            <div style="margin-top:20px;font-size:18px;font-weight:bold;">${partName}</div>
-            ${partLocation ? `<div style="margin-top:5px;color:#666;">${partLocation}</div>` : ''}
+            <div style="margin-top:20px;font-size:18px;font-weight:bold;">${selectedPart.name}</div>
+            ${selectedPart.sku ? `<div style="margin-top:5px;color:#666;">SKU: ${selectedPart.sku}</div>` : ''}
+            ${partLocation ? `<div style="margin-top:5px;color:#666;">📍 ${partLocation}</div>` : ''}
             <script>setTimeout(() => { window.print(); window.close(); }, 500)<\/script>
           </body>
         </html>
@@ -125,12 +160,20 @@ export default function QRScannerPage() {
     }
   }
 
+  // Reset create form
+  const resetCreate = () => {
+    setSelectedPartId('')
+    setPartLocation('')
+    setQrGenerated(false)
+    setQrImageUrl('')
+    setSelectedPart(null)
+  }
+
   // Start Scanner
   const startScanner = async () => {
     const readerDiv = document.getElementById('qr-reader')
     if (!readerDiv) return
 
-    // Check if library is loaded
     if (typeof (window as any).Html5Qrcode === 'undefined') {
       alert('Scanner is loading, please wait a moment and try again...')
       return
@@ -142,22 +185,42 @@ export default function QRScannerPage() {
       await html5QrCodeRef.current.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 200, height: 200 } },
-        (decodedText: string) => {
-          // On success
+        async (decodedText: string) => {
           if (navigator.vibrate) navigator.vibrate(100)
           stopScanner()
           
-          let part
+          let qrData
           try {
-            part = JSON.parse(decodedText)
+            qrData = JSON.parse(decodedText)
           } catch {
-            part = { name: decodedText }
+            qrData = { name: decodedText }
           }
           
-          setScannedPart(part)
+          // Look up part in database
+          if (qrData.id) {
+            const part = parts.find(p => p.id === qrData.id)
+            if (part) {
+              setScannedPart(part)
+              setScannedLocation(qrData.loc || '')
+              setScanQty(1)
+              return
+            }
+          }
+          
+          // Fallback: show what was scanned
+          setScannedPart({
+            id: qrData.id || '',
+            name: qrData.name || decodedText,
+            sku: qrData.sku || null,
+            category: null,
+            in_stock: 0,
+            unit: 'pcs',
+            image_url: null
+          })
+          setScannedLocation(qrData.loc || '')
           setScanQty(1)
         },
-        () => {} // Ignore errors (no QR in frame)
+        () => {}
       )
       
       setScanning(true)
@@ -177,41 +240,76 @@ export default function QRScannerPage() {
     }
   }
 
-  // Log Scan
-  const logScan = async () => {
-    if (!scannedPart || !user) return
+  // Update inventory
+  const updateInventory = async () => {
+    if (!scannedPart || !scannedPart.id) {
+      alert('Part not found in inventory')
+      return
+    }
 
     setLogging(true)
 
     try {
-      // Save to database
+      // Calculate new stock
+      const currentStock = scannedPart.in_stock || 0
+      const newStock = adjustmentType === 'add' 
+        ? currentStock + scanQty 
+        : Math.max(0, currentStock - scanQty)
+
+      // Update in database
       const { error } = await supabase
-        .from('qr_scans')
-        .insert({
-          user_id: user.id,
-          part_name: scannedPart.name,
-          quantity: scanQty,
-          scanned_at: new Date().toISOString()
+        .from('parts')
+        .update({ 
+          in_stock: newStock,
+          updated_at: new Date().toISOString()
         })
+        .eq('id', scannedPart.id)
 
-      if (error) {
-        console.log('DB Error (table might not exist, but that is OK):', error)
-      }
+      if (error) throw error
 
-      // Add to local history
+      // Add to history
       setScanHistory(prev => [{
         name: scannedPart.name,
         qty: scanQty,
+        type: adjustmentType,
+        oldStock: currentStock,
+        newStock: newStock,
         time: new Date().toLocaleTimeString()
       }, ...prev].slice(0, 10))
 
+      // Refresh parts list
+      fetchParts()
+
+      // Reset
       setScannedPart(null)
+      setScannedLocation('')
 
     } catch (err: any) {
-      console.error('Log error:', err)
+      console.error('Update error:', err)
+      alert('Failed to update inventory: ' + err.message)
     }
 
     setLogging(false)
+  }
+
+  // No store connected
+  if (!store && !loadingParts) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="mb-8">
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">QR Scanner</h1>
+          <p className="text-gray-600 mt-1">Create QR labels and scan inventory</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="text-5xl mb-4">🏪</div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No store connected</h3>
+          <p className="text-gray-600 mb-6">Connect a store first to use QR Scanner</p>
+          <a href="/dashboard/stores" className="inline-block px-6 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-teal-600 transition-colors">
+            Connect Store
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -219,7 +317,7 @@ export default function QRScannerPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">QR Scanner</h1>
-        <p className="text-gray-600 mt-1">Create QR labels and scan inventory</p>
+        <p className="text-gray-600 mt-1">Create QR labels and scan parts inventory</p>
       </div>
 
       {/* Tabs */}
@@ -250,18 +348,34 @@ export default function QRScannerPage() {
       {activeTab === 'create' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="max-w-md">
-            {/* Part Name */}
+            {/* Part Selector */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Part Name *
+                Select Part *
               </label>
-              <input
-                type="text"
-                value={partName}
-                onChange={(e) => setPartName(e.target.value)}
-                placeholder="Enter part name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-              />
+              {loadingParts ? (
+                <div className="text-gray-500">Loading parts...</div>
+              ) : parts.length === 0 ? (
+                <div className="text-gray-500">
+                  No parts found. <a href="/dashboard/parts" className="text-teal-600 hover:underline">Add parts first</a>
+                </div>
+              ) : (
+                <select
+                  value={selectedPartId}
+                  onChange={(e) => {
+                    setSelectedPartId(e.target.value)
+                    setQrGenerated(false)
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                >
+                  <option value="">-- Select a part --</option>
+                  {parts.map(part => (
+                    <option key={part.id} value={part.id}>
+                      {part.name} {part.sku ? `(${part.sku})` : ''} - {part.in_stock} {part.unit}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Location */}
@@ -273,7 +387,7 @@ export default function QRScannerPage() {
                 type="text"
                 value={partLocation}
                 onChange={(e) => setPartLocation(e.target.value)}
-                placeholder="e.g. Shelf A-1"
+                placeholder="e.g. Shelf A-1, Bin 23"
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
               />
             </div>
@@ -281,20 +395,23 @@ export default function QRScannerPage() {
             {/* Generate Button */}
             <button
               onClick={generateQR}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-teal-600 transition-colors mb-6"
+              disabled={!selectedPartId}
+              className="w-full py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-teal-600 transition-colors mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Generate QR Code
             </button>
 
             {/* QR Preview */}
-            {qrGenerated && (
+            {qrGenerated && selectedPart && (
               <div className="border border-gray-200 rounded-xl p-6 text-center">
                 <div className="text-green-600 font-medium mb-4">✓ QR Code Ready</div>
                 <div className="inline-block bg-white border-2 border-gray-200 rounded-lg p-4 mb-4">
                   <img src={qrImageUrl} alt="QR Code" className="w-[180px] h-[180px]" />
                   <div className="mt-3 pt-3 border-t border-dashed border-gray-300">
-                    <div className="font-bold text-gray-900">{partName}</div>
-                    {partLocation && <div className="text-sm text-gray-500">{partLocation}</div>}
+                    <div className="font-bold text-gray-900">{selectedPart.name}</div>
+                    {selectedPart.sku && <div className="text-sm text-gray-500">SKU: {selectedPart.sku}</div>}
+                    {partLocation && <div className="text-sm text-gray-500">📍 {partLocation}</div>}
+                    <div className="text-sm text-teal-600 mt-1">Stock: {selectedPart.in_stock} {selectedPart.unit}</div>
                   </div>
                 </div>
 
@@ -306,15 +423,10 @@ export default function QRScannerPage() {
                     🖨️ Print
                   </button>
                   <button
-                    onClick={saveLabel}
-                    disabled={saving}
-                    className={`flex-1 py-3 rounded-xl font-medium transition-colors ${
-                      saveSuccess
-                        ? 'bg-green-500 text-white'
-                        : 'bg-teal-500 text-white hover:bg-teal-600'
-                    } disabled:opacity-50`}
+                    onClick={resetCreate}
+                    className="flex-1 py-3 bg-teal-500 text-white rounded-xl font-medium hover:bg-teal-600 transition-colors"
                   >
-                    {saving ? 'Saving...' : saveSuccess ? '✓ Saved!' : '💾 Save'}
+                    ✨ New Label
                   </button>
                 </div>
               </div>
@@ -359,11 +471,41 @@ export default function QRScannerPage() {
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
                 <div className="text-green-600 text-sm font-medium mb-1">SCANNED</div>
                 <div className="text-xl font-bold text-green-700 mb-1">{scannedPart.name}</div>
-                {scannedPart.loc && (
-                  <div className="text-gray-600 text-sm mb-3">📍 {scannedPart.loc}</div>
+                {scannedPart.sku && (
+                  <div className="text-gray-600 text-sm">SKU: {scannedPart.sku}</div>
                 )}
+                {scannedLocation && (
+                  <div className="text-gray-600 text-sm">📍 {scannedLocation}</div>
+                )}
+                <div className="text-teal-600 text-sm font-medium mt-1">
+                  Current Stock: {scannedPart.in_stock} {scannedPart.unit}
+                </div>
                 
                 <div className="border-t border-green-200 pt-3 mt-3">
+                  {/* Adjustment Type */}
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      onClick={() => setAdjustmentType('remove')}
+                      className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+                        adjustmentType === 'remove'
+                          ? 'bg-red-500 text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      ➖ Remove
+                    </button>
+                    <button
+                      onClick={() => setAdjustmentType('add')}
+                      className={`flex-1 py-2 rounded-lg font-medium transition-colors ${
+                        adjustmentType === 'add'
+                          ? 'bg-green-500 text-white'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      ➕ Add
+                    </button>
+                  </div>
+
                   <label className="block text-sm text-gray-600 mb-2">Quantity</label>
                   <div className="flex flex-col gap-3">
                     <input
@@ -374,12 +516,23 @@ export default function QRScannerPage() {
                       className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
                     />
                     <button
-                      onClick={logScan}
-                      disabled={logging}
-                      className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 disabled:opacity-50"
+                      onClick={updateInventory}
+                      disabled={logging || !scannedPart.id}
+                      className={`w-full px-6 py-3 text-white rounded-xl font-medium disabled:opacity-50 ${
+                        adjustmentType === 'remove'
+                          ? 'bg-red-500 hover:bg-red-600'
+                          : 'bg-green-500 hover:bg-green-600'
+                      }`}
                     >
-                      {logging ? 'Sending...' : 'Send Request'}
+                      {logging ? 'Updating...' : `${adjustmentType === 'remove' ? 'Remove' : 'Add'} ${scanQty} ${scannedPart.unit}`}
                     </button>
+                  </div>
+                  
+                  {/* Preview new stock */}
+                  <div className="text-center text-sm text-gray-500 mt-2">
+                    New stock will be: {adjustmentType === 'add' 
+                      ? scannedPart.in_stock + scanQty 
+                      : Math.max(0, scannedPart.in_stock - scanQty)} {scannedPart.unit}
                   </div>
                 </div>
               </div>
@@ -388,7 +541,7 @@ export default function QRScannerPage() {
 
           {/* Scan History */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Scans</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Adjustments</h3>
             
             {scanHistory.length > 0 ? (
               <div className="space-y-2">
@@ -396,16 +549,22 @@ export default function QRScannerPage() {
                   <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <div className="font-medium text-gray-900">{scan.name}</div>
-                      <div className="text-sm text-gray-500">Qty: {scan.qty} • {scan.time}</div>
+                      <div className="text-sm text-gray-500">
+                        {scan.type === 'remove' ? '➖' : '➕'} {scan.qty} • {scan.oldStock} → {scan.newStock}
+                      </div>
+                      <div className="text-xs text-gray-400">{scan.time}</div>
                     </div>
-                    <div className="text-green-500">✓</div>
+                    <div className={scan.type === 'remove' ? 'text-red-500' : 'text-green-500'}>
+                      {scan.type === 'remove' ? '−' : '+'}{scan.qty}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-400">
-                <div className="text-4xl mb-3">📷</div>
-                <p>No scans yet</p>
+                <div className="text-4xl mb-3">📦</div>
+                <p>No adjustments yet</p>
+                <p className="text-sm mt-1">Scan a QR code to update inventory</p>
               </div>
             )}
           </div>
