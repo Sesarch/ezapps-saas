@@ -3,7 +3,6 @@
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Script from 'next/script'
 
 export default function QRScannerPage() {
   const { user } = useAuth()
@@ -12,16 +11,11 @@ export default function QRScannerPage() {
   // Tab state
   const [activeTab, setActiveTab] = useState<'create' | 'scan'>('create')
   
-  // Script loading state
-  const [scriptsLoaded, setScriptsLoaded] = useState(false)
-  const [qrScriptLoaded, setQrScriptLoaded] = useState(false)
-  const [scannerScriptLoaded, setScannerScriptLoaded] = useState(false)
-  
   // Create tab state
   const [partName, setPartName] = useState('')
   const [partLocation, setPartLocation] = useState('')
   const [qrGenerated, setQrGenerated] = useState(false)
-  const [currentQRData, setCurrentQRData] = useState<string | null>(null)
+  const [qrImageUrl, setQrImageUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   
@@ -32,158 +26,65 @@ export default function QRScannerPage() {
   const [scanHistory, setScanHistory] = useState<any[]>([])
   const [logging, setLogging] = useState(false)
   
-  // Refs
-  const qrCanvasRef = useRef<HTMLCanvasElement>(null)
-  const qrHiddenRef = useRef<HTMLDivElement>(null)
+  // Scanner ref
   const html5QrCodeRef = useRef<any>(null)
+  const scannerScriptLoaded = useRef(false)
 
-  // Check if both scripts are loaded
+  // Load scanner script on mount
   useEffect(() => {
-    if (qrScriptLoaded && scannerScriptLoaded) {
-      setScriptsLoaded(true)
+    if (!scannerScriptLoaded.current) {
+      const script = document.createElement('script')
+      script.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
+      script.async = true
+      script.onload = () => {
+        scannerScriptLoaded.current = true
+        console.log('Scanner script loaded')
+      }
+      document.head.appendChild(script)
     }
-  }, [qrScriptLoaded, scannerScriptLoaded])
+  }, [])
 
-  // Generate QR Code
+  // Generate QR Code using API
   const generateQR = () => {
     if (!partName.trim()) {
       alert('Please enter a part name')
       return
     }
 
-    if (typeof window === 'undefined' || !(window as any).QRCode) {
-      alert('QR Code library not loaded yet. Please wait a moment and try again.')
-      return
-    }
-
-    const qrHidden = qrHiddenRef.current
-    if (!qrHidden) return
-
-    qrHidden.innerHTML = ''
-    
     const qrData = JSON.stringify({ 
       id: Date.now().toString(), 
       name: partName, 
       loc: partLocation 
     })
 
-    try {
-      new (window as any).QRCode(qrHidden, { 
-        text: qrData, 
-        width: 180, 
-        height: 180 
-      })
-
-      setTimeout(() => {
-        const qrImg = qrHidden.querySelector('canvas') || qrHidden.querySelector('img')
-        const canvas = qrCanvasRef.current
-        if (!canvas) return
-
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        // White background
-        ctx.fillStyle = '#FFFFFF'
-        ctx.fillRect(0, 0, 220, 260)
-
-        // Draw QR
-        if (qrImg) {
-          if (qrImg.tagName === 'CANVAS') {
-            ctx.drawImage(qrImg as HTMLCanvasElement, 20, 15, 180, 180)
-          } else {
-            const img = new Image()
-            img.onload = () => {
-              ctx.drawImage(img, 20, 15, 180, 180)
-              finishQRDraw(ctx, canvas)
-            }
-            img.src = (qrImg as HTMLImageElement).src
-            return
-          }
-        }
-
-        finishQRDraw(ctx, canvas)
-      }, 300)
-    } catch (err) {
-      console.error('QR generation error:', err)
-      alert('Error generating QR code')
-    }
-  }
-
-  const finishQRDraw = (ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
-    // Dashed line
-    ctx.strokeStyle = '#CCCCCC'
-    ctx.setLineDash([4, 4])
-    ctx.beginPath()
-    ctx.moveTo(20, 205)
-    ctx.lineTo(200, 205)
-    ctx.stroke()
-    ctx.setLineDash([])
-
-    // Part name
-    ctx.fillStyle = '#000000'
-    ctx.font = 'bold 16px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(partName.substring(0, 18), 110, 230)
-
-    // Location
-    if (partLocation) {
-      ctx.fillStyle = '#666666'
-      ctx.font = '12px Arial'
-      ctx.fillText(partLocation.substring(0, 22), 110, 250)
-    }
-
-    setCurrentQRData(canvas.toDataURL('image/png'))
+    // Use QR Server API to generate QR code
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrData)}`
+    
+    setQrImageUrl(qrUrl)
     setQrGenerated(true)
   }
 
   // Save QR Label
   const saveLabel = async () => {
-    if (!currentQRData || !user) return
+    if (!qrImageUrl || !user) return
 
     setSaving(true)
     setSaveSuccess(false)
 
     try {
-      // Convert data URL to blob
-      const arr = currentQRData.split(',')
-      const bstr = atob(arr[1])
-      const u8 = new Uint8Array(bstr.length)
-      for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i)
-      const blob = new Blob([u8], { type: 'image/png' })
-
-      const fileName = `qr_${Date.now()}.png`
-
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('qr-labels')
-        .upload(fileName, blob, { contentType: 'image/png', upsert: true })
-
-      if (uploadError) {
-        // If bucket doesn't exist, create it
-        if (uploadError.message.includes('not found')) {
-          console.log('Creating qr-labels bucket...')
-        }
-        throw uploadError
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('qr-labels')
-        .getPublicUrl(fileName)
-
-      // Save to database
+      // For now, just save the metadata (the QR image URL is already public)
       const { error: dbError } = await supabase
         .from('qr_labels')
         .insert({
           user_id: user.id,
           name: partName,
           location: partLocation,
-          image_url: urlData.publicUrl,
+          image_url: qrImageUrl,
           created_at: new Date().toISOString()
         })
 
       if (dbError) {
-        console.log('DB Error (table might not exist):', dbError)
+        console.log('DB Error (table might not exist, but that is OK):', dbError)
       }
 
       setSaveSuccess(true)
@@ -193,7 +94,7 @@ export default function QRScannerPage() {
         setPartName('')
         setPartLocation('')
         setQrGenerated(false)
-        setCurrentQRData(null)
+        setQrImageUrl('')
         setSaveSuccess(false)
       }, 2000)
 
@@ -207,14 +108,17 @@ export default function QRScannerPage() {
 
   // Print QR
   const printQR = () => {
-    if (!currentQRData) return
+    if (!qrImageUrl) return
     const printWindow = window.open('', '_blank')
     if (printWindow) {
       printWindow.document.write(`
         <html>
-          <body style="text-align:center;margin-top:50px;">
-            <img src="${currentQRData}" style="max-width:300px;">
-            <script>setTimeout(() => { window.print(); window.close(); }, 500)</script>
+          <head><title>Print QR - ${partName}</title></head>
+          <body style="text-align:center;margin-top:50px;font-family:Arial,sans-serif;">
+            <img src="${qrImageUrl}" style="width:200px;height:200px;">
+            <div style="margin-top:20px;font-size:18px;font-weight:bold;">${partName}</div>
+            ${partLocation ? `<div style="margin-top:5px;color:#666;">${partLocation}</div>` : ''}
+            <script>setTimeout(() => { window.print(); window.close(); }, 500)<\/script>
           </body>
         </html>
       `)
@@ -223,13 +127,14 @@ export default function QRScannerPage() {
 
   // Start Scanner
   const startScanner = async () => {
-    if (typeof window === 'undefined' || !(window as any).Html5Qrcode) {
-      alert('Scanner library not loaded yet. Please wait a moment and try again.')
-      return
-    }
-
     const readerDiv = document.getElementById('qr-reader')
     if (!readerDiv) return
+
+    // Check if library is loaded
+    if (typeof (window as any).Html5Qrcode === 'undefined') {
+      alert('Scanner is loading, please wait a moment and try again...')
+      return
+    }
 
     try {
       html5QrCodeRef.current = new (window as any).Html5Qrcode('qr-reader')
@@ -258,7 +163,7 @@ export default function QRScannerPage() {
       setScanning(true)
     } catch (err: any) {
       console.error('Scanner error:', err)
-      alert('Camera access denied')
+      alert('Camera access denied or error: ' + err.message)
     }
   }
 
@@ -290,7 +195,7 @@ export default function QRScannerPage() {
         })
 
       if (error) {
-        console.log('DB Error (table might not exist):', error)
+        console.log('DB Error (table might not exist, but that is OK):', error)
       }
 
       // Add to local history
@@ -310,17 +215,6 @@ export default function QRScannerPage() {
   }
 
   return (
-    <>
-      {/* Load external scripts */}
-      <Script 
-        src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
-        onLoad={() => setQrScriptLoaded(true)}
-      />
-      <Script 
-        src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"
-        onLoad={() => setScannerScriptLoaded(true)}
-      />
-      
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="mb-8">
@@ -396,10 +290,13 @@ export default function QRScannerPage() {
             {qrGenerated && (
               <div className="border border-gray-200 rounded-xl p-6 text-center">
                 <div className="text-green-600 font-medium mb-4">✓ QR Code Ready</div>
-                <div className="inline-block border-2 border-gray-200 rounded-lg p-2 mb-4">
-                  <canvas ref={qrCanvasRef} width={220} height={260} className="block" />
+                <div className="inline-block bg-white border-2 border-gray-200 rounded-lg p-4 mb-4">
+                  <img src={qrImageUrl} alt="QR Code" className="w-[180px] h-[180px]" />
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-300">
+                    <div className="font-bold text-gray-900">{partName}</div>
+                    {partLocation && <div className="text-sm text-gray-500">{partLocation}</div>}
+                  </div>
                 </div>
-                <div ref={qrHiddenRef} className="hidden" />
 
                 <div className="flex gap-3">
                   <button
@@ -468,20 +365,20 @@ export default function QRScannerPage() {
                 
                 <div className="border-t border-green-200 pt-3 mt-3">
                   <label className="block text-sm text-gray-600 mb-2">Quantity</label>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col gap-3">
                     <input
                       type="number"
                       value={scanQty}
                       onChange={(e) => setScanQty(parseInt(e.target.value) || 1)}
                       min={1}
-                      className="flex-1 px-4 py-3 text-xl text-center border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
+                      className="w-full px-4 py-3 text-xl text-center border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 outline-none"
                     />
                     <button
                       onClick={logScan}
                       disabled={logging}
-                      className="px-6 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 disabled:opacity-50"
+                      className="w-full px-6 py-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 disabled:opacity-50"
                     >
-                      {logging ? '...' : 'Send Request'}
+                      {logging ? 'Sending...' : 'Send Request'}
                     </button>
                   </div>
                 </div>
@@ -515,6 +412,5 @@ export default function QRScannerPage() {
         </div>
       )}
     </div>
-    </>
   )
 }
