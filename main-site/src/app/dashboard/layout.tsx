@@ -45,7 +45,6 @@ export default function DashboardLayout({
     { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
     { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
     { name: 'Build Orders', href: '/dashboard/builds', icon: '🏭' },
-    { name: 'QR Scanner', href: '/dashboard/qr-scanner', icon: '📱' },
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
     { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
