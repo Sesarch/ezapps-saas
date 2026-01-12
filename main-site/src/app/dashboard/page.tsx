@@ -164,7 +164,7 @@ export default function DashboardPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Available Apps</h2>
-          <Link href="/dashboard/apps" className="text-[#97999B] hover:text-gray-700 text-sm font-medium">
+          <Link href="/dashboard/apps" className="px-4 py-2 bg-[#F5DF4D] text-gray-800 text-sm font-medium rounded-lg hover:bg-[#e5cf3d] transition-colors">
             View All →
           </Link>
         </div>
