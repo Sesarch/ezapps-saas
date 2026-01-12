@@ -62,6 +62,7 @@ export default function AdminLayout({
     { name: 'Subscriptions', href: '/admin/subscriptions', icon: '💳' },
     { name: 'Stores', href: '/admin/stores', icon: '🏪' },
     { name: 'Plans', href: '/admin/plans', icon: '📋' },
+    { name: 'Reports', href: '/admin/reports', icon: '📈' },
     { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
   ]
 
