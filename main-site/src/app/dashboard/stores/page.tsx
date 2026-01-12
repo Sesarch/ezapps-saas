@@ -62,20 +62,55 @@ export default function StoresPage() {
   }
 
   const disconnectStore = async (storeId: string, storeName: string) => {
-    if (!confirm(`Are you sure you want to disconnect "${storeName}"?`)) {
+    if (!confirm(`Are you sure you want to disconnect "${storeName}"? This will remove all associated data.`)) {
       return
     }
 
-    const { error } = await supabase
-      .from('stores')
-      .delete()
-      .eq('id', storeId)
+    try {
+      // First, delete any related records that reference this store
+      // Delete from order_line_items (via orders)
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('store_id', storeId)
+      
+      if (orders && orders.length > 0) {
+        const orderIds = orders.map(o => o.id)
+        await supabase
+          .from('order_line_items')
+          .delete()
+          .in('order_id', orderIds)
+      }
 
-    if (error) {
-      setMessage({ type: 'error', text: 'Failed to disconnect store. Please try again.' })
-    } else {
-      setMessage({ type: 'success', text: `${storeName} has been disconnected.` })
-      fetchStores()
+      // Delete orders for this store
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('store_id', storeId)
+
+      // Delete products for this store
+      await supabase
+        .from('products')
+        .delete()
+        .eq('store_id', storeId)
+
+      // Now delete the store itself (with user_id check for RLS)
+      const { error } = await supabase
+        .from('stores')
+        .delete()
+        .eq('id', storeId)
+        .eq('user_id', user?.id)
+
+      if (error) {
+        console.error('Delete store error:', error)
+        setMessage({ type: 'error', text: `Failed to disconnect store: ${error.message}` })
+      } else {
+        setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
+        fetchStores()
+      }
+    } catch (err) {
+      console.error('Disconnect error:', err)
+      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' })
     }
   }
 
@@ -107,8 +142,8 @@ export default function StoresPage() {
                   <span className="text-2xl">🛍️</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{store.store_name}</h3>
-                  <p className="text-sm text-gray-500">{store.store_url}</p>
+                  <h3 className="font-semibold text-gray-900">{store.store_url}</h3>
+                  <p className="text-sm text-gray-500 capitalize">{store.platform_id || 'Shopify'}</p>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -117,7 +152,7 @@ export default function StoresPage() {
                   Connected
                 </span>
                 <button 
-                  onClick={() => disconnectStore(store.id, store.store_name)}
+                  onClick={() => disconnectStore(store.id, store.store_url)}
                   className="text-sm text-gray-500 hover:text-red-600 transition-colors"
                 >
                   Disconnect
@@ -173,8 +208,8 @@ export default function StoresPage() {
       {/* Other Platforms Coming Soon */}
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">More Platforms Coming Soon</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {['WooCommerce', 'Wix', 'BigCommerce', 'Squarespace', 'Magento', 'OpenCart'].map((platform) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
+          {['WooCommerce', 'Wix', 'BigCommerce', 'Squarespace', 'Magento', 'OpenCart', 'Etsy', 'Amazon Seller'].map((platform) => (
             <div key={platform} className="bg-gray-100 rounded-xl p-4 text-center opacity-60">
               <div className="text-2xl mb-2">🔜</div>
               <p className="text-sm text-gray-600">{platform}</p>
