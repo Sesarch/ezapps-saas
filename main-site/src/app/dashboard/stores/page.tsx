@@ -142,8 +142,8 @@ export default function StoresPage() {
                   <span className="text-2xl">🛍️</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{store.store_url}</h3>
-                  <p className="text-sm text-gray-500 capitalize">{store.platform_id || 'Shopify'}</p>
+                  <h3 className="font-semibold text-gray-900">{store.store_name}</h3>
+                  <p className="text-sm text-gray-500">{store.store_url}</p>
                 </div>
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
@@ -152,7 +152,7 @@ export default function StoresPage() {
                   Connected
                 </span>
                 <button 
-                  onClick={() => disconnectStore(store.id, store.store_url)}
+                  onClick={() => disconnectStore(store.id, store.store_name)}
                   className="text-sm text-gray-500 hover:text-red-600 transition-colors"
                 >
                   Disconnect
