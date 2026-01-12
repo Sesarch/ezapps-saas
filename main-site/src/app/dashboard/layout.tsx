@@ -36,19 +36,19 @@ export default function DashboardLayout({
     return null
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
-    { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
-    { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
-    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
-    { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
-    { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
-    { name: 'Build Orders', href: '/dashboard/builds', icon: '🏭' },
-    { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
-    { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
-    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
-  ]
+const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
+  { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
+  { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
+  { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
+  { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
+  { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
+  { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
+  { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
+  { name: 'Build Orders', href: '/dashboard/builds', icon: '🏭' },
+  { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
+  { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
+]
 
   return (
     <div className="min-h-screen bg-gray-50">
