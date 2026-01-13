@@ -44,12 +44,17 @@ export default function AdminPlansPage() {
   const supabase = createClient()
 
   const fetchPlans = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('plans')
       .select('*')
       .order('price_monthly', { ascending: true })
     
-    setPlans(data || [])
+    if (error) {
+      console.error('Error fetching plans:', error)
+      setPlans([])
+    } else {
+      setPlans(data || [])
+    }
     setLoading(false)
   }
 
@@ -68,15 +73,15 @@ export default function AdminPlansPage() {
     setFormData({
       name: plan.name,
       description: plan.description || '',
-      price_monthly: plan.price_monthly,
-      price_yearly: plan.price_yearly || plan.price_monthly * 10,
-      apps_limit: plan.apps_limit,
-      platforms_limit: plan.platforms_limit,
+      price_monthly: plan.price_monthly || 0,
+      price_yearly: plan.price_yearly || plan.price_monthly * 10 || 0,
+      apps_limit: plan.apps_limit || 1,
+      platforms_limit: plan.platforms_limit || 1,
       orders_limit: plan.orders_limit || 1000,
-      is_active: plan.is_active,
-      stripe_price_id_monthly: plan.stripe_price_id_monthly,
-      stripe_price_id_yearly: plan.stripe_price_id_yearly,
-      features: plan.features || []
+      is_active: plan.is_active ?? true,
+      stripe_price_id_monthly: plan.stripe_price_id_monthly || null,
+      stripe_price_id_yearly: plan.stripe_price_id_yearly || null,
+      features: Array.isArray(plan.features) ? plan.features : []
     })
     setShowModal(true)
   }
@@ -152,9 +157,10 @@ export default function AdminPlansPage() {
 
   const addFeature = () => {
     if (newFeature.trim()) {
+      const currentFeatures = Array.isArray(formData.features) ? formData.features : []
       setFormData({
         ...formData,
-        features: [...(formData.features || []), newFeature.trim()]
+        features: [...currentFeatures, newFeature.trim()]
       })
       setNewFeature('')
     }
@@ -249,9 +255,9 @@ export default function AdminPlansPage() {
               </div>
             </div>
 
-            {plan.features && plan.features.length > 0 && (
+            {plan.features && Array.isArray(plan.features) && plan.features.length > 0 && (
               <div className="mb-4 space-y-1">
-                {plan.features.slice(0, 3).map((feature, i) => (
+                {plan.features.slice(0, 3).map((feature: string, i: number) => (
                   <div key={i} className="flex items-center text-sm text-gray-300">
                     <span className="text-green-400 mr-2">✓</span>
                     {feature}
@@ -415,7 +421,7 @@ export default function AdminPlansPage() {
                   </button>
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {formData.features?.map((feature, index) => (
+                  {formData.features && Array.isArray(formData.features) && formData.features.map((feature, index) => (
                     <div key={index} className="flex items-center justify-between bg-gray-700/50 px-3 py-2 rounded-lg">
                       <span className="text-gray-300 text-sm">✓ {feature}</span>
                       <button
