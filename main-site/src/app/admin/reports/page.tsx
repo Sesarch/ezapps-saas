@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+interface GrowthData {
+  week: string
+  users: number
+}
+
+interface PlatformData {
+  name: string
+  count: number
+}
+
 export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState('30')
@@ -13,8 +23,8 @@ export default function AdminReportsPage() {
     churnedUsers: 0,
     avgRevenuePerUser: 0
   })
-  const [userGrowth, setUserGrowth] = useState<any[]>([])
-  const [topPlatforms, setTopPlatforms] = useState<any[]>([])
+  const [userGrowth, setUserGrowth] = useState<GrowthData[]>([])
+  const [topPlatforms, setTopPlatforms] = useState<PlatformData[]>([])
   const supabase = createClient()
 
   useEffect(() => {
@@ -46,7 +56,7 @@ export default function AdminReportsPage() {
       const totalRevenue = subs?.reduce((sum, sub) => sum + (sub.plans?.price_monthly || 0), 0) || 0
 
       // Calculate user growth by week
-      const growth = []
+      const growth: GrowthData[] = []
       for (let i = days; i >= 0; i -= 7) {
         const weekStart = new Date()
         weekStart.setDate(weekStart.getDate() - i)
