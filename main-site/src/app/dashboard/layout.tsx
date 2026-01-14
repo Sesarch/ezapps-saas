@@ -2,12 +2,12 @@
 
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import PlatformSwitcher from '@/components/PlatformSwitcher'
 import { platforms } from '@/config/platforms'
 
-export default function DashboardLayout({
+function DashboardContent({
   children,
 }: {
   children: React.ReactNode
@@ -207,5 +207,21 @@ export default function DashboardLayout({
         </main>
       </div>
     </div>
+  )
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <DashboardContent>{children}</DashboardContent>
+    </Suspense>
   )
 }

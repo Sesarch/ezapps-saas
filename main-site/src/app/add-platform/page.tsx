@@ -1,10 +1,11 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { platforms, pricing, getAllPlatforms } from '@/config/platforms'
 
-export default function AddPlatformPage() {
+function AddPlatformContent() {
   const searchParams = useSearchParams()
   const platformId = searchParams.get('platform') || 'woocommerce'
   const platform = platforms[platformId]
@@ -216,7 +217,7 @@ export default function AddPlatformPage() {
                     : 'bg-gray-50 border border-gray-200 opacity-60'
                 } ${p.id === platformId ? 'ring-2 ring-offset-2' : ''}`}
                 style={{ 
-                  ringColor: p.id === platformId ? p.colors.primary : undefined 
+                  boxShadow: p.id === platformId ? `0 0 0 2px ${p.colors.primary}, 0 0 0 4px white` : undefined 
                 }}
               >
                 <div 
@@ -237,5 +238,17 @@ export default function AddPlatformPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function AddPlatformPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <AddPlatformContent />
+    </Suspense>
   )
 }
