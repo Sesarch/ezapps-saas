@@ -1,9 +1,11 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import PlatformSwitcher from '@/components/PlatformSwitcher'
+import { platforms } from '@/config/platforms'
 
 export default function DashboardLayout({
   children,
@@ -13,7 +15,17 @@ export default function DashboardLayout({
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [userPlatforms, setUserPlatforms] = useState<string[]>(['shopify'])
+  const [isBundle, setIsBundle] = useState(false)
+  
+  // Get current platform from URL param or default to shopify
+  const currentPlatformId = searchParams.get('platform') || 'shopify'
+  const currentPlatform = platforms[currentPlatformId]
+  
+  // Platform theme colors
+  const themeColor = currentPlatform?.colors.primary || '#F5DF4D'
 
   useEffect(() => {
     if (!loading && !user) {
@@ -25,7 +37,10 @@ export default function DashboardLayout({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#F5DF4D] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div 
+            className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+            style={{ borderColor: themeColor, borderTopColor: 'transparent' }}
+          ></div>
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -50,25 +65,42 @@ export default function DashboardLayout({
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
   ]
 
+  // Add platform param to nav links
+  const getNavHref = (href: string) => {
+    return `${href}?platform=${currentPlatformId}`
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <Link href="/dashboard">
+      <div 
+        className="lg:hidden border-b px-4 py-3 flex items-center justify-between"
+        style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}30` }}
+      >
+        <Link href={`/dashboard?platform=${currentPlatformId}`}>
           <img src="/logo.png" alt="EZ Apps" className="h-8" />
         </Link>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {sidebarOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Mobile Platform Indicator */}
+          <div 
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
+            style={{ backgroundColor: themeColor }}
+          >
+            {currentPlatform?.icon || '🏪'}
+          </div>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {sidebarOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="flex">
@@ -81,11 +113,31 @@ export default function DashboardLayout({
           lg:translate-x-0
         `}>
           <div className="flex flex-col h-full">
-            {/* Logo */}
-            <div className="hidden lg:flex items-center h-16 px-6 border-b border-gray-200">
-              <Link href="/dashboard">
-                <img src="/logo.png" alt="EZ Apps" className="h-8" />
-              </Link>
+            {/* Logo & Platform Switcher */}
+            <div className="hidden lg:block border-b border-gray-200">
+              <div className="flex items-center h-16 px-6">
+                <Link href={`/dashboard?platform=${currentPlatformId}`}>
+                  <img src="/logo.png" alt="EZ Apps" className="h-8" />
+                </Link>
+              </div>
+              
+              {/* Platform Switcher */}
+              <div className="px-4 pb-4">
+                <PlatformSwitcher 
+                  currentPlatformId={currentPlatformId}
+                  userPlatforms={userPlatforms}
+                  isBundle={isBundle}
+                />
+              </div>
+            </div>
+
+            {/* Mobile Platform Switcher */}
+            <div className="lg:hidden px-4 py-4 border-b border-gray-200">
+              <PlatformSwitcher 
+                currentPlatformId={currentPlatformId}
+                userPlatforms={userPlatforms}
+                isBundle={isBundle}
+              />
             </div>
 
             {/* Navigation */}
@@ -95,13 +147,16 @@ export default function DashboardLayout({
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    href={getNavHref(item.href)}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-[#F5DF4D]/20 text-gray-900'
+                        ? 'text-gray-900'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
+                    style={{
+                      backgroundColor: isActive ? `${themeColor}20` : undefined
+                    }}
                   >
                     <span className="mr-3 text-lg">{item.icon}</span>
                     {item.name}
@@ -115,12 +170,15 @@ export default function DashboardLayout({
               {/* User Section */}
               <div className="px-4 py-3">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-[#F5DF4D] rounded-full flex items-center justify-center text-gray-900 font-semibold">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
+                    style={{ backgroundColor: themeColor }}
+                  >
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div className="ml-3 overflow-hidden">
                     <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
-                    <p className="text-xs text-[#97999B]">Free Trial</p>
+                    <p className="text-xs text-gray-500">Free Trial</p>
                   </div>
                 </div>
                 <button
