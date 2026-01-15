@@ -158,6 +158,9 @@ function LoginForm() {
                       key={platform.id} 
                       value={platform.id}
                       disabled={platform.status === 'coming_soon'}
+                      style={{ 
+                        color: platform.status === 'coming_soon' ? '#ccc' : '#111'
+                      }}
                     >
                       {platform.icon} {platform.displayName}
                       {platform.status === 'coming_soon' ? ' (Coming Soon)' : ''}
