@@ -44,6 +44,14 @@ function LoginForm() {
     }
     
     if (data.user) {
+      // Check if there's a redirect parameter (e.g., /admin)
+      const redirectTo = searchParams.get('redirect')
+      if (redirectTo === '/admin') {
+        router.push('/admin')
+        router.refresh()
+        return
+      }
+
       // Check user's subscription for platform access
       const { data: subscription } = await supabase
         .from('subscriptions')
