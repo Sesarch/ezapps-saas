@@ -44,19 +44,6 @@ function LoginForm() {
     }
     
     if (data.user) {
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', data.user.id)
-        .single()
-
-      if (profile?.is_admin) {
-        router.push('/admin')
-        router.refresh()
-        return
-      }
-
       // Check user's subscription for platform access
       const { data: subscription } = await supabase
         .from('subscriptions')
