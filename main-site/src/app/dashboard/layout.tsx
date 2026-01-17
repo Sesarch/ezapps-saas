@@ -56,6 +56,7 @@ function DashboardContent({
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
     { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
     { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
+    { name: 'Scan', href: '/dashboard/scan', icon: '📷' },
     { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
     { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
     { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },

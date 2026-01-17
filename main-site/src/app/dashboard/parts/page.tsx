@@ -44,6 +44,8 @@ export default function PartsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [uploading, setUploading] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
+  const [qrPart, setQrPart] = useState<Part | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [formData, setFormData] = useState({
@@ -93,6 +95,32 @@ export default function PartsPage() {
     } catch (err) {
       console.error('Error fetching store:', err)
       setLoading(false)
+    }
+  }
+
+  async function recalculateCommitted() {
+    if (!store) return
+    
+    try {
+      setRecalculating(true)
+      const response = await fetch('/api/shopify/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storeId: store.id })
+      })
+      
+      if (response.ok) {
+        await fetchParts() // Refresh parts to show updated committed values
+        alert('Committed inventory recalculated!')
+      } else {
+        const data = await response.json()
+        alert('Error: ' + (data.error || 'Failed to recalculate'))
+      }
+    } catch (err) {
+      console.error('Error recalculating:', err)
+      alert('Failed to recalculate committed inventory')
+    } finally {
+      setRecalculating(false)
     }
   }
 
@@ -431,12 +459,28 @@ export default function PartsPage() {
             )}
           </div>
 
-          <button
-            onClick={openAddModal}
-            className="flex items-center justify-center px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium"
-          >
-            <span className="mr-2">+</span> Add Part
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={recalculateCommitted}
+              disabled={recalculating}
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+            >
+              {recalculating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Calculating...
+                </>
+              ) : (
+                <>🔄 Recalculate Committed</>
+              )}
+            </button>
+            <button
+              onClick={openAddModal}
+              className="flex items-center justify-center px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium"
+            >
+              <span className="mr-2">+</span> Add Part
+            </button>
+          </div>
         </div>
       </div>
 
@@ -534,6 +578,13 @@ export default function PartsPage() {
                         )}
                       </td>
                       <td className="py-4 px-6 text-right">
+                        <button
+                          onClick={() => setQrPart(part)}
+                          className="text-gray-600 hover:text-gray-800 mr-3"
+                          title="Generate QR Code"
+                        >
+                          📱
+                        </button>
                         <button
                           onClick={() => openEditModal(part)}
                           className="text-teal-600 hover:text-teal-800 mr-3"
@@ -764,6 +815,100 @@ export default function PartsPage() {
               >
                 {editingPart ? 'Update Part' : 'Add Part'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {qrPart && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">QR Code</h2>
+              <button
+                onClick={() => setQrPart(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Part Info */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {qrPart.image_url ? (
+                    <img src={qrPart.image_url} alt={qrPart.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl">🔧</span>
+                  )}
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">{qrPart.name}</p>
+                  <p className="text-sm text-gray-500">SKU: {qrPart.sku || 'N/A'}</p>
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="flex justify-center mb-6" id="qr-container">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://ezapps.app/dashboard/scan?part=${qrPart.id}`)}`}
+                  alt="QR Code"
+                  className="w-48 h-48"
+                />
+              </div>
+
+              {/* Part ID for USB scanners */}
+              <div className="bg-gray-50 rounded-lg p-3 text-center mb-6">
+                <p className="text-xs text-gray-500 mb-1">Part ID (for USB scanners)</p>
+                <p className="font-mono text-sm text-gray-900 select-all">{qrPart.id}</p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    const printWindow = window.open('', '_blank')
+                    if (printWindow) {
+                      printWindow.document.write(`
+                        <html>
+                          <head>
+                            <title>QR Code - ${qrPart.name}</title>
+                            <style>
+                              body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+                              .label { border: 1px solid #ccc; padding: 20px; display: inline-block; margin: 10px; }
+                              .name { font-weight: bold; margin-top: 10px; }
+                              .sku { color: #666; font-size: 12px; }
+                            </style>
+                          </head>
+                          <body>
+                            <div class="label">
+                              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`https://ezapps.app/dashboard/scan?part=${qrPart.id}`)}" />
+                              <div class="name">${qrPart.name}</div>
+                              <div class="sku">SKU: ${qrPart.sku || 'N/A'}</div>
+                            </div>
+                            <script>window.onload = function() { window.print(); }</script>
+                          </body>
+                        </html>
+                      `)
+                      printWindow.document.close()
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium flex items-center justify-center gap-2"
+                >
+                  🖨️ Print Label
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(qrPart.id)
+                    alert('Part ID copied to clipboard!')
+                  }}
+                  className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  📋 Copy ID
+                </button>
+              </div>
             </div>
           </div>
         </div>

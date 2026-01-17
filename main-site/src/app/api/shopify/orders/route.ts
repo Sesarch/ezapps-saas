@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     let shopDomain = store.store_url
     shopDomain = shopDomain.replace('https://', '').replace('http://', '')
 
-    // Use newer API version and explicitly request fulfillment_status
     const shopifyUrl = `https://${shopDomain}/admin/api/2024-10/orders.json?status=any&limit=50`
     
     console.log('Fetching orders from:', shopifyUrl)
@@ -54,22 +53,14 @@ export async function GET(request: NextRequest) {
     const orders = data.orders || []
 
     for (const order of orders) {
-      // Debug: Log raw fulfillment data from Shopify
-      console.log(`Order ${order.name}: fulfillment_status="${order.fulfillment_status}", fulfillments array length=${order.fulfillments?.length || 0}`)
-      if (order.fulfillments && order.fulfillments.length > 0) {
-        console.log(`Order ${order.name} fulfillments:`, JSON.stringify(order.fulfillments))
-      }
-
       // Determine fulfillment status
       let fulfillmentStatus = 'unfulfilled'
       
-      // Method 1: Check fulfillment_status field directly
       if (order.fulfillment_status === 'fulfilled') {
         fulfillmentStatus = 'fulfilled'
       } else if (order.fulfillment_status === 'partial') {
         fulfillmentStatus = 'partial'
       } else if (order.fulfillments && order.fulfillments.length > 0) {
-        // Method 2: Check fulfillments array
         const lineItemCount = order.line_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
         const fulfilledCount = order.fulfillments.reduce((sum: number, f: any) => {
           return sum + (f.line_items?.reduce((s: number, li: any) => s + li.quantity, 0) || 0)
@@ -81,8 +72,6 @@ export async function GET(request: NextRequest) {
           fulfillmentStatus = 'partial'
         }
       }
-      
-      console.log(`Order ${order.name}: final status = ${fulfillmentStatus}`)
       
       const orderData = {
         store_id: store.id,
@@ -132,27 +121,122 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Recalculate committed inventory
     await recalculateCommitted(store.id)
 
-    return NextResponse.json({ orders })
+    return NextResponse.json({ 
+      orders,
+      message: `Synced ${orders.length} orders and recalculated committed inventory`
+    })
   } catch (error) {
     console.error('Error fetching orders:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
+// POST endpoint to manually recalculate committed inventory
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { storeId } = body
+
+    if (!storeId) {
+      return NextResponse.json({ error: 'Store ID required' }, { status: 400 })
+    }
+
+    await recalculateCommitted(storeId)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Committed inventory recalculated successfully' 
+    })
+  } catch (error) {
+    console.error('Error in POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 async function recalculateCommitted(storeId: string) {
   try {
-    const { error } = await supabase.rpc('recalculate_committed', {
+    // Try calling the database function first
+    const { error: rpcError } = await supabase.rpc('recalculate_committed', {
       p_store_id: storeId
     })
     
-    if (error) {
-      console.error('Error calling recalculate_committed:', error)
+    if (rpcError) {
+      console.error('RPC error, falling back to direct calculation:', rpcError)
+      // Fallback: Do the calculation directly in code
+      await fallbackRecalculate(storeId)
     } else {
-      console.log('Committed inventory recalculated successfully')
+      console.log('Committed inventory recalculated via database function')
     }
   } catch (error) {
     console.error('Error recalculating committed:', error)
+    // Try fallback
+    await fallbackRecalculate(storeId)
+  }
+}
+
+async function fallbackRecalculate(storeId: string) {
+  try {
+    // Reset all parts to 0 committed
+    await supabase
+      .from('parts')
+      .update({ committed: 0 })
+      .eq('store_id', storeId)
+
+    // Get all unfulfilled orders with their line items
+    const { data: lineItems } = await supabase
+      .from('order_line_items')
+      .select(`
+        quantity,
+        shopify_variant_id,
+        shopify_orders!inner(fulfillment_status)
+      `)
+      .eq('store_id', storeId)
+      .or('fulfillment_status.eq.unfulfilled,fulfillment_status.is.null', { foreignTable: 'shopify_orders' })
+
+    if (!lineItems || lineItems.length === 0) {
+      console.log('No unfulfilled order line items found')
+      return
+    }
+
+    // Get all BOM items for this store
+    const { data: bomItems } = await supabase
+      .from('bom_items')
+      .select('part_id, shopify_variant_id, quantity_needed')
+      .eq('store_id', storeId)
+
+    if (!bomItems || bomItems.length === 0) {
+      console.log('No BOM items found')
+      return
+    }
+
+    // Calculate committed for each part
+    const partCommitted: Record<string, number> = {}
+
+    for (const lineItem of lineItems) {
+      const variantId = lineItem.shopify_variant_id
+      if (!variantId) continue
+
+      const matchingBoms = bomItems.filter(b => b.shopify_variant_id === variantId)
+      
+      for (const bom of matchingBoms) {
+        const committed = lineItem.quantity * bom.quantity_needed
+        partCommitted[bom.part_id] = (partCommitted[bom.part_id] || 0) + committed
+      }
+    }
+
+    // Update parts with calculated committed values
+    for (const [partId, committed] of Object.entries(partCommitted)) {
+      await supabase
+        .from('parts')
+        .update({ committed })
+        .eq('id', partId)
+    }
+
+    console.log('Fallback committed calculation complete:', partCommitted)
+  } catch (error) {
+    console.error('Fallback recalculate error:', error)
   }
 }
