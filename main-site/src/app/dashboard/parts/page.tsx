@@ -580,10 +580,9 @@ export default function PartsPage() {
                       <td className="py-4 px-6 text-right">
                         <button
                           onClick={() => setQrPart(part)}
-                          className="text-gray-600 hover:text-gray-800 mr-3"
-                          title="Generate QR Code"
+                          className="text-blue-600 hover:text-blue-800 mr-3 text-sm font-medium"
                         >
-                          📱
+                          QR Code
                         </button>
                         <button
                           onClick={() => openEditModal(part)}
