@@ -13,6 +13,9 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
+  // Check if we're in production
+  const isProduction = process.env.NODE_ENV === 'production'
+
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
@@ -23,9 +26,20 @@ export async function updateSession(request: NextRequest) {
         supabaseResponse = NextResponse.next({
           request,
         })
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options)
-        )
+        cookiesToSet.forEach(({ name, value, options }) => {
+          // Set domain to .ezapps.app in production for cross-subdomain access
+          const cookieOptions: Record<string, any> = isProduction
+            ? { 
+                ...options, 
+                domain: '.ezapps.app',
+                path: '/',
+                sameSite: 'lax',
+                secure: true,
+              }
+            : { ...options, path: '/' }
+          
+          supabaseResponse.cookies.set(name, value, cookieOptions)
+        })
       },
     },
   })
