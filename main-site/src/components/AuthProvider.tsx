@@ -63,7 +63,19 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     await supabase.auth.signOut()
     setUser(null)
     setSession(null)
-    window.location.href = '/'
+    
+    // Always redirect to main domain after logout
+    // Check if we're in production
+    const hostname = window.location.hostname
+    const isProduction = !hostname.includes('localhost') && !hostname.includes('127.0.0.1')
+    
+    if (isProduction) {
+      // In production, always go to main domain
+      window.location.href = 'https://ezapps.app'
+    } else {
+      // In development, just go to root
+      window.location.href = '/'
+    }
   }
 
   return (
