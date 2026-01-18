@@ -20,7 +20,7 @@ export function createClient() {
             })
             .filter(cookie => cookie.name && cookie.value)
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
           cookiesToSet.forEach(({ name, value, options }) => {
             // Set domain to .ezapps.app in production for cross-subdomain access
             const cookieOptions = isProduction
