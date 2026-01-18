@@ -68,7 +68,6 @@ function PlatformSelectionContent() {
   }
 
   const availablePlatforms = Object.keys(platforms).map(id => ({
-    id,
     ...platforms[id],
     connected: connectedStores.some(s => s.platform_id === id)
   }))
