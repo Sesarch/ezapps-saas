@@ -12,54 +12,100 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    // Add a timeout - if still loading after 5 seconds, show error
+    const timeout = setTimeout(() => {
+      if (isValidSession === null) {
+        setDebugInfo('Timeout reached. Hash: ' + window.location.hash.substring(0, 50) + '...')
+        setIsValidSession(false)
+      }
+    }, 5000)
+
     // Handle the recovery flow
     const handleRecovery = async () => {
-      // Check for hash params (Supabase sends tokens in URL hash)
-      const hash = window.location.hash
-      
-      if (hash && hash.includes('access_token')) {
-        // Parse the hash params
-        const hashParams = new URLSearchParams(hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const refreshToken = hashParams.get('refresh_token')
-        const type = hashParams.get('type')
+      try {
+        const hash = window.location.hash
+        const fullUrl = window.location.href
         
-        if (type === 'recovery' && accessToken && refreshToken) {
-          // Set the session manually with the recovery tokens
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
+        console.log('Reset page loaded. URL:', fullUrl)
+        console.log('Hash:', hash)
+        
+        // Check for hash params (Supabase sends tokens in URL hash)
+        if (hash && hash.includes('access_token')) {
+          const hashParams = new URLSearchParams(hash.substring(1))
+          const accessToken = hashParams.get('access_token')
+          const refreshToken = hashParams.get('refresh_token')
+          const type = hashParams.get('type')
+          
+          console.log('Token type:', type)
+          console.log('Has access token:', !!accessToken)
+          console.log('Has refresh token:', !!refreshToken)
+          
+          if (accessToken && refreshToken) {
+            // Set the session manually with the recovery tokens
+            const { data, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+            
+            if (sessionError) {
+              console.error('Error setting session:', sessionError)
+              setDebugInfo('Session error: ' + sessionError.message)
+              setIsValidSession(false)
+              return
+            }
+            
+            if (data.session) {
+              console.log('Session set successfully!')
+              window.history.replaceState(null, '', window.location.pathname)
+              setIsValidSession(true)
+              return
+            }
+          }
+        }
+        
+        // Check for query params (some Supabase versions use query params)
+        const urlParams = new URLSearchParams(window.location.search)
+        const queryToken = urlParams.get('access_token')
+        const queryRefresh = urlParams.get('refresh_token')
+        
+        if (queryToken && queryRefresh) {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: queryToken,
+            refresh_token: queryRefresh,
           })
           
-          if (error) {
-            console.error('Error setting session:', error)
-            setIsValidSession(false)
-            return
-          }
-          
-          if (data.session) {
-            // Clear the hash from URL for cleaner look
+          if (!sessionError && data.session) {
             window.history.replaceState(null, '', window.location.pathname)
             setIsValidSession(true)
             return
           }
         }
-      }
-      
-      // No hash params, check if we already have a session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setIsValidSession(true)
-      } else {
+        
+        // No tokens in URL, check if we already have a session
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          console.log('Existing session found')
+          setIsValidSession(true)
+        } else {
+          console.log('No session found')
+          setDebugInfo('No tokens found in URL and no existing session')
+          setIsValidSession(false)
+        }
+      } catch (err) {
+        console.error('Recovery error:', err)
+        setDebugInfo('Error: ' + String(err))
         setIsValidSession(false)
       }
     }
 
     handleRecovery()
+    
+    return () => clearTimeout(timeout)
   }, [supabase.auth])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,9 +168,14 @@ export default function ResetPasswordPage() {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">Invalid or Expired Link</h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-4">
               This password reset link is invalid or has expired. Please request a new one.
             </p>
+            {debugInfo && (
+              <p className="text-xs text-gray-400 mb-4 font-mono bg-gray-100 p-2 rounded break-all">
+                Debug: {debugInfo}
+              </p>
+            )}
             <Link
               href="/forgot-password"
               className="inline-block py-3 px-6 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
