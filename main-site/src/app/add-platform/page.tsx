@@ -32,12 +32,6 @@ function PlatformSelectionContent() {
 
     if (!error && data) {
       setConnectedStores(data)
-      
-      // If user has only one store, redirect to that platform automatically
-      if (data.length === 1) {
-        const platformId = data[0].platform_id
-        redirectToPlatform(platformId)
-      }
     }
     setLoadingStores(false)
   }
