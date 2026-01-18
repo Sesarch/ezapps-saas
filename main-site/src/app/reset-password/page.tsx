@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -14,16 +14,14 @@ export default function ResetPasswordPage() {
   const [isValidSession, setIsValidSession] = useState<boolean | null>(null)
   const [debugInfo, setDebugInfo] = useState<string>('')
   const router = useRouter()
-  const supabase = createClient()
+  const hasRun = useRef(false)
 
   useEffect(() => {
-    // Add a timeout - if still loading after 5 seconds, show error
-    const timeout = setTimeout(() => {
-      if (isValidSession === null) {
-        setDebugInfo('Timeout reached. Hash: ' + window.location.hash.substring(0, 50) + '...')
-        setIsValidSession(false)
-      }
-    }, 5000)
+    // Prevent double execution in React strict mode
+    if (hasRun.current) return
+    hasRun.current = true
+
+    const supabase = createClient()
 
     // Handle the recovery flow
     const handleRecovery = async () => {
@@ -93,20 +91,34 @@ export default function ResetPasswordPage() {
           setIsValidSession(true)
         } else {
           console.log('No session found')
-          setDebugInfo('No tokens found in URL and no existing session')
+          setDebugInfo('No tokens found in URL and no existing session. Hash: ' + (hash ? hash.substring(0, 50) : 'empty'))
           setIsValidSession(false)
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Recovery error:', err)
+        // Don't fail on AbortError - it's usually just React strict mode
+        if (err?.name === 'AbortError') {
+          console.log('AbortError caught, retrying...')
+          // Wait a moment and check session
+          setTimeout(async () => {
+            const supabase2 = createClient()
+            const { data: { session } } = await supabase2.auth.getSession()
+            if (session) {
+              setIsValidSession(true)
+            } else {
+              setDebugInfo('Request was cancelled. Please try clicking the reset link again.')
+              setIsValidSession(false)
+            }
+          }, 500)
+          return
+        }
         setDebugInfo('Error: ' + String(err))
         setIsValidSession(false)
       }
     }
 
     handleRecovery()
-    
-    return () => clearTimeout(timeout)
-  }, [supabase.auth])
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -123,6 +135,8 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
+    
+    const supabase = createClient()
 
     const { error } = await supabase.auth.updateUser({
       password: password
