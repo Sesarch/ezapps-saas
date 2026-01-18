@@ -1,31 +1,18 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { getAllPlatforms, platforms } from '@/config/platforms'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [selectedPlatform, setSelectedPlatform] = useState('shopify')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-
-  const allPlatforms = getAllPlatforms()
-  const currentPlatform = platforms[selectedPlatform]
-
-  // Check for platform param in URL
-  useEffect(() => {
-    const platformParam = searchParams.get('platform')
-    if (platformParam && platforms[platformParam]) {
-      setSelectedPlatform(platformParam)
-    }
-  }, [searchParams])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,37 +39,8 @@ function LoginForm() {
         return
       }
 
-      // Check user's subscription for platform access
-      const { data: subscription } = await supabase
-        .from('subscriptions')
-        .select('platforms, is_bundle, status')
-        .eq('user_id', data.user.id)
-        .eq('status', 'active')
-        .single()
-
-      // Determine if user has access to selected platform
-      const hasAccess = subscription?.is_bundle || 
-                        subscription?.platforms?.includes(selectedPlatform) ||
-                        selectedPlatform === 'shopify' // Default access for existing users
-
-      if (hasAccess) {
-        // Redirect to platform subdomain
-        const platform = platforms[selectedPlatform]
-        if (platform.status === 'active') {
-          // For production, redirect to subdomain
-          // window.location.href = `https://${platform.subdomain}/dashboard`
-          // For now, just go to dashboard with platform param
-          router.push(`/dashboard?platform=${selectedPlatform}`)
-        } else {
-          setError(`${platform.displayName} is coming soon! Please select an active platform.`)
-          setLoading(false)
-          return
-        }
-      } else {
-        // User doesn't have access to this platform
-        router.push(`/add-platform?platform=${selectedPlatform}`)
-      }
-      
+      // Always redirect to platform selection page
+      router.push('/add-platform')
       router.refresh()
     }
     
@@ -138,111 +96,45 @@ function LoginForm() {
               />
             </div>
 
-            {/* Platform Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Select Platform
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedPlatform}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none appearance-none bg-white"
-                  style={{ 
-                    borderLeftWidth: '4px',
-                    borderLeftColor: currentPlatform?.colors.primary 
-                  }}
-                >
-                  {allPlatforms.map((platform) => (
-                    <option 
-                      key={platform.id} 
-                      value={platform.id}
-                      disabled={platform.status === 'coming_soon'}
-                      style={{ 
-                        color: platform.status === 'coming_soon' ? '#ccc' : '#111'
-                      }}
-                    >
-                      {platform.icon} {platform.displayName}
-                      {platform.status === 'coming_soon' ? ' (Coming Soon)' : ''}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              
-              {/* Platform Preview */}
-              {currentPlatform && (
-                <div 
-                  className="mt-2 p-3 rounded-lg flex items-center gap-3"
-                  style={{ backgroundColor: `${currentPlatform.colors.primary}15` }}
-                >
-                  <div 
-                    className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-xl"
-                    style={{ backgroundColor: currentPlatform.colors.primary }}
-                  >
-                    {currentPlatform.icon}
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{currentPlatform.displayName}</p>
-                    <p className="text-xs text-gray-500">
-                      {currentPlatform.status === 'active' 
-                        ? '✅ Ready to use' 
-                        : '🕐 Coming soon'}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading || currentPlatform?.status === 'coming_soon'}
-              className="w-full py-3 text-white rounded-xl font-semibold transition-all disabled:opacity-50"
-              style={{ 
-                backgroundColor: currentPlatform?.colors.primary || '#14B8A6',
-              }}
+              disabled={loading}
+              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
             >
-              {loading ? 'Signing in...' : `Sign In to ${currentPlatform?.displayName || 'EZ Apps'}`}
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
             <Link 
-              href={`/signup?platform=${selectedPlatform}`} 
-              className="font-medium hover:underline"
-              style={{ color: currentPlatform?.colors.primary || '#14B8A6' }}
+              href="/signup" 
+              className="font-medium text-teal-600 hover:text-teal-700 hover:underline"
             >
               Sign up free
             </Link>
           </p>
         </div>
 
-        {/* Platform badges */}
+        {/* Platform info */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500 mb-3">Available platforms</p>
+          <p className="text-sm text-gray-600 mb-3">
+            Manage inventory across all major platforms
+          </p>
           <div className="flex items-center justify-center gap-2 flex-wrap">
-            {allPlatforms.map((platform) => (
-              <div
-                key={platform.id}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1 ${
-                  platform.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {platform.icon}
-                {platform.name}
-                {platform.status === 'coming_soon' && (
-                  <span className="text-[10px] opacity-70">soon</span>
-                )}
-              </div>
-            ))}
+            <div className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
+              🛍️ Shopify
+            </div>
+            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium flex items-center gap-1">
+              🛒 WooCommerce <span className="text-[10px] opacity-70">soon</span>
+            </div>
+            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium flex items-center gap-1">
+              📦 Etsy <span className="text-[10px] opacity-70">soon</span>
+            </div>
+            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
+              +6 more
+            </div>
           </div>
         </div>
       </div>
