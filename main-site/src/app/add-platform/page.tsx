@@ -1,240 +1,211 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { platforms, pricing, getAllPlatforms } from '@/config/platforms'
+import { useAuth } from '@/components/AuthProvider'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { platforms } from '@/config/platforms'
+import { createClient } from '@/lib/supabase/client'
 
-function AddPlatformContent() {
-  const searchParams = useSearchParams()
-  const platformId = searchParams.get('platform') || 'woocommerce'
-  const platform = platforms[platformId]
-  const allPlatforms = getAllPlatforms()
+function PlatformSelectionContent() {
+  const { user, loading } = useAuth()
+  const router = useRouter()
+  const [connectedStores, setConnectedStores] = useState<any[]>([])
+  const [loadingStores, setLoadingStores] = useState(true)
 
-  if (!platform) {
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login')
+      return
+    }
+
+    if (user) {
+      loadConnectedStores()
+    }
+  }, [user, loading, router])
+
+  const loadConnectedStores = async () => {
+    const supabase = createClient()
+    const { data, error} = await supabase
+      .from('stores')
+      .select('*')
+      .eq('user_id', user?.id)
+
+    if (!error && data) {
+      setConnectedStores(data)
+      
+      // If user has only one store, redirect to that platform automatically
+      if (data.length === 1) {
+        const platformId = data[0].platform_id
+        redirectToPlatform(platformId)
+      }
+    }
+    setLoadingStores(false)
+  }
+
+  const redirectToPlatform = (platformId: string) => {
+    // Check if we're in production or development
+    const hostname = window.location.hostname
+    const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1')
+    
+    if (isLocalhost) {
+      // In development, just navigate to dashboard with platform context
+      router.push('/dashboard')
+    } else {
+      // In production, redirect to platform subdomain
+      window.location.href = `https://${platformId}.ezapps.app/dashboard`
+    }
+  }
+
+  if (loading || loadingStores) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Platform not found</h1>
-          <Link href="/dashboard" className="text-teal-600 hover:underline mt-4 inline-block">
-            Return to Dashboard
-          </Link>
+          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your platforms...</p>
         </div>
       </div>
     )
   }
 
-  const isComingSoon = platform.status === 'coming_soon'
+  const availablePlatforms = Object.keys(platforms).map(id => ({
+    id,
+    ...platforms[id],
+    connected: connectedStores.some(s => s.platform_id === id)
+  }))
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Back Link */}
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-8"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Dashboard
-        </Link>
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div 
-            className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-4xl mx-auto mb-4 shadow-lg"
-            style={{ backgroundColor: platform.colors.primary }}
-          >
-            {platform.icon}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="EZ Apps" className="h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Add {platform.displayName} to Your Account
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-gray-600">{user?.email}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Select Your Platform
           </h1>
-          <p className="text-gray-600">
-            {isComingSoon 
-              ? `${platform.displayName} integration is coming soon!`
-              : `Get access to all 6 apps for your ${platform.displayName} store`
-            }
+          <p className="text-xl text-gray-600">
+            Choose which e-commerce platform you want to manage
           </p>
         </div>
 
-        {isComingSoon ? (
-          /* Coming Soon UI */
-          <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-lg mx-auto">
-            <div className="text-6xl mb-4">🚀</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon!</h2>
-            <p className="text-gray-600 mb-6">
-              We're working hard to bring {platform.displayName} integration to EZ Apps. 
-              Join the waitlist to be notified when it's ready.
-            </p>
-            
-            <form className="space-y-4">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-              />
-              <button
-                type="submit"
-                className="w-full py-3 rounded-xl font-semibold text-white transition-all"
-                style={{ backgroundColor: platform.colors.primary }}
-              >
-                Notify Me When Available
-              </button>
-            </form>
-
-            <p className="mt-6 text-sm text-gray-500">
-              In the meantime, you can use EZ Apps with{' '}
-              <Link href="/dashboard?platform=shopify" className="text-teal-600 hover:underline">
-                Shopify
-              </Link>
-            </p>
-          </div>
-        ) : (
-          /* Pricing Options */
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Single Platform Option */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-transparent hover:border-gray-200 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
+        {/* Platform Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {availablePlatforms.map((platform) => (
+            <button
+              key={platform.id}
+              onClick={() => {
+                if (platform.connected) {
+                  redirectToPlatform(platform.id)
+                } else {
+                  // Not yet connected - go to stores page to connect
+                  router.push('/dashboard/stores')
+                }
+              }}
+              disabled={!platform.connected}
+              className={`relative bg-white rounded-2xl border-2 p-8 transition-all group ${
+                platform.connected 
+                  ? 'border-gray-300 hover:border-gray-400 hover:shadow-lg cursor-pointer'
+                  : 'border-gray-200 opacity-60 cursor-not-allowed'
+              }`}
+              style={{
+                borderColor: platform.connected ? platform.colors.primary : undefined,
+                backgroundColor: platform.connected ? `${platform.colors.primary}05` : undefined
+              }}
+            >
+              {/* Connected Badge */}
+              {platform.connected && (
                 <div 
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-white text-2xl"
+                  className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-semibold text-white"
                   style={{ backgroundColor: platform.colors.primary }}
                 >
-                  {platform.icon}
+                  Connected
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">Add {platform.displayName}</h3>
-                  <p className="text-sm text-gray-500">Single platform add-on</p>
-                </div>
-              </div>
+              )}
 
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-gray-900">${pricing.additionalPlatform.monthly}</span>
-                  <span className="text-gray-500">/month</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  or ${pricing.additionalPlatform.yearly}/year (save 2 months)
-                </p>
-              </div>
+              {platform.connected ? (
+                <>
+                  {/* Platform Icon */}
+                  <div className="flex justify-center mb-6">
+                    <div 
+                      className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
+                      style={{ backgroundColor: `${platform.colors.primary}20` }}
+                    >
+                      {platform.icon}
+                    </div>
+                  </div>
 
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  All 6 Apps included
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  Unlimited products
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  10,000 orders/month
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  Email support
-                </li>
-              </ul>
+                  {/* Platform Info */}
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {platform.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Click to open dashboard
+                    </p>
+                  </div>
 
-              <button
-                className="w-full py-3 rounded-xl font-semibold text-white transition-all"
-                style={{ backgroundColor: platform.colors.primary }}
-              >
-                Add {platform.displayName}
-              </button>
-            </div>
+                  {/* Hover Effect */}
+                  <div 
+                    className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity"
+                    style={{ backgroundColor: platform.colors.primary }}
+                  ></div>
+                </>
+              ) : (
+                <>
+                  {/* Platform Icon - Disabled */}
+                  <div className="flex justify-center mb-6">
+                    <div 
+                      className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl grayscale"
+                      style={{ backgroundColor: `${platform.colors.primary}20` }}
+                    >
+                      {platform.icon}
+                    </div>
+                  </div>
 
-            {/* Bundle Option */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border-2 border-purple-500 relative">
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                <span className="bg-purple-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                  BEST VALUE
-                </span>
-              </div>
+                  {/* Platform Info - Coming Soon */}
+                  <div className="text-center">
+                    <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                      {platform.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Coming Soon
+                    </p>
+                  </div>
+                </>
+              )}
+            </button>
+          ))}
+        </div>
 
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-2xl">
-                  ✨
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">All Platforms Bundle</h3>
-                  <p className="text-sm text-gray-500">Access all 9 platforms</p>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-gray-900">${pricing.allPlatformsBundle.monthly}</span>
-                  <span className="text-gray-500">/month</span>
-                </div>
-                <p className="text-sm text-green-600 font-medium mt-1">
-                  Save ${pricing.allPlatformsBundle.savings}/month vs buying separately!
-                </p>
-              </div>
-
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  <strong>All 9 platforms</strong>
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  All 6 Apps included
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  Unlimited products
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  <strong>Unlimited orders</strong>
-                </li>
-                <li className="flex items-center gap-2 text-gray-700">
-                  <span className="text-green-500">✓</span>
-                  <strong>Priority support</strong>
-                </li>
-              </ul>
-
-              <button className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 transition-all">
-                Get All Platforms
-              </button>
-            </div>
+        {/* Help Text */}
+        {connectedStores.length === 0 && (
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 mb-4">
+              No platforms connected yet
+            </p>
+            <button
+              onClick={() => router.push('/dashboard/stores')}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-colors"
+            >
+              Connect Your First Platform
+            </button>
           </div>
         )}
 
-        {/* All Platforms Preview */}
-        <div className="mt-12 bg-white rounded-2xl shadow-lg p-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">All Available Platforms</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-4">
-            {allPlatforms.map((p) => (
-              <div 
-                key={p.id} 
-                className={`flex flex-col items-center p-3 rounded-xl transition-all ${
-                  p.status === 'active' 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-gray-50 border border-gray-200 opacity-60'
-                } ${p.id === platformId ? 'ring-2 ring-offset-2' : ''}`}
-                style={{ 
-                  boxShadow: p.id === platformId ? `0 0 0 2px ${p.colors.primary}, 0 0 0 4px white` : undefined 
-                }}
-              >
-                <div 
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg mb-2 ${
-                    p.status === 'coming_soon' ? 'grayscale' : ''
-                  }`}
-                  style={{ backgroundColor: p.colors.primary }}
-                >
-                  {p.icon}
-                </div>
-                <span className="text-xs font-medium text-gray-700 text-center">{p.name}</span>
-                {p.status === 'coming_soon' && (
-                  <span className="text-[10px] text-gray-400">Soon</span>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            Need help? <a href="/contact" className="text-teal-600 hover:text-teal-700 font-medium">Contact Support</a>
+          </p>
         </div>
       </div>
     </div>
@@ -248,7 +219,8 @@ export default function AddPlatformPage() {
         <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
-      <AddPlatformContent />
+      <PlatformSelectionContent />
     </Suspense>
   )
 }
+

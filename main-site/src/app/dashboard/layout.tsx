@@ -1,11 +1,10 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
-import PlatformSwitcher from '@/components/PlatformSwitcher'
-import { platforms } from '@/config/platforms'
+import { usePlatform } from '@/hooks/usePlatform'
 
 function DashboardContent({
   children,
@@ -15,14 +14,10 @@ function DashboardContent({
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [userPlatforms, setUserPlatforms] = useState<string[]>(['shopify'])
-  const [isBundle, setIsBundle] = useState(false)
   
-  // Get current platform from URL param or default to shopify
-  const currentPlatformId = searchParams.get('platform') || 'shopify'
-  const currentPlatform = platforms[currentPlatformId]
+  // Get current platform from subdomain
+  const { platformId: currentPlatformId, platform: currentPlatform } = usePlatform()
   
   // Platform theme colors
   const themeColor = currentPlatform?.colors.primary || '#F5DF4D'
@@ -66,11 +61,6 @@ function DashboardContent({
     { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
   ]
 
-  // Add platform param to nav links
-  const getNavHref = (href: string) => {
-    return `${href}?platform=${currentPlatformId}`
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
@@ -78,16 +68,17 @@ function DashboardContent({
         className="lg:hidden border-b px-4 py-3 flex items-center justify-between"
         style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}30` }}
       >
-        <Link href={`/dashboard?platform=${currentPlatformId}`}>
+        <Link href="/dashboard">
           <img src="/logo.png" alt="EZ Apps" className="h-8" />
         </Link>
         <div className="flex items-center gap-2">
-          {/* Mobile Platform Indicator */}
+          {/* Mobile Platform Badge */}
           <div 
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
+            className="px-3 py-1.5 rounded-lg flex items-center gap-2 text-white text-sm font-medium"
             style={{ backgroundColor: themeColor }}
           >
-            {currentPlatform?.icon || '🏪'}
+            <span>{currentPlatform?.icon || '🏪'}</span>
+            <span className="hidden sm:inline">{currentPlatform?.name || 'Platform'}</span>
           </div>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -114,31 +105,27 @@ function DashboardContent({
           lg:translate-x-0
         `}>
           <div className="flex flex-col h-full">
-            {/* Logo & Platform Switcher */}
-            <div className="hidden lg:block border-b border-gray-200">
+            {/* Logo & Platform Badge */}
+            <div className="border-b border-gray-200">
               <div className="flex items-center h-16 px-6">
-                <Link href={`/dashboard?platform=${currentPlatformId}`}>
+                <Link href="/dashboard">
                   <img src="/logo.png" alt="EZ Apps" className="h-8" />
                 </Link>
               </div>
               
-              {/* Platform Switcher */}
+              {/* Platform Badge (Desktop) */}
               <div className="px-4 pb-4">
-                <PlatformSwitcher 
-                  currentPlatformId={currentPlatformId}
-                  userPlatforms={userPlatforms}
-                  isBundle={isBundle}
-                />
+                <div 
+                  className="px-4 py-3 rounded-xl flex items-center gap-3 text-white"
+                  style={{ backgroundColor: themeColor }}
+                >
+                  <span className="text-2xl">{currentPlatform?.icon || '🏪'}</span>
+                  <div>
+                    <div className="font-semibold">{currentPlatform?.name || 'Platform'}</div>
+                    <div className="text-xs opacity-90">Connected</div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            {/* Mobile Platform Switcher */}
-            <div className="lg:hidden px-4 py-4 border-b border-gray-200">
-              <PlatformSwitcher 
-                currentPlatformId={currentPlatformId}
-                userPlatforms={userPlatforms}
-                isBundle={isBundle}
-              />
             </div>
 
             {/* Navigation */}
@@ -148,7 +135,7 @@ function DashboardContent({
                 return (
                   <Link
                     key={item.name}
-                    href={getNavHref(item.href)}
+                    href={item.href}
                     onClick={() => setSidebarOpen(false)}
                     className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                       isActive

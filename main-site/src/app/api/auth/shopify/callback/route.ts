@@ -98,6 +98,10 @@ export async function GET(request: Request) {
   // Clear the state cookie
   cookieStore.delete('shopify_oauth_state')
 
-  // Redirect to dashboard
-  return NextResponse.redirect(new URL('/dashboard/stores?success=store_connected', request.url))
+  // Redirect to Shopify subdomain dashboard
+  const baseUrl = process.env.NODE_ENV === 'production' 
+    ? 'https://shopify.ezapps.app'
+    : 'http://localhost:3000'
+  
+  return NextResponse.redirect(new URL(`${baseUrl}/dashboard/stores?success=store_connected`, request.url))
 }
