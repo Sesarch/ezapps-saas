@@ -11,29 +11,20 @@ export async function GET(request: NextRequest) {
 
   // Verify user is authenticated
   const supabase = await createClient()
-  const { data: { user }, error } = await supabase.auth.getUser()
+  const { data: { session }, error } = await supabase.auth.getSession()
 
-  if (error || !user) {
+  if (error || !session) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Get the session to pass along
-  const { data: { session } } = await supabase.auth.getSession()
+  // Get the access token from the session
+  const accessToken = session.access_token
+  const refreshToken = session.refresh_token
 
-  if (!session) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Redirect to platform subdomain with session
+  // Redirect to platform subdomain with tokens in URL
   const redirectUrl = process.env.NODE_ENV === 'production'
-    ? `https://${platform}.ezapps.app/dashboard`
+    ? `https://${platform}.ezapps.app/auth/callback-subdomain?access_token=${accessToken}&refresh_token=${refreshToken}`
     : `http://localhost:3000/dashboard`
 
-  // Create response with session cookies properly set for subdomain
-  const response = NextResponse.redirect(redirectUrl)
-
-  // The cookies are already set by the createClient call above with the correct domain
-  // Just redirect - the middleware will handle the session
-
-  return response
+  return NextResponse.redirect(redirectUrl)
 }
