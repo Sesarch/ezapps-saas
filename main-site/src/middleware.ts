@@ -18,6 +18,11 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const url = request.nextUrl
   
+  // Skip middleware for auth callback route
+  if (url.pathname === '/auth/callback-subdomain') {
+    return NextResponse.next()
+  }
+  
   // Extract subdomain (e.g., "shopify" from "shopify.ezapps.app")
   const subdomain = hostname.split('.')[0]
   
@@ -55,5 +60,6 @@ export const config = {
     '/dashboard/:path*',
     '/login',
     '/signup',
+    '/auth/:path*',
   ],
 }
