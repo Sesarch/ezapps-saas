@@ -23,7 +23,7 @@ export function createClient() {
         setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
           cookiesToSet.forEach(({ name, value, options }) => {
             // Set domain to .ezapps.app in production for cross-subdomain access
-            const cookieOptions = isProduction
+            const cookieOptions: Record<string, any> = isProduction
               ? { 
                   ...options, 
                   domain: '.ezapps.app',
@@ -35,14 +35,12 @@ export function createClient() {
             
             let cookieString = `${name}=${encodeURIComponent(value)}`
             
-            if (cookieOptions) {
-              if (cookieOptions.domain) cookieString += `; domain=${cookieOptions.domain}`
-              if (cookieOptions.path) cookieString += `; path=${cookieOptions.path}`
-              if (cookieOptions.maxAge) cookieString += `; max-age=${cookieOptions.maxAge}`
-              if (cookieOptions.expires) cookieString += `; expires=${new Date(cookieOptions.expires as string).toUTCString()}`
-              if (cookieOptions.secure) cookieString += '; secure'
-              if (cookieOptions.sameSite) cookieString += `; samesite=${cookieOptions.sameSite}`
-            }
+            if (cookieOptions.domain) cookieString += `; domain=${cookieOptions.domain}`
+            if (cookieOptions.path) cookieString += `; path=${cookieOptions.path}`
+            if (cookieOptions.maxAge) cookieString += `; max-age=${cookieOptions.maxAge}`
+            if (cookieOptions.expires) cookieString += `; expires=${new Date(cookieOptions.expires as string).toUTCString()}`
+            if (cookieOptions.secure) cookieString += '; secure'
+            if (cookieOptions.sameSite) cookieString += `; samesite=${cookieOptions.sameSite}`
             
             document.cookie = cookieString
           })
