@@ -45,8 +45,8 @@ function PlatformSelectionContent() {
       // In development, just navigate to dashboard with platform context
       router.push('/dashboard')
     } else {
-      // In production, redirect to platform subdomain
-      window.location.href = `https://${platformId}.ezapps.app/dashboard`
+      // In production, use API route to ensure proper session transfer
+      window.location.href = `/api/auth/redirect-to-platform?platform=${platformId}`
     }
   }
 

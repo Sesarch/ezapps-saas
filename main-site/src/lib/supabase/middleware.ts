@@ -47,17 +47,32 @@ export async function updateSession(request: NextRequest) {
   // Refresh the session
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Get hostname to check if we're on a subdomain
+  const hostname = request.headers.get('host') || ''
+  const hostnameParts = hostname.split('.')
+  const isSubdomain = hostnameParts.length > 2 && !hostname.includes('localhost')
+
   // Protected routes - redirect to login if not authenticated
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    // If on subdomain, redirect to main domain login
+    if (isSubdomain) {
+      const mainDomain = process.env.NODE_ENV === 'production' 
+        ? 'https://ezapps.app/login'
+        : 'http://localhost:3000/login'
+      return NextResponse.redirect(mainDomain)
+    }
+    
+    // If on main domain, just go to login
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
   // Redirect logged-in users away from auth pages
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+  // But only on main domain - subdomains shouldn't have login/signup pages
+  if (user && !isSubdomain && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = '/add-platform'
     return NextResponse.redirect(url)
   }
 
