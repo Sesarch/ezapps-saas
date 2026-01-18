@@ -16,39 +16,50 @@ export default function ResetPasswordPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    // Check if we have a valid recovery session
-    const checkSession = async () => {
+    // Handle the recovery flow
+    const handleRecovery = async () => {
+      // Check for hash params (Supabase sends tokens in URL hash)
+      const hash = window.location.hash
+      
+      if (hash && hash.includes('access_token')) {
+        // Parse the hash params
+        const hashParams = new URLSearchParams(hash.substring(1))
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        const type = hashParams.get('type')
+        
+        if (type === 'recovery' && accessToken && refreshToken) {
+          // Set the session manually with the recovery tokens
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          
+          if (error) {
+            console.error('Error setting session:', error)
+            setIsValidSession(false)
+            return
+          }
+          
+          if (data.session) {
+            // Clear the hash from URL for cleaner look
+            window.history.replaceState(null, '', window.location.pathname)
+            setIsValidSession(true)
+            return
+          }
+        }
+      }
+      
+      // No hash params, check if we already have a session
       const { data: { session } } = await supabase.auth.getSession()
-      
-      // Also check for hash params (Supabase sends tokens in URL hash)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const accessToken = hashParams.get('access_token')
-      const type = hashParams.get('type')
-      
-      if (type === 'recovery' && accessToken) {
-        // We have a recovery token, session should be set by Supabase automatically
-        setIsValidSession(true)
-      } else if (session) {
+      if (session) {
         setIsValidSession(true)
       } else {
         setIsValidSession(false)
       }
     }
-    
-    // Listen for auth state changes (Supabase handles the token exchange)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setIsValidSession(true)
-      } else if (event === 'SIGNED_IN' && session) {
-        setIsValidSession(true)
-      }
-    })
 
-    checkSession()
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    handleRecovery()
   }, [supabase.auth])
 
   const handleSubmit = async (e: React.FormEvent) => {
