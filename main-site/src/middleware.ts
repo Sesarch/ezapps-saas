@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
   }
   
   // Main domain logic - only allow dashboard access from platform subdomains
-  if (isMainDomain && url.pathname.startsWith('/dashboard')) {
+  // EXCEPT for /dashboard/stores which is needed to connect first store
+  if (isMainDomain && url.pathname.startsWith('/dashboard') && url.pathname !== '/dashboard/stores') {
     // Redirect to platform selection or first connected store
     return NextResponse.redirect(new URL('/add-platform', request.url))
   }
