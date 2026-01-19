@@ -15,7 +15,7 @@ export default function EmergencyLoginPage() {
     setResult(null)
 
     try {
-      const response = await fetch('/api/auth/admin-login', {
+      const response = await fetch('/api/emergency-login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -76,9 +76,9 @@ export default function EmergencyLoginPage() {
             {result && (
               <div className="bg-green-50 text-green-800 px-4 py-3 rounded-lg text-sm">
                 <p className="font-semibold mb-2">✅ Link Generated!</p>
-                {result.actionLink ? (
+                {result.action_link ? (
                   <a 
-                    href={result.actionLink}
+                    href={result.action_link}
                     className="text-blue-600 hover:underline break-all block"
                   >
                     Click here to login
