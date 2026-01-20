@@ -17,17 +17,32 @@ export default function InventoryPage() {
   // Fetch user's stores
   useEffect(() => {
     if (user) {
+      // First get the Shopify platform UUID
       supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('platform_id', 'shopify')
-        .then(({ data, error }) => {
-          setStores(data || [])
-          if (data && data.length > 0) {
-            setSelectedStore(data[0])
+        .from('platforms')
+        .select('id')
+        .eq('slug', 'shopify')
+        .single()
+        .then(({ data: platform, error: platformError }) => {
+          if (platformError || !platform) {
+            console.error('Platform lookup error:', platformError)
+            setLoading(false)
+            return
           }
-          setLoading(false)
+
+          // Now fetch stores with the correct platform UUID
+          supabase
+            .from('stores')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('platform_id', platform.id)
+            .then(({ data, error }) => {
+              setStores(data || [])
+              if (data && data.length > 0) {
+                setSelectedStore(data[0])
+              }
+              setLoading(false)
+            })
         })
     }
   }, [user])
