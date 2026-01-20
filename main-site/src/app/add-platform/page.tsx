@@ -25,13 +25,25 @@ function PlatformSelectionContent() {
 
   const loadConnectedStores = async () => {
     const supabase = createClient()
+    
+    // First get all platforms with their UUIDs and slugs
+    const { data: platformsData } = await supabase
+      .from('platforms')
+      .select('id, slug')
+    
+    // Then get user's stores
     const { data, error} = await supabase
       .from('stores')
-      .select('*')
+      .select('*, platforms(slug)')
       .eq('user_id', user?.id)
 
     if (!error && data) {
-      setConnectedStores(data)
+      // Map stores to include platform slugs
+      const storesWithSlugs = data.map(store => ({
+        ...store,
+        platform_slug: store.platforms?.slug || null
+      }))
+      setConnectedStores(storesWithSlugs)
     }
     setLoadingStores(false)
   }
@@ -63,7 +75,7 @@ function PlatformSelectionContent() {
 
   const availablePlatforms = Object.keys(platforms).map(id => ({
     ...platforms[id],
-    connected: connectedStores.some(s => s.platform_id === id)
+    connected: connectedStores.some(s => s.platform_slug === id)
   }))
 
   return (
@@ -77,13 +89,24 @@ function PlatformSelectionContent() {
             </a>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.email}</span>
-            <a 
-              href="/login" 
-              className="text-sm text-teal-600 hover:text-teal-700 font-medium"
-            >
-              Login
-            </a>
+            {user ? (
+              <>
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <a 
+                  href="/auth/signout" 
+                  className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  Sign Out
+                </a>
+              </>
+            ) : (
+              <a 
+                href="/login" 
+                className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 font-medium transition-colors"
+              >
+                Login
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -94,9 +117,17 @@ function PlatformSelectionContent() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Select Your Platform
           </h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-gray-600 mb-4">
             Choose which e-commerce platform you want to manage
           </p>
+          {connectedStores.length > 0 && (
+            <a 
+              href="/dashboard/stores" 
+              className="inline-block text-sm text-teal-600 hover:text-teal-700 font-medium underline"
+            >
+              Or go to Stores page →
+            </a>
+          )}
         </div>
 
         {/* Platform Grid */}
