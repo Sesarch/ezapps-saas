@@ -72,10 +72,18 @@ function PlatformSelectionContent() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="EZ Apps" className="h-8" />
+            <a href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <img src="/logo.png" alt="EZ Apps" className="h-8" />
+            </a>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-gray-600">{user?.email}</span>
+            <a 
+              href="/login" 
+              className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+            >
+              Login
+            </a>
           </div>
         </div>
       </div>
@@ -216,4 +224,3 @@ export default function AddPlatformPage() {
     </Suspense>
   )
 }
-
