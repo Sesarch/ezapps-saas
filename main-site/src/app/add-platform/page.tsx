@@ -117,9 +117,25 @@ function PlatformSelectionContent() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Select Your Platform
           </h1>
-          <p className="text-xl text-gray-600 mb-4">
+          <p className="text-xl text-gray-600 mb-6">
             Choose which e-commerce platform you want to manage
           </p>
+          
+          {/* Prominent CTA when no platforms connected */}
+          {connectedStores.length === 0 && (
+            <div className="mb-8">
+              <button
+                onClick={() => router.push('/dashboard/stores')}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-colors shadow-lg hover:shadow-xl text-lg"
+              >
+                🚀 Connect Your First Platform
+              </button>
+              <p className="text-gray-500 text-sm mt-3">
+                Get started by connecting your e-commerce store
+              </p>
+            </div>
+          )}
+          
           {connectedStores.length > 0 && (
             <a 
               href="/dashboard/stores" 
@@ -218,21 +234,6 @@ function PlatformSelectionContent() {
             </button>
           ))}
         </div>
-
-        {/* Help Text */}
-        {connectedStores.length === 0 && (
-          <div className="mt-12 text-center">
-            <p className="text-gray-600 mb-4">
-              No platforms connected yet
-            </p>
-            <button
-              onClick={() => router.push('/dashboard/stores')}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-colors"
-            >
-              Connect Your First Platform
-            </button>
-          </div>
-        )}
 
         <div className="mt-8 text-center">
           <p className="text-gray-600">
