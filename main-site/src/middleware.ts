@@ -49,8 +49,19 @@ export async function middleware(request: NextRequest) {
   // Main domain logic - only allow dashboard access from platform subdomains
   // EXCEPT for /dashboard/stores which is needed to connect first store
   if (isMainDomain && url.pathname.startsWith('/dashboard') && url.pathname !== '/dashboard/stores') {
-    // Redirect to platform selection or first connected store
-    return NextResponse.redirect(new URL('/add-platform', request.url))
+    // Update session first to check authentication
+    const response = await updateSession(request)
+    
+    // Check if user is authenticated by looking for session cookie
+    const sessionCookie = request.cookies.get('sb-access-token')
+    
+    // Only redirect authenticated users to platform selection
+    if (sessionCookie) {
+      return NextResponse.redirect(new URL('/add-platform', request.url))
+    }
+    
+    // Logged out users should be redirected to login
+    return NextResponse.redirect(new URL('/login', request.url))
   }
   
   return await updateSession(request)
