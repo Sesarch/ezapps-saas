@@ -77,12 +77,26 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Get the Shopify platform UUID from the platforms table
+  const { data: platform, error: platformError } = await supabaseAdmin
+    .from('platforms')
+    .select('id')
+    .eq('slug', 'shopify')
+    .single()
+
+  if (platformError || !platform) {
+    console.error('Platform lookup error:', JSON.stringify(platformError))
+    return NextResponse.redirect(new URL('/dashboard/stores?error=platform_not_found', request.url))
+  }
+
+  console.log('CALLBACK - Got platform UUID:', platform.id)
+
   // Save store to database
   const { data, error: dbError } = await supabaseAdmin
     .from('stores')
     .insert({
       user_id: user.id,
-      platform_id: 'shopify',
+      platform_id: platform.id,
       store_url: shopDomain,
       access_token: accessToken,
     })
