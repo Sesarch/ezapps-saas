@@ -5,9 +5,7 @@
     "react-dom": "^18",
     "@supabase/ssr": "latest",
     "framer-motion": "^11.0.3",
-  }
 }
-{
   "name": "ezapps-main-site",
   "version": "1.0.0",
   "private": true,
