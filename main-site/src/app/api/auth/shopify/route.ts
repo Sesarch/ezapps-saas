@@ -15,15 +15,15 @@ export async function GET(request: NextRequest) {
     {
       cookies: {
         async getAll() {
-          return (await cookieStore).getAll()
-        },
-        async setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
-          const store = await cookieStore
-          cookiesToSet.forEach(({ name, value, options }) =>
-            store.set(name, value, options)
-          )
-        },
-      },
+    return (await cookieStore).getAll()
+  },
+  async setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+    const store = await cookieStore
+    cookiesToSet.forEach(({ name, value, options }) =>
+      store.set(name, value, options)
+    )
+  },
+}
     }
   )
 
