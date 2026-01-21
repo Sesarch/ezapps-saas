@@ -1,4 +1,14 @@
 {
+  "dependencies": {
+    "next": "14.2.21",
+    "react": "^18",
+    "react-dom": "^18",
+    "@supabase/ssr": "latest",
+    "framer-motion": "^11.0.3",  ← ADD THIS LINE
+    ... (your other dependencies)
+  }
+}
+{
   "name": "ezapps-main-site",
   "version": "1.0.0",
   "private": true,
