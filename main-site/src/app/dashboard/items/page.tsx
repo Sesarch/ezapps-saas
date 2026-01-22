@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Item, ItemType, ItemsFilter, CreateItemInput } from '@/types/items';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ItemFormModal } from '@/components/ItemFormModal';
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -466,18 +467,4 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
       </p>
     </motion.div>
   );
-}
-
-// Modern Form Modal (will be in next file)
-function ItemFormModal({ 
-  item, 
-  onClose, 
-  onSuccess 
-}: { 
-  item?: Item; 
-  onClose: () => void; 
-  onSuccess: () => void;
-}) {
-  // Form implementation in next message
-  return null;
 }
