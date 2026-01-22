@@ -63,10 +63,9 @@ export function ItemFormModal({
   };
 
   const typeConfig = [
-    { value: 'part', label: 'Part', icon: '⚙️', desc: 'Raw material or component' },
-    { value: 'assembly', label: 'Assembly', icon: '🏗️', desc: 'Pre-assembled unit' },
-    { value: 'component', label: 'Component', icon: '🔧', desc: 'Sellable sub-assembly' },
-    { value: 'product', label: 'Product', icon: '📦', desc: 'Final sellable item' },
+    { value: 'part', label: 'Part', icon: '⚙️', desc: 'Raw material or basic component' },
+    { value: 'component', label: 'Component', icon: '🔧', desc: 'Manufactured sub-assembly' },
+    { value: 'assembly', label: 'Assembly', icon: '🏗️', desc: 'Complete assembled unit' },
   ];
 
   return (
