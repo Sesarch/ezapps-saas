@@ -2,10 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   EZ APPS - CENTRALIZED COLOR SYSTEM
+   Edit this file to change all platform colors
+   ======================================== */
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* ===== PRIMARY BRAND COLORS ===== */
+  --primary-50: #f0fdfa;
+  --primary-100: #ccfbf1;
+  --primary-200: #99f6e4;
+  --primary-300: #5eead4;
+  --primary-400: #2dd4bf;
+  --primary-500: #14b8a6;  /* Main Brand Color - Teal */
+  --primary-600: #0d9488;
+  --primary-700: #0f766e;
+  --primary-800: #115e59;
+  --primary-900: #134e4a;
+
+  /* ===== SECONDARY COLORS ===== */
+  --secondary-50: #faf5ff;
+  --secondary-100: #f3e8ff;
+  --secondary-200: #e9d5ff;
+  --secondary-300: #d8b4fe;
+  --secondary-400: #c084fc;
+  --secondary-500: #a855f7;  /* Purple Accent */
+  --secondary-600: #9333ea;
+  --secondary-700: #7e22ce;
+  --secondary-800: #6b21a8;
+  --secondary-900: #581c87;
+
+  /* ===== ACCENT COLORS ===== */
+  --accent-blue: #3b82f6;
+  --accent-indigo: #6366f1;
+  --accent-pink: #ec4899;
+  --accent-orange: #f97316;
+  --accent-yellow: #eab308;
+  --accent-green: #22c55e;
+
+  /* ===== NEUTRAL COLORS ===== */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* ===== STATUS COLORS ===== */
+  --success-light: #d1fae5;
+  --success: #10b981;
+  --success-dark: #059669;
+  
+  --warning-light: #fef3c7;
+  --warning: #f59e0b;
+  --warning-dark: #d97706;
+  
+  --error-light: #fee2e2;
+  --error: #ef4444;
+  --error-dark: #dc2626;
+  
+  --info-light: #dbeafe;
+  --info: #3b82f6;
+  --info-dark: #2563eb;
+
+  /* ===== BACKGROUND GRADIENTS ===== */
+  --bg-gradient-start: #f8fafc;
+  --bg-gradient-via: #f0f9ff;
+  --bg-gradient-end: #f5f3ff;
+
+  /* ===== GLASSMORPHISM EFFECTS ===== */
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(0, 0, 0, 0.1);
+
+  /* ===== TEXT COLORS ===== */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  /* ===== SIDEBAR/NAVIGATION ===== */
+  --sidebar-bg: #0f172a;
+  --sidebar-text: #e2e8f0;
+  --sidebar-hover: #1e293b;
+  --sidebar-active: #14b8a6;
+  --sidebar-active-bg: rgba(20, 184, 166, 0.1);
 }
 
 html {
@@ -13,5 +97,53 @@ html {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: var(--text-primary);
+  background: linear-gradient(
+    135deg,
+    var(--bg-gradient-start),
+    var(--bg-gradient-via),
+    var(--bg-gradient-end)
+  );
+  min-height: 100vh;
+}
+
+/* ===== UTILITY CLASSES FOR COLOR SYSTEM ===== */
+@layer utilities {
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  }
+
+  .gradient-secondary {
+    background: linear-gradient(135deg, var(--secondary-500), var(--secondary-600));
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, var(--accent-indigo), var(--accent-pink));
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-rainbow {
+    background: linear-gradient(
+      135deg,
+      var(--accent-indigo),
+      var(--secondary-500),
+      var(--accent-pink)
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }

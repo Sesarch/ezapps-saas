@@ -30,11 +30,10 @@ function DashboardContent({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
         <div className="text-center">
           <div 
-            className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
-            style={{ borderColor: themeColor, borderTopColor: 'transparent' }}
+            className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"
           ></div>
           <p className="text-gray-600">Loading...</p>
         </div>
@@ -49,11 +48,10 @@ function DashboardContent({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
-    { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
-    { name: 'Parts', href: '/dashboard/parts', icon: '🔧' },
+    { name: 'Items', href: '/dashboard/items', icon: '📦' },
+    { name: 'BOM Builder', href: '/dashboard/bom', icon: '🔗' },
     { name: 'Scan', href: '/dashboard/scan', icon: '📷' },
     { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🚚' },
-    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
     { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
     { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
     { name: 'Build Orders', href: '/dashboard/builds', icon: '🏭' },
@@ -62,11 +60,10 @@ function DashboardContent({
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       {/* Mobile Header */}
       <div 
-        className="lg:hidden border-b px-4 py-3 flex items-center justify-between"
-        style={{ backgroundColor: `${themeColor}10`, borderColor: `${themeColor}30` }}
+        className="lg:hidden border-b border-gray-200 px-4 py-3 flex items-center justify-between bg-white/80 backdrop-blur-xl"
       >
         <Link href="/dashboard">
           <img src="/logo.png" alt="EZ Apps" className="h-8" />
@@ -74,8 +71,7 @@ function DashboardContent({
         <div className="flex items-center gap-2">
           {/* Mobile Platform Badge */}
           <div 
-            className="px-3 py-1.5 rounded-lg flex items-center gap-2 text-white text-sm font-medium"
-            style={{ backgroundColor: themeColor }}
+            className="px-3 py-1.5 rounded-lg flex items-center gap-2 text-white text-sm font-medium bg-gradient-primary"
           >
             <span>{currentPlatform?.icon || '🏪'}</span>
             <span className="hidden sm:inline">{currentPlatform?.name || 'Platform'}</span>
@@ -99,14 +95,14 @@ function DashboardContent({
         {/* Sidebar */}
         <aside className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-64 bg-white border-r border-gray-200
+          w-64 bg-sidebar-bg
           transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}>
           <div className="flex flex-col h-full">
             {/* Logo & Platform Badge */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-sidebar-hover">
               <div className="flex items-center h-16 px-6">
                 <Link href="/dashboard">
                   <img src="/logo.png" alt="EZ Apps" className="h-8" />
@@ -116,8 +112,7 @@ function DashboardContent({
               {/* Platform Badge (Desktop) */}
               <div className="px-4 pb-4">
                 <div 
-                  className="px-4 py-3 rounded-xl flex items-center gap-3 text-white"
-                  style={{ backgroundColor: themeColor }}
+                  className="px-4 py-3 rounded-xl flex items-center gap-3 text-white bg-gradient-primary shadow-lg"
                 >
                   <span className="text-2xl">{currentPlatform?.icon || '🏪'}</span>
                   <div>
@@ -137,14 +132,11 @@ function DashboardContent({
                     key={item.name}
                     href={item.href}
                     onClick={() => setSidebarOpen(false)}
-                    className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex items-center px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                       isActive
-                        ? 'text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-sidebar-active-bg text-sidebar-active'
+                        : 'text-sidebar-text hover:bg-sidebar-hover hover:text-white'
                     }`}
-                    style={{
-                      backgroundColor: isActive ? `${themeColor}20` : undefined
-                    }}
                   >
                     <span className="mr-3 text-lg">{item.icon}</span>
                     {item.name}
@@ -153,25 +145,24 @@ function DashboardContent({
               })}
 
               {/* Divider */}
-              <div className="my-4 border-t border-gray-200"></div>
+              <div className="my-4 border-t border-sidebar-hover"></div>
 
               {/* User Section */}
               <div className="px-4 py-3">
                 <div className="flex items-center mb-4">
                   <div 
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold"
-                    style={{ backgroundColor: themeColor }}
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold bg-gradient-primary"
                   >
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
                   <div className="ml-3 overflow-hidden">
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.email}</p>
+                    <p className="text-sm font-medium text-sidebar-text truncate">{user.email}</p>
                     <p className="text-xs text-gray-500">Free Trial</p>
                   </div>
                 </div>
                 <button
                   onClick={signOut}
-                  className="w-full flex items-center px-4 py-2.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="w-full flex items-center px-4 py-2.5 text-sm text-sidebar-text hover:text-white hover:bg-sidebar-hover rounded-lg transition-all"
                 >
                   <span className="mr-3">🚪</span>
                   Sign Out
@@ -205,8 +196,8 @@ export default function DashboardLayout({
 }) {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+        <div className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <DashboardContent>{children}</DashboardContent>
