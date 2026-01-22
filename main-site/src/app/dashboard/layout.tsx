@@ -48,6 +48,7 @@ function DashboardContent({
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
     { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
+    { name: 'Products', href: '/dashboard/inventory', icon: '🎯' },
     { name: 'Items', href: '/dashboard/items', icon: '📦' },
     { name: 'BOM Builder', href: '/dashboard/bom', icon: '🔗' },
     { name: 'Scan', href: '/dashboard/scan', icon: '📷' },
