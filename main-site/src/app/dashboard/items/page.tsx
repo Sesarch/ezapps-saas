@@ -101,13 +101,6 @@ export default function ItemsPage() {
 
   const stats = {
     total: items.length,
-    const stats = {
-  total: items.length,
-  components: items.filter(i => i.item_type === 'component').length,
-  parts: items.filter(i => i.item_type === 'part').length,
-  assemblies: items.filter(i => i.item_type === 'assembly').length,
-  lowStock: items.filter(i => i.track_inventory && i.available_stock <= i.min_stock_level).length,
-};
     components: items.filter(i => i.item_type === 'component').length,
     parts: items.filter(i => i.item_type === 'part').length,
     assemblies: items.filter(i => i.item_type === 'assembly').length,
@@ -126,17 +119,16 @@ export default function ItemsPage() {
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
             Items Management
           </h1>
-          <p className="text-slate-600 text-lg">Manage your inventory with precision and style</p>
+          <p className="text-slate-600 text-lg">Internal inventory - Parts, Components & Assemblies</p>
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <StatsCard label="Total" value={stats.total} icon="📦" gradient="from-blue-500 to-cyan-500" delay={0} />
-          <StatsCard label="Products" value={stats.products} icon="🎯" gradient="from-green-500 to-emerald-500" delay={0.1} />
+          <StatsCard label="Parts" value={stats.parts} icon="⚙️" gradient="from-yellow-500 to-orange-500" delay={0.1} />
           <StatsCard label="Components" value={stats.components} icon="🔧" gradient="from-purple-500 to-pink-500" delay={0.2} />
-          <StatsCard label="Parts" value={stats.parts} icon="⚙️" gradient="from-yellow-500 to-orange-500" delay={0.3} />
-          <StatsCard label="Assemblies" value={stats.assemblies} icon="🏗️" gradient="from-indigo-500 to-purple-500" delay={0.4} />
-          <StatsCard label="Low Stock" value={stats.lowStock} icon="⚠️" gradient="from-red-500 to-rose-500" delay={0.5} pulse={stats.lowStock > 0} />
+          <StatsCard label="Assemblies" value={stats.assemblies} icon="🏗️" gradient="from-indigo-500 to-purple-500" delay={0.3} />
+          <StatsCard label="Low Stock" value={stats.lowStock} icon="⚠️" gradient="from-red-500 to-rose-500" delay={0.4} pulse={stats.lowStock > 0} />
         </div>
 
         {/* Filters Bar */}
@@ -168,9 +160,8 @@ export default function ItemsPage() {
               className="px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
             >
               <option value="">All Types</option>
-              <option value="product">📦 Products</option>
-              <option value="component">🔧 Components</option>
               <option value="part">⚙️ Parts</option>
+              <option value="component">🔧 Components</option>
               <option value="assembly">🏗️ Assemblies</option>
             </select>
 
@@ -216,51 +207,39 @@ export default function ItemsPage() {
         ) : filteredItems.length === 0 ? (
           <EmptyState hasFilters={!!searchTerm || !!filter.item_type || filter.can_sell !== undefined || !!filter.low_stock} />
         ) : (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="grid gap-4"
-          >
+          <div className="space-y-4">
             {filteredItems.map((item, index) => (
-              <ItemCard
-                key={item.id}
-                item={item}
+              <ItemCard 
+                key={item.id} 
+                item={item} 
                 index={index}
                 onEdit={() => setEditingItem(item)}
                 onDelete={() => handleDelete(item.id, item.name)}
               />
             ))}
-          </motion.div>
+          </div>
         )}
 
-        {/* Modals */}
+        {/* Modal */}
         <AnimatePresence>
-          {showAddModal && (
+          {(showAddModal || editingItem) && (
             <ItemFormModal
-              onClose={() => setShowAddModal(false)}
-              onSuccess={() => {
+              item={editingItem || undefined}
+              onClose={() => {
                 setShowAddModal(false);
-                loadItems();
-                showToast('Item created successfully!', 'success');
-              }}
-            />
-          )}
-
-          {editingItem && (
-            <ItemFormModal
-              item={editingItem}
-              onClose={() => setEditingItem(null)}
-              onSuccess={() => {
                 setEditingItem(null);
+              }}
+              onSuccess={() => {
                 loadItems();
-                showToast('Item updated successfully!', 'success');
+                setShowAddModal(false);
+                setEditingItem(null);
+                showToast(editingItem ? 'Item updated successfully' : 'Item created successfully', 'success');
               }}
             />
           )}
         </AnimatePresence>
 
-        {/* Toast Notification */}
+        {/* Toast */}
         <AnimatePresence>
           {toast && (
             <motion.div
@@ -339,9 +318,8 @@ function ItemCard({
   onDelete: () => void;
 }) {
   const typeConfig = {
-    product: { icon: '📦', color: 'from-green-500 to-emerald-500', bg: 'bg-green-50' },
-    component: { icon: '🔧', color: 'from-purple-500 to-pink-500', bg: 'bg-purple-50' },
     part: { icon: '⚙️', color: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50' },
+    component: { icon: '🔧', color: 'from-purple-500 to-pink-500', bg: 'bg-purple-50' },
     assembly: { icon: '🏗️', color: 'from-indigo-500 to-purple-500', bg: 'bg-indigo-50' },
   }[item.item_type];
 
