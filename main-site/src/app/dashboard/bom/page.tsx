@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-interface Part {
+interface Item {
   id: string
   name: string
   sku: string | null
-  in_stock: number
+  type: 'part' | 'component' | 'assembly'
+  quantity: number
   unit: string
+  description?: string
 }
 
 interface BomItem {
@@ -17,9 +19,9 @@ interface BomItem {
   shopify_variant_id: string
   product_title: string
   variant_title: string | null
-  part_id: string
+  item_id: string
   quantity_needed: number
-  part?: Part
+  item?: Item
 }
 
 interface Product {
@@ -37,7 +39,7 @@ interface Store {
 
 export default function BomPage() {
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  const [parts, setParts] = useState<Part[]>([])
+  const [items, setItems] = useState<Item[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
@@ -45,7 +47,7 @@ export default function BomPage() {
   const [showModal, setShowModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<string>('')
   const [selectedVariant, setSelectedVariant] = useState<string>('')
-  const [selectedPart, setSelectedPart] = useState<string>('')
+  const [selectedItem, setSelectedItem] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
 
   const supabase = createClient()
@@ -56,7 +58,7 @@ export default function BomPage() {
 
   useEffect(() => {
     if (store) {
-      fetchParts()
+      fetchItems()
       fetchBomItems()
       fetchProducts()
     }
@@ -85,14 +87,14 @@ export default function BomPage() {
     }
   }
 
-  async function fetchParts() {
+  async function fetchItems() {
     if (!store) return
     const { data } = await supabase
-      .from('parts')
+      .from('items')
       .select('*')
       .eq('store_id', store.id)
       .order('name')
-    setParts(data || [])
+    setItems(data || [])
   }
 
   async function fetchBomItems() {
@@ -100,7 +102,7 @@ export default function BomPage() {
     try {
       const { data, error } = await supabase
         .from('bom_items')
-        .select('*, part:parts(*)')
+        .select('*, item:items(*)')
         .eq('store_id', store.id)
 
       if (error) throw error
@@ -126,8 +128,8 @@ export default function BomPage() {
   }
 
   async function addBomItem() {
-    if (!store || !selectedProduct || !selectedVariant || !selectedPart) {
-      alert('Please select product, variant, and part')
+    if (!store || !selectedProduct || !selectedVariant || !selectedItem) {
+      alert('Please select product, variant, and item')
       return
     }
 
@@ -143,7 +145,7 @@ export default function BomPage() {
           shopify_variant_id: selectedVariant,
           product_title: product?.title || '',
           variant_title: variant?.title || null,
-          part_id: selectedPart,
+          item_id: selectedItem,
           quantity_needed: quantity
         })
 
@@ -169,7 +171,7 @@ export default function BomPage() {
   function openModal() {
     setSelectedProduct('')
     setSelectedVariant('')
-    setSelectedPart('')
+    setSelectedItem('')
     setQuantity(1)
     setShowModal(true)
   }
@@ -247,8 +249,8 @@ export default function BomPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Available Parts</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{parts.length}</p>
+              <p className="text-sm text-gray-500">Available Items</p>
+              <p className="text-3xl font-bold text-blue-600 mt-1">{items.length}</p>
             </div>
             <div className="text-3xl">🔧</div>
           </div>
@@ -258,18 +260,18 @@ export default function BomPage() {
       {/* Actions */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
         <div className="flex justify-between items-center">
-          <p className="text-gray-600">Link parts to your Shopify products</p>
+          <p className="text-gray-600">Link items to your Shopify products</p>
           <button
             onClick={openModal}
-            disabled={parts.length === 0}
+            disabled={items.length === 0}
             className="flex items-center px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span className="mr-2">+</span> Add BOM Entry
           </button>
         </div>
-        {parts.length === 0 && (
+        {items.length === 0 && (
           <p className="text-yellow-600 text-sm mt-2">
-            ⚠️ Add parts first before creating BOM. <a href="/dashboard/parts" className="underline">Go to Parts</a>
+            ⚠️ Add items first before creating BOM. <a href="/dashboard/items" className="underline">Go to Items</a>
           </p>
         )}
       </div>
@@ -284,7 +286,7 @@ export default function BomPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="text-5xl mb-4">📋</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No BOM entries yet</h3>
-            <p className="text-gray-500 mb-4">Start by linking parts to your products</p>
+            <p className="text-gray-500 mb-4">Start by linking items to your products</p>
           </div>
         ) : (
           Object.entries(groupedBom).map(([key, group]) => (
@@ -300,11 +302,16 @@ export default function BomPage() {
                   <div key={item.id} className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                        🔧
+                        {item.item?.type === 'part' ? '🔧' : item.item?.type === 'component' ? '⚙️' : '📦'}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.part?.name || 'Unknown Part'}</p>
-                        <p className="text-sm text-gray-500">SKU: {item.part?.sku || '-'}</p>
+                        <p className="font-medium text-gray-900">{item.item?.name || 'Unknown Item'}</p>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>SKU: {item.item?.sku || '-'}</span>
+                          <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium capitalize">
+                            {item.item?.type || 'unknown'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-6">
@@ -314,8 +321,8 @@ export default function BomPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-gray-500">In Stock</p>
-                        <p className={`font-bold ${(item.part?.in_stock || 0) < item.quantity_needed ? 'text-red-600' : 'text-green-600'}`}>
-                          {item.part?.in_stock || 0}
+                        <p className={`font-bold ${(item.item?.quantity || 0) < item.quantity_needed ? 'text-red-600' : 'text-green-600'}`}>
+                          {item.item?.quantity || 0}
                         </p>
                       </div>
                       <button
@@ -330,7 +337,7 @@ export default function BomPage() {
               </div>
               <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
                 <p className="text-sm text-gray-600">
-                  Total parts: {group.items.length} | 
+                  Total items: {group.items.length} | 
                   Total cost: <span className="font-medium">Calculate from supplier prices</span>
                 </p>
               </div>
@@ -382,15 +389,17 @@ export default function BomPage() {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Part *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Item *</label>
                 <select
-                  value={selectedPart}
-                  onChange={(e) => setSelectedPart(e.target.value)}
+                  value={selectedItem}
+                  onChange={(e) => setSelectedItem(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  <option value="">Select a part...</option>
-                  {parts.map(part => (
-                    <option key={part.id} value={part.id}>{part.name} ({part.in_stock} in stock)</option>
+                  <option value="">Select an item...</option>
+                  {items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.name} ({item.type}) - {item.quantity} in stock
+                    </option>
                   ))}
                 </select>
               </div>
