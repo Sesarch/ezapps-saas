@@ -8,24 +8,79 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Your Custom Color Palette
-        gold: '#ffce00',
-        turquoise: '#7fe1e5',
-        peach: '#FCA47C',
-        // Extended shades
-        'turquoise-light': '#a8eef1',
-        'turquoise-dark': '#5cbec2',
-        'gold-light': '#ffe066',
-        'gold-dark': '#e6b800',
-        'peach-light': '#fdb99a',
-        'peach-dark': '#fb8f5e',
-        // Neutral colors
-        dark: '#1a1a2e',
-        navy: '#2d3748',
+        // PRIMARY BRAND COLORS (Teal)
+        primary: {
+          50: 'var(--primary-50)',
+          100: 'var(--primary-100)',
+          200: 'var(--primary-200)',
+          300: 'var(--primary-300)',
+          400: 'var(--primary-400)',
+          500: 'var(--primary-500)',  // Main brand color
+          600: 'var(--primary-600)',
+          700: 'var(--primary-700)',
+          800: 'var(--primary-800)',
+          900: 'var(--primary-900)',
+        },
+        // SECONDARY COLORS (Purple)
+        secondary: {
+          50: 'var(--secondary-50)',
+          100: 'var(--secondary-100)',
+          200: 'var(--secondary-200)',
+          300: 'var(--secondary-300)',
+          400: 'var(--secondary-400)',
+          500: 'var(--secondary-500)',
+          600: 'var(--secondary-600)',
+          700: 'var(--secondary-700)',
+          800: 'var(--secondary-800)',
+          900: 'var(--secondary-900)',
+        },
+        // ACCENT COLORS
+        accent: {
+          blue: 'var(--accent-blue)',
+          indigo: 'var(--accent-indigo)',
+          pink: 'var(--accent-pink)',
+          orange: 'var(--accent-orange)',
+          yellow: 'var(--accent-yellow)',
+          green: 'var(--accent-green)',
+        },
+        // STATUS COLORS
+        success: {
+          light: 'var(--success-light)',
+          DEFAULT: 'var(--success)',
+          dark: 'var(--success-dark)',
+        },
+        warning: {
+          light: 'var(--warning-light)',
+          DEFAULT: 'var(--warning)',
+          dark: 'var(--warning-dark)',
+        },
+        error: {
+          light: 'var(--error-light)',
+          DEFAULT: 'var(--error)',
+          dark: 'var(--error-dark)',
+        },
+        info: {
+          light: 'var(--info-light)',
+          DEFAULT: 'var(--info)',
+          dark: 'var(--info-dark)',
+        },
+        // SIDEBAR
+        sidebar: {
+          bg: 'var(--sidebar-bg)',
+          text: 'var(--sidebar-text)',
+          hover: 'var(--sidebar-hover)',
+          active: 'var(--sidebar-active)',
+          'active-bg': 'var(--sidebar-active-bg)',
+        },
       },
       fontFamily: {
         display: ['Sora', 'system-ui', 'sans-serif'],
         body: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gradient-primary': 'linear-gradient(135deg, var(--primary-500), var(--primary-600))',
+        'gradient-secondary': 'linear-gradient(135deg, var(--secondary-500), var(--secondary-600))',
+        'gradient-rainbow': 'linear-gradient(135deg, var(--accent-indigo), var(--secondary-500), var(--accent-pink))',
       },
     },
   },
