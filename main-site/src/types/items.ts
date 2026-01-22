@@ -1,5 +1,7 @@
 // src/types/items.ts
-export type ItemType = 'product' | 'component' | 'part' | 'assembly';
+// Note: Products are NOT items - they come from Shopify sync
+// Items are internal inventory: Parts, Components, Assemblies
+export type ItemType = 'part' | 'component' | 'assembly';
 
 export interface Item {
   id: string;
@@ -57,7 +59,6 @@ export interface ItemsFilter {
 
 export interface ItemsStats {
   total: number;
-  products: number;
   components: number;
   parts: number;
   assemblies: number;
