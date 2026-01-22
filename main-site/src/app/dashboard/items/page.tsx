@@ -101,7 +101,13 @@ export default function ItemsPage() {
 
   const stats = {
     total: items.length,
-    products: items.filter(i => i.item_type === 'product').length,
+    const stats = {
+  total: items.length,
+  components: items.filter(i => i.item_type === 'component').length,
+  parts: items.filter(i => i.item_type === 'part').length,
+  assemblies: items.filter(i => i.item_type === 'assembly').length,
+  lowStock: items.filter(i => i.track_inventory && i.available_stock <= i.min_stock_level).length,
+};
     components: items.filter(i => i.item_type === 'component').length,
     parts: items.filter(i => i.item_type === 'part').length,
     assemblies: items.filter(i => i.item_type === 'assembly').length,
