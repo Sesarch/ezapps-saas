@@ -46,9 +46,17 @@ export function ItemFormModal({
 
         if (error) throw error;
       } else {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Include user_id when creating new items
         const { error } = await supabase
           .from('items')
-          .insert([formData]);
+          .insert([{
+            ...formData,
+            user_id: user.id
+          }]);
 
         if (error) throw error;
       }
