@@ -23,18 +23,18 @@ interface BomItem {
   items?: Item
 }
 
-interface ShopifyProduct {
+interface Product {
   id: string
-  shopify_product_id: string
   title: string
-  variants: ShopifyVariant[]
+  shopify_product_id: string
+  variants?: Variant[]
 }
 
-interface ShopifyVariant {
+interface Variant {
   id: string
-  shopify_variant_id: string
   title: string | null
-  product_id: string
+  shopify_variant_id: string
+  inventory_quantity: number
 }
 
 interface ProductGroup {
@@ -46,7 +46,7 @@ interface ProductGroup {
   has_bom: boolean
 }
 
-export default function AllProductsBomPage() {
+export default function CompleteBomPage() {
   const [allProducts, setAllProducts] = useState<ProductGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<ProductGroup | null>(null)
@@ -62,21 +62,25 @@ export default function AllProductsBomPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch ALL products from Shopify sync
-      const { data: productsData } = await supabase
-        .from('products')
+      // Fetch Shopify products (these are synced from Shopify)
+      const { data: productsData, error: productsError } = await supabase
+        .from('shopify_products')
         .select(`
           id,
-          shopify_product_id,
           title,
-          variants (
+          shopify_product_id,
+          shopify_variants (
             id,
-            shopify_variant_id,
             title,
-            product_id
+            shopify_variant_id,
+            inventory_quantity
           )
         `)
         .eq('user_id', user.id)
+
+      if (productsError) {
+        console.error('Products fetch error:', productsError)
+      }
 
       // Fetch existing BOM items
       const { data: bomData } = await supabase
@@ -105,14 +109,14 @@ export default function AllProductsBomPage() {
         })
       }
 
-      // Build complete product list with BOM status
+      // Build complete product list
       const productGroups: ProductGroup[] = []
-      
-      if (productsData) {
+
+      if (productsData && productsData.length > 0) {
+        // Use Shopify products
         productsData.forEach(product => {
-          // Handle each variant separately
-          if (product.variants && product.variants.length > 0) {
-            product.variants.forEach(variant => {
+          if (product.shopify_variants && product.shopify_variants.length > 0) {
+            product.shopify_variants.forEach((variant: any) => {
               const key = `${product.shopify_product_id}-${variant.shopify_variant_id}`
               const bomItems = bomMap.get(key) || []
               
@@ -125,20 +129,33 @@ export default function AllProductsBomPage() {
                 has_bom: bomItems.length > 0
               })
             })
-          } else {
-            // Product with no variants (shouldn't happen with Shopify, but handle it)
-            const key = `${product.shopify_product_id}-default`
-            const bomItems = bomMap.get(key) || []
-            
-            productGroups.push({
-              product_id: product.shopify_product_id,
-              variant_id: 'default',
-              product_title: product.title,
-              variant_title: null,
-              items: bomItems,
-              has_bom: bomItems.length > 0
-            })
           }
+        })
+      } else {
+        // Fallback: Use products from BOM items (for those already with BOMs)
+        const uniqueProducts = new Map<string, ProductGroup>()
+        
+        if (bomData) {
+          bomData.forEach(item => {
+            const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
+            if (!uniqueProducts.has(key)) {
+              uniqueProducts.set(key, {
+                product_id: item.shopify_product_id,
+                variant_id: item.shopify_variant_id,
+                product_title: item.product_title,
+                variant_title: item.variant_title,
+                items: [],
+                has_bom: false
+              })
+            }
+          })
+        }
+
+        // Build groups from BOM items
+        uniqueProducts.forEach((group, key) => {
+          group.items = bomMap.get(key) || []
+          group.has_bom = group.items.length > 0
+          productGroups.push(group)
         })
       }
 
@@ -262,14 +279,19 @@ export default function AllProductsBomPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="text-5xl mb-4">📋</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500 mb-4">Make sure your Shopify store is connected and products are synced</p>
+            <p className="text-gray-500 mb-4">
+              Go to <strong>Products</strong> page to see if Shopify products are synced.<br/>
+              Or check <strong>Stores</strong> page to verify your connection.
+            </p>
           </div>
         ) : (
           <>
             {/* Products WITH BOMs */}
             {stats.withBom > 0 && (
               <div className="mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">✅ Products with BOM ({stats.withBom})</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  ✅ Products with BOM ({stats.withBom})
+                </h2>
                 <div className="space-y-4">
                   {allProducts
                     .filter(group => group.has_bom)
@@ -350,7 +372,9 @@ export default function AllProductsBomPage() {
             {/* Products WITHOUT BOMs */}
             {stats.withoutBom > 0 && (
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">⚠️ Products needing BOM ({stats.withoutBom})</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  ⚠️ Products needing BOM ({stats.withoutBom})
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {allProducts
                     .filter(group => !group.has_bom)
