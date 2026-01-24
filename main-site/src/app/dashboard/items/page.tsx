@@ -230,7 +230,7 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
       const itemData = {
         ...formData,
         user_id: user.id,
-        store_id: 'default',
+        store_id: null,
       };
 
       if (editItem) {
