@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Item, ItemType, ItemsFilter, CreateItemInput } from '@/types/items';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ItemFormModal } from '@/components/ItemFormModal';
+import EnhancedItemForm from '@/components/EnhancedItemForm';
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -220,24 +220,22 @@ export default function ItemsPage() {
           </div>
         )}
 
-        {/* Modal */}
-        <AnimatePresence>
-          {(showAddModal || editingItem) && (
-            <ItemFormModal
-              item={editingItem || undefined}
-              onClose={() => {
-                setShowAddModal(false);
-                setEditingItem(null);
-              }}
-              onSuccess={() => {
-                loadItems();
-                setShowAddModal(false);
-                setEditingItem(null);
-                showToast(editingItem ? 'Item updated successfully' : 'Item created successfully', 'success');
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {/* Enhanced Modal */}
+        {(showAddModal || editingItem) && (
+          <EnhancedItemForm
+            onClose={() => {
+              setShowAddModal(false);
+              setEditingItem(null);
+            }}
+            onSuccess={() => {
+              loadItems();
+              setShowAddModal(false);
+              setEditingItem(null);
+              showToast(editingItem ? 'Item updated successfully' : 'Item created successfully', 'success');
+            }}
+            editItem={editingItem || undefined}
+          />
+        )}
 
         {/* Toast */}
         <AnimatePresence>
