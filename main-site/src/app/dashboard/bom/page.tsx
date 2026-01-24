@@ -109,10 +109,13 @@ export default function BomPage() {
   async function fetchBomItems() {
     if (!store) return
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
       const { data, error } = await supabase
         .from('bom_items')
         .select('*, item:items(*)')
-        .eq('store_id', store.id)
+        .eq('user_id', user.id)
 
       if (error) throw error
       setBomItems(data || [])
@@ -146,9 +149,17 @@ export default function BomPage() {
     const variant = product?.variants.find(v => v.id.toString() === selectedVariant)
 
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert('User not authenticated')
+        return
+      }
+
       const { error } = await supabase
         .from('bom_items')
         .insert({
+          user_id: user.id,  // Include user_id for RLS
           store_id: store.id,
           shopify_product_id: selectedProduct,
           shopify_variant_id: selectedVariant,
