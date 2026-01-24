@@ -10,7 +10,7 @@ interface Item {
   sku: string;
   description?: string;
   item_type: string;
-  unit_abbreviation?: string;
+  unit?: string;
   current_stock: number;
   min_stock: number;
   available_stock?: number;
@@ -146,9 +146,9 @@ export default function ItemsPage() {
                       <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
                         {item.item_type}
                       </span>
-                      {item.unit_abbreviation && (
+                      {item.unit && (
                         <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          {item.unit_abbreviation}
+                          {item.unit}
                         </span>
                       )}
                     </div>
@@ -217,7 +217,7 @@ export default function ItemsPage() {
 function ItemForm({ onClose, onSuccess, editItem }: any) {
   const [formData, setFormData] = useState({
     item_type: editItem?.item_type || 'part',
-    unit_abbreviation: editItem?.unit_abbreviation || 'pcs',
+    unit: editItem?.unit || 'pcs',
     name: editItem?.name || '',
     sku: editItem?.sku || '',
     description: editItem?.description || '',
@@ -349,8 +349,8 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
                   Unit of Measure *
                 </label>
                 <select
-                  value={formData.unit_abbreviation}
-                  onChange={(e) => setFormData({ ...formData, unit_abbreviation: e.target.value })}
+                  value={formData.unit}
+                  onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   className="w-full px-4 py-3 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium"
                 >
                   {units.map(category => (
