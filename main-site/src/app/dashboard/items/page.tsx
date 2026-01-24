@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// All types defined inline - NO IMPORTS
 interface Item {
   id: string;
   name: string;
   sku: string;
   description?: string;
   item_type: string;
+  unit_abbreviation?: string;
   current_stock: number;
   min_stock: number;
   available_stock?: number;
@@ -141,7 +141,17 @@ export default function ItemsPage() {
               <div key={item.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold mb-2">{item.name}</h3>
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-bold">{item.name}</h3>
+                      <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                        {item.item_type}
+                      </span>
+                      {item.unit_abbreviation && (
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          {item.unit_abbreviation}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-slate-600">SKU: {item.sku}</p>
                     {item.description && <p className="text-sm text-slate-500 mt-1">{item.description}</p>}
                   </div>
@@ -206,10 +216,11 @@ export default function ItemsPage() {
 
 function ItemForm({ onClose, onSuccess, editItem }: any) {
   const [formData, setFormData] = useState({
+    item_type: editItem?.item_type || 'part',
+    unit_abbreviation: editItem?.unit_abbreviation || 'pcs',
     name: editItem?.name || '',
     sku: editItem?.sku || '',
     description: editItem?.description || '',
-    item_type: editItem?.item_type || 'part',
     current_stock: editItem?.current_stock || 0,
     min_stock: editItem?.min_stock || 0,
   });
@@ -217,6 +228,40 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
   const [error, setError] = useState('');
 
   const supabase = createClient();
+
+  // Common units grouped by category
+  const units = [
+    { category: '📦 Quantity', options: [
+      { value: 'pcs', label: 'pcs (pieces)' },
+      { value: 'box', label: 'box (boxes)' },
+      { value: 'pack', label: 'pack (packs)' },
+      { value: 'set', label: 'set (sets)' },
+      { value: 'pair', label: 'pair (pairs)' },
+      { value: 'dozen', label: 'dozen' },
+      { value: 'roll', label: 'roll (rolls)' },
+      { value: 'sheet', label: 'sheet (sheets)' },
+    ]},
+    { category: '⚖️ Weight', options: [
+      { value: 'kg', label: 'kg (kilograms)' },
+      { value: 'g', label: 'g (grams)' },
+      { value: 'mg', label: 'mg (milligrams)' },
+      { value: 'lb', label: 'lb (pounds)' },
+      { value: 'oz', label: 'oz (ounces)' },
+    ]},
+    { category: '📏 Length', options: [
+      { value: 'm', label: 'm (meters)' },
+      { value: 'cm', label: 'cm (centimeters)' },
+      { value: 'mm', label: 'mm (millimeters)' },
+      { value: 'ft', label: 'ft (feet)' },
+      { value: 'in', label: 'in (inches)' },
+    ]},
+    { category: '🧪 Volume', options: [
+      { value: 'L', label: 'L (liters)' },
+      { value: 'mL', label: 'mL (milliliters)' },
+      { value: 'gal', label: 'gal (gallons)' },
+      { value: 'qt', label: 'qt (quarts)' },
+    ]},
+  ];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -230,7 +275,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
       const itemData = {
         ...formData,
         user_id: user.id,
-        store_id: null,
       };
 
       if (editItem) {
@@ -261,110 +305,162 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold">{editItem ? 'Edit Item' : 'Create Item'}</h2>
-          <button onClick={onClose} className="text-2xl hover:text-gray-600">✕</button>
+        <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 flex justify-between items-center rounded-t-2xl">
+          <h2 className="text-2xl font-bold">{editItem ? '✏️ Edit Item' : '✨ Create New Item'}</h2>
+          <button onClick={onClose} className="text-2xl hover:text-gray-200 transition-colors">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-              {error}
+            <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-lg font-medium">
+              ⚠️ {error}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Name *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                placeholder="Item name"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">SKU *</label>
-              <input
-                type="text"
-                required
-                value={formData.sku}
-                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                placeholder="SKU-001"
-              />
+          {/* TOP SECTION: Type & Unit */}
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border-2 border-indigo-100">
+            <h3 className="text-lg font-bold text-indigo-900 mb-4">📋 Categorization</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-indigo-900 mb-2">
+                  Item Type *
+                </label>
+                <select
+                  value={formData.item_type}
+                  onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium"
+                >
+                  <option value="part">⚙️ Part</option>
+                  <option value="component">🔧 Component</option>
+                  <option value="assembly">📦 Assembly</option>
+                  <option value="box">📦 Box</option>
+                  <option value="label">🏷️ Label</option>
+                  <option value="packaging">📦 Packaging</option>
+                  <option value="tool">🔨 Tool</option>
+                  <option value="material">🧱 Material</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-indigo-900 mb-2">
+                  Unit of Measure *
+                </label>
+                <select
+                  value={formData.unit_abbreviation}
+                  onChange={(e) => setFormData({ ...formData, unit_abbreviation: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white font-medium"
+                >
+                  {units.map(category => (
+                    <optgroup key={category.category} label={category.category}>
+                      {category.options.map(unit => (
+                        <option key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
+          {/* BASIC INFORMATION */}
           <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="Optional description..."
-            />
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📝 Basic Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Item Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., Steel Bolt M8"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  SKU / Part Number *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.sku}
+                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., BOLT-M8-001"
+                />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={3}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                placeholder="Optional description or notes..."
+              />
+            </div>
           </div>
 
+          {/* STOCK MANAGEMENT */}
           <div>
-            <label className="block text-sm font-medium mb-2">Type *</label>
-            <select
-              value={formData.item_type}
-              onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="part">Part</option>
-              <option value="component">Component</option>
-              <option value="assembly">Assembly</option>
-              <option value="box">Box</option>
-              <option value="label">Label</option>
-              <option value="packaging">Packaging</option>
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Current Stock</label>
-              <input
-                type="number"
-                value={formData.current_stock}
-                onChange={(e) => setFormData({ ...formData, current_stock: Number(e.target.value) })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Min Stock</label>
-              <input
-                type="number"
-                value={formData.min_stock}
-                onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-                min="0"
-              />
+            <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Stock Management</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Current Stock Level
+                </label>
+                <input
+                  type="number"
+                  value={formData.current_stock}
+                  onChange={(e) => setFormData({ ...formData, current_stock: Number(e.target.value) })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Minimum Stock Level
+                </label>
+                <input
+                  type="number"
+                  value={formData.min_stock}
+                  onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  min="0"
+                  placeholder="0"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* ACTIONS */}
+          <div className="flex gap-3 pt-4 border-t-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border rounded-lg hover:bg-gray-50"
+              className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? '⏳ Saving...' : editItem ? '💾 Update Item' : '✨ Create Item'}
             </button>
           </div>
         </form>
