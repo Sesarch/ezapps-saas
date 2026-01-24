@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import ProductPanel from '@/components/ProductPanel'
 
 interface Item {
   id: string
   name: string
   sku: string | null
-  item_type: 'part' | 'component' | 'assembly'
+  item_type: string
   current_stock: number
-  unit: string
-  description?: string
 }
 
 interface BomItem {
@@ -24,90 +23,26 @@ interface BomItem {
   items?: Item
 }
 
-interface Product {
-  id: string
-  title: string
-  variants: { id: string; title: string }[]
-  image?: { src: string }
+interface ProductGroup {
+  product_id: string
+  variant_id: string
+  product_title: string
+  variant_title: string | null
+  items: BomItem[]
 }
 
-interface Store {
-  id: string
-  store_url: string
-  access_token: string
-}
-
-export default function BomPage() {
+export default function EnhancedBomPage() {
   const [bomItems, setBomItems] = useState<BomItem[]>([])
-  const [items, setItems] = useState<Item[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [store, setStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [selectedProduct, setSelectedProduct] = useState<string>('')
-  const [selectedVariant, setSelectedVariant] = useState<string>('')
-  const [selectedItem, setSelectedItem] = useState<string>('')
-  const [quantity, setQuantity] = useState(1)
-
+  const [selectedProduct, setSelectedProduct] = useState<ProductGroup | null>(null)
+  
   const supabase = createClient()
 
   useEffect(() => {
-    fetchStore()
+    fetchBomItems()
   }, [])
 
-  useEffect(() => {
-    if (store) {
-      fetchItems()
-      fetchBomItems()
-      fetchProducts()
-    }
-  }, [store])
-
-  async function fetchStore() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: stores } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .limit(1)
-
-      if (stores && stores.length > 0) {
-        setStore(stores[0])
-      } else {
-        setError('Please connect a store first')
-        setLoading(false)
-      }
-    } catch (err) {
-      console.error('Error fetching store:', err)
-      setLoading(false)
-    }
-  }
-
-  async function fetchItems() {
-    if (!store) return
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      
-      // Fetch items by user_id (works with simplified RLS)
-      const { data } = await supabase
-        .from('items')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('name')
-      
-      setItems(data || [])
-    } catch (err) {
-      console.error('Error fetching items:', err)
-    }
-  }
-
   async function fetchBomItems() {
-    if (!store) return
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -126,12 +61,7 @@ export default function BomPage() {
         `)
         .eq('user_id', user.id)
 
-      if (error) {
-        console.error('Fetch error:', error)
-        throw error
-      }
-      
-      console.log('BOM items fetched:', data)
+      if (error) throw error
       setBomItems(data || [])
     } catch (err) {
       console.error('Error fetching BOM:', err)
@@ -140,122 +70,75 @@ export default function BomPage() {
     }
   }
 
-  async function fetchProducts() {
-    if (!store) return
-    try {
-      const response = await fetch(`/api/shopify/products?storeId=${store.id}`)
-      const data = await response.json()
-      if (data.products) {
-        setProducts(data.products)
-      }
-    } catch (err) {
-      console.error('Error fetching products:', err)
-    }
-  }
-
-  async function addBomItem() {
-    if (!store || !selectedProduct || !selectedVariant || !selectedItem) {
-      alert('Please select product, variant, and item')
-      return
-    }
-
-    const product = products.find(p => p.id.toString() === selectedProduct)
-    const variant = product?.variants.find(v => v.id.toString() === selectedVariant)
-
-    try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        alert('User not authenticated')
-        return
-      }
-
-      const { error } = await supabase
-        .from('bom_items')
-        .insert({
-          user_id: user.id,  // Include user_id for RLS
-          store_id: store.id,
-          shopify_product_id: selectedProduct,
-          shopify_variant_id: selectedVariant,
-          product_title: product?.title || '',
-          variant_title: variant?.title || null,
-          item_id: selectedItem,
-          quantity_needed: quantity
-        })
-
-      if (error) throw error
-      closeModal()
-      fetchBomItems()
-    } catch (err) {
-      console.error('Error adding BOM item:', err)
-      alert('Failed to add BOM item. It may already exist.')
-    }
-  }
-
-  async function deleteBomItem(id: string) {
-    if (!confirm('Remove this part from the BOM?')) return
-    try {
-      await supabase.from('bom_items').delete().eq('id', id)
-      fetchBomItems()
-    } catch (err) {
-      console.error('Error deleting BOM item:', err)
-    }
-  }
-
-  function openModal() {
-    setSelectedProduct('')
-    setSelectedVariant('')
-    setSelectedItem('')
-    setQuantity(1)
-    setShowModal(true)
-  }
-
-  function closeModal() {
-    setShowModal(false)
-  }
-
-  const selectedProductData = products.find(p => p.id.toString() === selectedProduct)
-
   // Group BOM items by product/variant
-  const groupedBom = bomItems.reduce((acc, item) => {
-    const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
-    if (!acc[key]) {
-      acc[key] = {
-        product_title: item.product_title,
-        variant_title: item.variant_title,
-        items: []
+  const productGroups: ProductGroup[] = Object.values(
+    bomItems.reduce((acc, item) => {
+      const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
+      if (!acc[key]) {
+        acc[key] = {
+          product_id: item.shopify_product_id,
+          variant_id: item.shopify_variant_id,
+          product_title: item.product_title,
+          variant_title: item.variant_title,
+          items: []
+        }
       }
+      acc[key].items.push(item)
+      return acc
+    }, {} as Record<string, ProductGroup>)
+  )
+
+  function calculateBuildable(group: ProductGroup): number {
+    if (group.items.length === 0) return 0
+    
+    const quantities = group.items.map(bomItem => {
+      const stock = bomItem.items?.current_stock || 0
+      const needed = bomItem.quantity_needed
+      return Math.floor(stock / needed)
+    })
+    
+    return Math.min(...quantities)
+  }
+
+  function getBottleneck(group: ProductGroup): string | null {
+    if (group.items.length === 0) return null
+    
+    let minUnits = Infinity
+    let bottleneck = null
+    
+    group.items.forEach(bomItem => {
+      const stock = bomItem.items?.current_stock || 0
+      const needed = bomItem.quantity_needed
+      const canBuild = Math.floor(stock / needed)
+      
+      if (canBuild < minUnits) {
+        minUnits = canBuild
+        bottleneck = bomItem.items?.name || 'Unknown'
+      }
+    })
+    
+    return bottleneck
+  }
+
+  const getItemIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      part: '🔧',
+      component: '⚙️',
+      assembly: '📦',
+      box: '📦',
+      packaging: '📦',
+      label: '🏷️'
     }
-    acc[key].items.push(item)
-    return acc
-  }, {} as Record<string, { product_title: string; variant_title: string | null; items: BomItem[] }>)
-
-  if (loading && !store) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    return icons[type.toLowerCase()] || '📦'
   }
 
-  if (error && !store) {
-    return (
-      <div className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
-          {error}. <a href="/dashboard/stores" className="underline">Go to Stores</a>
-        </div>
-      </div>
-    )
-  }
+  const uniqueProducts = productGroups.length
 
   return (
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Bill of Materials</h1>
-        <p className="text-gray-600 mt-1">Define which parts are needed to build each product variant</p>
+        <p className="text-gray-600 mt-1">Click any product to manage its BOM</p>
       </div>
 
       {/* Stats */}
@@ -264,7 +147,7 @@ export default function BomPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Products with BOM</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{Object.keys(groupedBom).length}</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{uniqueProducts}</p>
             </div>
             <div className="text-3xl">📦</div>
           </div>
@@ -283,189 +166,119 @@ export default function BomPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Available Items</p>
-              <p className="text-3xl font-bold text-blue-600 mt-1">{items.length}</p>
+              <p className="text-sm text-gray-500">Avg Items per Product</p>
+              <p className="text-3xl font-bold text-blue-600 mt-1">
+                {uniqueProducts > 0 ? (bomItems.length / uniqueProducts).toFixed(1) : 0}
+              </p>
             </div>
-            <div className="text-3xl">🔧</div>
+            <div className="text-3xl">📊</div>
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex justify-between items-center">
-          <p className="text-gray-600">Link items to your Shopify products</p>
-          <button
-            onClick={openModal}
-            disabled={items.length === 0}
-            className="flex items-center px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span className="mr-2">+</span> Add BOM Entry
-          </button>
-        </div>
-        {items.length === 0 && (
-          <p className="text-yellow-600 text-sm mt-2">
-            ⚠️ Add items first before creating BOM. <a href="/dashboard/items" className="underline">Go to Items</a>
-          </p>
-        )}
-      </div>
-
-      {/* BOM List */}
-      <div className="space-y-6">
+      {/* Product Cards */}
+      <div className="space-y-4">
         {loading ? (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
-            <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading BOMs...</p>
           </div>
-        ) : Object.keys(groupedBom).length === 0 ? (
+        ) : productGroups.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="text-5xl mb-4">📋</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No BOM entries yet</h3>
-            <p className="text-gray-500 mb-4">Start by linking items to your products</p>
+            <p className="text-gray-500 mb-4">Start by adding items to your products</p>
+            <p className="text-sm text-gray-400">
+              💡 Tip: Click any product to open its BOM panel
+            </p>
           </div>
         ) : (
-          Object.entries(groupedBom).map(([key, group]) => (
-            <div key={key} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div className="bg-gray-50 px-6 py-4 border-b border-gray-100">
-                <h3 className="font-semibold text-gray-900">{group.product_title}</h3>
-                {group.variant_title && group.variant_title !== 'Default Title' && (
-                  <p className="text-sm text-gray-500">Variant: {group.variant_title}</p>
-                )}
-              </div>
-              <div className="divide-y divide-gray-100">
-                {group.items.map((item) => (
-                  <div key={item.id} className="px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                        {item.items?.item_type === 'part' ? '🔧' : item.items?.item_type === 'component' ? '⚙️' : '📦'}
-                      </div>
+          productGroups.map((group) => {
+            const buildable = calculateBuildable(group)
+            const bottleneck = getBottleneck(group)
+            
+            return (
+              <button
+                key={`${group.product_id}-${group.variant_id}`}
+                onClick={() => setSelectedProduct(group)}
+                className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-teal-500 transition-all text-left"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="text-3xl">📦</div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.items?.name || 'Unknown Item'}</p>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <span>SKU: {item.items?.sku || '-'}</span>
-                          <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium capitalize">
-                            {item.items?.item_type || 'unknown'}
+                        <h3 className="text-lg font-bold text-gray-900">{group.product_title}</h3>
+                        {group.variant_title && group.variant_title !== 'Default Title' && (
+                          <p className="text-sm text-gray-500">Variant: {group.variant_title}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* BOM Items Preview */}
+                    <div className="space-y-2 mb-4">
+                      {group.items.slice(0, 3).map(bomItem => (
+                        <div key={bomItem.id} className="flex items-center gap-2 text-sm">
+                          <span className="text-lg">{getItemIcon(bomItem.items?.item_type || '')}</span>
+                          <span className="font-medium">{bomItem.items?.name || 'Unknown'}</span>
+                          <span className="text-gray-400">×</span>
+                          <span className="text-gray-600">{bomItem.quantity_needed}</span>
+                          <span className="text-gray-400 text-xs">
+                            ({bomItem.items?.current_stock || 0} in stock)
                           </span>
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="text-sm text-gray-500">Qty Needed</p>
-                        <p className="font-bold text-gray-900">{item.quantity_needed}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm text-gray-500">In Stock</p>
-                        <p className={`font-bold ${(item.items?.current_stock || 0) < item.quantity_needed ? 'text-red-600' : 'text-green-600'}`}>
-                          {item.items?.current_stock || 0}
+                      ))}
+                      {group.items.length > 3 && (
+                        <p className="text-sm text-gray-400 pl-7">
+                          + {group.items.length - 3} more items
                         </p>
+                      )}
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="flex items-center gap-6 text-sm">
+                      <div>
+                        <span className="text-gray-500">Total Items:</span>
+                        <span className="font-semibold text-gray-900 ml-2">{group.items.length}</span>
                       </div>
-                      <button
-                        onClick={() => deleteBomItem(item.id)}
-                        className="text-red-500 hover:text-red-700 p-2"
-                      >
-                        🗑️
-                      </button>
+                      <div>
+                        <span className="text-gray-500">Can Build:</span>
+                        <span className={`font-semibold ml-2 ${buildable > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {buildable} units
+                        </span>
+                      </div>
+                      {bottleneck && buildable < 100 && (
+                        <div>
+                          <span className="text-gray-500">Bottleneck:</span>
+                          <span className="font-semibold text-orange-600 ml-2">{bottleneck}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-              <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
-                <p className="text-sm text-gray-600">
-                  Total items: {group.items.length} | 
-                  Total cost: <span className="font-medium">Calculate from supplier prices</span>
-                </p>
-              </div>
-            </div>
-          ))
+
+                  <div className="text-teal-500 text-2xl">
+                    →
+                  </div>
+                </div>
+              </button>
+            )
+          })
         )}
       </div>
 
-      {/* Add Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900">Add BOM Entry</h2>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product *</label>
-                <select
-                  value={selectedProduct}
-                  onChange={(e) => {
-                    setSelectedProduct(e.target.value)
-                    setSelectedVariant('')
-                  }}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select a product...</option>
-                  {products.map(product => (
-                    <option key={product.id} value={product.id}>{product.title}</option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedProductData && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Variant *</label>
-                  <select
-                    value={selectedVariant}
-                    onChange={(e) => setSelectedVariant(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  >
-                    <option value="">Select a variant...</option>
-                    {selectedProductData.variants.map(variant => (
-                      <option key={variant.id} value={variant.id}>{variant.title}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Item *</label>
-                <select
-                  value={selectedItem}
-                  onChange={(e) => setSelectedItem(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                >
-                  <option value="">Select an item...</option>
-                  {items.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.name} ({item.item_type}) - {item.current_stock} in stock
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Needed *</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="px-6 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={addBomItem}
-                className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600"
-              >
-                Add to BOM
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Product Panel */}
+      {selectedProduct && (
+        <ProductPanel
+          productId={selectedProduct.product_id}
+          variantId={selectedProduct.variant_id}
+          productTitle={selectedProduct.product_title}
+          variantTitle={selectedProduct.variant_title}
+          onClose={() => setSelectedProduct(null)}
+          onUpdate={() => {
+            fetchBomItems()
+            setSelectedProduct(null)
+          }}
+        />
       )}
     </div>
   )
