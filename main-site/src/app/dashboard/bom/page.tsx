@@ -1,3 +1,16 @@
+/*
+ * INSTRUCTIONS:
+ * 
+ * 1. Go to: main-site/src/app/dashboard/bom/page.tsx
+ * 2. Open that file
+ * 3. DELETE EVERYTHING in that file
+ * 4. Copy EVERYTHING from this file (starting from 'use client' below)
+ * 5. Paste into page.tsx
+ * 6. Save
+ * 7. Restart: npm run dev
+ * 8. Refresh browser: Ctrl+Shift+R
+ */
+
 'use client'
 
 import { useState, useEffect } from 'react'
