@@ -7,8 +7,8 @@ interface Item {
   id: string
   name: string
   sku: string | null
-  type: 'part' | 'component' | 'assembly'
-  quantity: number
+  item_type: 'part' | 'component' | 'assembly'
+  current_stock: number
   unit: string
   description?: string
 }
@@ -21,7 +21,7 @@ interface BomItem {
   variant_title: string | null
   item_id: string
   quantity_needed: number
-  item?: Item
+  items?: Item
 }
 
 interface Product {
@@ -114,10 +114,24 @@ export default function BomPage() {
 
       const { data, error } = await supabase
         .from('bom_items')
-        .select('*, item:items(*)')
+        .select(`
+          *,
+          items (
+            id,
+            name,
+            sku,
+            item_type,
+            current_stock
+          )
+        `)
         .eq('user_id', user.id)
 
-      if (error) throw error
+      if (error) {
+        console.error('Fetch error:', error)
+        throw error
+      }
+      
+      console.log('BOM items fetched:', data)
       setBomItems(data || [])
     } catch (err) {
       console.error('Error fetching BOM:', err)
@@ -322,14 +336,14 @@ export default function BomPage() {
                   <div key={item.id} className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mr-4">
-                        {item.item?.type === 'part' ? '🔧' : item.item?.type === 'component' ? '⚙️' : '📦'}
+                        {item.items?.item_type === 'part' ? '🔧' : item.items?.item_type === 'component' ? '⚙️' : '📦'}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{item.item?.name || 'Unknown Item'}</p>
+                        <p className="font-medium text-gray-900">{item.items?.name || 'Unknown Item'}</p>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <span>SKU: {item.item?.sku || '-'}</span>
+                          <span>SKU: {item.items?.sku || '-'}</span>
                           <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium capitalize">
-                            {item.item?.type || 'unknown'}
+                            {item.items?.item_type || 'unknown'}
                           </span>
                         </div>
                       </div>
@@ -341,8 +355,8 @@ export default function BomPage() {
                       </div>
                       <div className="text-center">
                         <p className="text-sm text-gray-500">In Stock</p>
-                        <p className={`font-bold ${(item.item?.quantity || 0) < item.quantity_needed ? 'text-red-600' : 'text-green-600'}`}>
-                          {item.item?.quantity || 0}
+                        <p className={`font-bold ${(item.items?.current_stock || 0) < item.quantity_needed ? 'text-red-600' : 'text-green-600'}`}>
+                          {item.items?.current_stock || 0}
                         </p>
                       </div>
                       <button
@@ -418,7 +432,7 @@ export default function BomPage() {
                   <option value="">Select an item...</option>
                   {items.map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.name} ({item.type}) - {item.quantity} in stock
+                      {item.name} ({item.item_type}) - {item.current_stock} in stock
                     </option>
                   ))}
                 </select>
