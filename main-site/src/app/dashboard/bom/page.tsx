@@ -24,13 +24,13 @@ interface BomItem {
 }
 
 interface ShopifyProduct {
-  id: string
+  id: string | number
   title: string
   variants: ShopifyVariant[]
 }
 
 interface ShopifyVariant {
-  id: string
+  id: string | number
   title: string
   inventory_quantity: number
 }
@@ -44,7 +44,7 @@ interface ProductGroup {
   has_bom: boolean
 }
 
-export default function ShopifyBomPage() {
+export default function ShopifyBomPageFixed() {
   const [allProducts, setAllProducts] = useState<ProductGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<ProductGroup | null>(null)
@@ -55,6 +55,17 @@ export default function ShopifyBomPage() {
   useEffect(() => {
     fetchAllProductsAndBoms()
   }, [])
+
+  // Helper function to extract ID (handles both string GIDs and numbers)
+  function extractId(id: string | number): string {
+    if (typeof id === 'number') {
+      return String(id)
+    }
+    if (typeof id === 'string' && id.includes('gid://')) {
+      return id.split('/').pop() || id
+    }
+    return String(id)
+  }
 
   async function fetchAllProductsAndBoms() {
     try {
@@ -99,11 +110,14 @@ export default function ShopifyBomPage() {
         
         if (data.error) {
           console.error('Shopify API error:', data.error)
+          setError(data.error)
         } else {
           shopifyProducts = data.products || []
+          console.log(`Fetched ${shopifyProducts.length} products from Shopify`)
         }
       } catch (err) {
         console.error('Failed to fetch from Shopify:', err)
+        setError('Failed to fetch products from Shopify')
       }
 
       // Fetch existing BOM items from database
@@ -125,20 +139,16 @@ export default function ShopifyBomPage() {
       const bomMap = new Map<string, BomItem[]>()
       if (bomData) {
         bomData.forEach(item => {
-          // Extract just the ID from the full GID if it's there
-          const productId = item.shopify_product_id.includes('gid://') 
-            ? item.shopify_product_id.split('/').pop() || item.shopify_product_id
-            : item.shopify_product_id
-          const variantId = item.shopify_variant_id.includes('gid://')
-            ? item.shopify_variant_id.split('/').pop() || item.shopify_variant_id
-            : item.shopify_variant_id
-            
+          const productId = extractId(item.shopify_product_id)
+          const variantId = extractId(item.shopify_variant_id)
           const key = `${productId}-${variantId}`
+          
           if (!bomMap.has(key)) {
             bomMap.set(key, [])
           }
           bomMap.get(key)!.push(item)
         })
+        console.log(`Found ${bomData.length} BOM items in database`)
       }
 
       // Build product groups from Shopify products
@@ -147,14 +157,8 @@ export default function ShopifyBomPage() {
       shopifyProducts.forEach(product => {
         if (product.variants && product.variants.length > 0) {
           product.variants.forEach(variant => {
-            // Extract IDs (handle both formats: plain ID or GID)
-            const productId = product.id.includes('gid://') 
-              ? product.id.split('/').pop() || product.id
-              : product.id
-            const variantId = variant.id.includes('gid://')
-              ? variant.id.split('/').pop() || variant.id
-              : variant.id
-              
+            const productId = extractId(product.id)
+            const variantId = extractId(variant.id)
             const key = `${productId}-${variantId}`
             const bomItems = bomMap.get(key) || []
             
@@ -170,10 +174,11 @@ export default function ShopifyBomPage() {
         }
       })
 
-      console.log(`Loaded ${productGroups.length} product variants`)
+      console.log(`Created ${productGroups.length} product variants`)
       console.log(`${productGroups.filter(p => p.has_bom).length} have BOMs`)
       
       setAllProducts(productGroups)
+      setError(null)
     } catch (err) {
       console.error('Error fetching products and BOMs:', err)
       setError('Failed to load products')
