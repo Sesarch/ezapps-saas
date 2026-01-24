@@ -23,17 +23,15 @@ interface BomItem {
   items?: Item
 }
 
-interface Product {
+interface ShopifyProduct {
   id: string
   title: string
-  shopify_product_id: string
-  variants?: Variant[]
+  variants: ShopifyVariant[]
 }
 
-interface Variant {
+interface ShopifyVariant {
   id: string
-  title: string | null
-  shopify_variant_id: string
+  title: string
   inventory_quantity: number
 }
 
@@ -46,10 +44,11 @@ interface ProductGroup {
   has_bom: boolean
 }
 
-export default function CompleteBomPage() {
+export default function ShopifyBomPage() {
   const [allProducts, setAllProducts] = useState<ProductGroup[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<ProductGroup | null>(null)
+  const [error, setError] = useState<string | null>(null)
   
   const supabase = createClient()
 
@@ -60,29 +59,54 @@ export default function CompleteBomPage() {
   async function fetchAllProductsAndBoms() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      // Fetch Shopify products (these are synced from Shopify)
-      const { data: productsData, error: productsError } = await supabase
-        .from('shopify_products')
-        .select(`
-          id,
-          title,
-          shopify_product_id,
-          shopify_variants (
-            id,
-            title,
-            shopify_variant_id,
-            inventory_quantity
-          )
-        `)
-        .eq('user_id', user.id)
-
-      if (productsError) {
-        console.error('Products fetch error:', productsError)
+      if (!user) {
+        setLoading(false)
+        return
       }
 
-      // Fetch existing BOM items
+      // Get Shopify store
+      const { data: platform } = await supabase
+        .from('platforms')
+        .select('id')
+        .eq('slug', 'shopify')
+        .single()
+
+      if (!platform) {
+        setError('Shopify platform not found')
+        setLoading(false)
+        return
+      }
+
+      const { data: stores } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('platform_id', platform.id)
+
+      if (!stores || stores.length === 0) {
+        setError('No Shopify store connected')
+        setLoading(false)
+        return
+      }
+
+      const store = stores[0]
+
+      // Fetch products from Shopify API
+      let shopifyProducts: ShopifyProduct[] = []
+      try {
+        const response = await fetch(`/api/shopify/products?storeId=${store.id}`)
+        const data = await response.json()
+        
+        if (data.error) {
+          console.error('Shopify API error:', data.error)
+        } else {
+          shopifyProducts = data.products || []
+        }
+      } catch (err) {
+        console.error('Failed to fetch from Shopify:', err)
+      }
+
+      // Fetch existing BOM items from database
       const { data: bomData } = await supabase
         .from('bom_items')
         .select(`
@@ -101,7 +125,15 @@ export default function CompleteBomPage() {
       const bomMap = new Map<string, BomItem[]>()
       if (bomData) {
         bomData.forEach(item => {
-          const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
+          // Extract just the ID from the full GID if it's there
+          const productId = item.shopify_product_id.includes('gid://') 
+            ? item.shopify_product_id.split('/').pop() || item.shopify_product_id
+            : item.shopify_product_id
+          const variantId = item.shopify_variant_id.includes('gid://')
+            ? item.shopify_variant_id.split('/').pop() || item.shopify_variant_id
+            : item.shopify_variant_id
+            
+          const key = `${productId}-${variantId}`
           if (!bomMap.has(key)) {
             bomMap.set(key, [])
           }
@@ -109,59 +141,42 @@ export default function CompleteBomPage() {
         })
       }
 
-      // Build complete product list
+      // Build product groups from Shopify products
       const productGroups: ProductGroup[] = []
 
-      if (productsData && productsData.length > 0) {
-        // Use Shopify products
-        productsData.forEach(product => {
-          if (product.shopify_variants && product.shopify_variants.length > 0) {
-            product.shopify_variants.forEach((variant: any) => {
-              const key = `${product.shopify_product_id}-${variant.shopify_variant_id}`
-              const bomItems = bomMap.get(key) || []
+      shopifyProducts.forEach(product => {
+        if (product.variants && product.variants.length > 0) {
+          product.variants.forEach(variant => {
+            // Extract IDs (handle both formats: plain ID or GID)
+            const productId = product.id.includes('gid://') 
+              ? product.id.split('/').pop() || product.id
+              : product.id
+            const variantId = variant.id.includes('gid://')
+              ? variant.id.split('/').pop() || variant.id
+              : variant.id
               
-              productGroups.push({
-                product_id: product.shopify_product_id,
-                variant_id: variant.shopify_variant_id,
-                product_title: product.title,
-                variant_title: variant.title,
-                items: bomItems,
-                has_bom: bomItems.length > 0
-              })
+            const key = `${productId}-${variantId}`
+            const bomItems = bomMap.get(key) || []
+            
+            productGroups.push({
+              product_id: productId,
+              variant_id: variantId,
+              product_title: product.title,
+              variant_title: variant.title,
+              items: bomItems,
+              has_bom: bomItems.length > 0
             })
-          }
-        })
-      } else {
-        // Fallback: Use products from BOM items (for those already with BOMs)
-        const uniqueProducts = new Map<string, ProductGroup>()
-        
-        if (bomData) {
-          bomData.forEach(item => {
-            const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
-            if (!uniqueProducts.has(key)) {
-              uniqueProducts.set(key, {
-                product_id: item.shopify_product_id,
-                variant_id: item.shopify_variant_id,
-                product_title: item.product_title,
-                variant_title: item.variant_title,
-                items: [],
-                has_bom: false
-              })
-            }
           })
         }
+      })
 
-        // Build groups from BOM items
-        uniqueProducts.forEach((group, key) => {
-          group.items = bomMap.get(key) || []
-          group.has_bom = group.items.length > 0
-          productGroups.push(group)
-        })
-      }
-
+      console.log(`Loaded ${productGroups.length} product variants`)
+      console.log(`${productGroups.filter(p => p.has_bom).length} have BOMs`)
+      
       setAllProducts(productGroups)
     } catch (err) {
       console.error('Error fetching products and BOMs:', err)
+      setError('Failed to load products')
     } finally {
       setLoading(false)
     }
@@ -273,16 +288,19 @@ export default function CompleteBomPage() {
         {loading ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500">Loading products...</p>
+            <p className="text-gray-500">Loading products from Shopify...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{error}</h3>
+            <p className="text-gray-500">Please check your Shopify connection in the Stores page.</p>
           </div>
         ) : allProducts.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
             <div className="text-5xl mb-4">📋</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-500 mb-4">
-              Go to <strong>Products</strong> page to see if Shopify products are synced.<br/>
-              Or check <strong>Stores</strong> page to verify your connection.
-            </p>
+            <p className="text-gray-500">Your Shopify store doesn't have any products yet.</p>
           </div>
         ) : (
           <>
