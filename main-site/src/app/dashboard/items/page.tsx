@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { Item, ItemType, ItemsFilter, CreateItemInput } from '@/types/items';
+import type { Item, ItemType, ItemsFilter } from '@/types/items';
 import { motion, AnimatePresence } from 'framer-motion';
-import EnhancedItemForm from '@/components/EnhancedItemForm';
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
@@ -26,7 +25,6 @@ export default function ItemsPage() {
     applyFilters();
   }, [items, filter, searchTerm]);
 
-  // Auto-hide toast
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 3000);
@@ -110,7 +108,6 @@ export default function ItemsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
       <div className="max-w-[1600px] mx-auto">
-        {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -122,7 +119,6 @@ export default function ItemsPage() {
           <p className="text-slate-600 text-lg">Internal inventory - Parts, Components & Assemblies</p>
         </motion.div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <StatsCard label="Total" value={stats.total} icon="📦" gradient="from-blue-500 to-cyan-500" delay={0} />
           <StatsCard label="Parts" value={stats.parts} icon="⚙️" gradient="from-yellow-500 to-orange-500" delay={0.1} />
@@ -131,7 +127,6 @@ export default function ItemsPage() {
           <StatsCard label="Low Stock" value={stats.lowStock} icon="⚠️" gradient="from-red-500 to-rose-500" delay={0.4} pulse={stats.lowStock > 0} />
         </div>
 
-        {/* Filters Bar */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -139,7 +134,6 @@ export default function ItemsPage() {
           className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6 mb-6"
         >
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
             <div className="flex-1 relative group">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                 <span className="text-slate-400 group-focus-within:text-indigo-500 transition-colors">🔍</span>
@@ -153,7 +147,6 @@ export default function ItemsPage() {
               />
             </div>
 
-            {/* Type Filter */}
             <select
               value={filter.item_type || ''}
               onChange={(e) => setFilter({ ...filter, item_type: e.target.value as ItemType || undefined })}
@@ -165,33 +158,6 @@ export default function ItemsPage() {
               <option value="assembly">🏗️ Assemblies</option>
             </select>
 
-            {/* Sellable Filter */}
-            <select
-              value={filter.can_sell === undefined ? '' : filter.can_sell.toString()}
-              onChange={(e) => setFilter({ 
-                ...filter, 
-                can_sell: e.target.value === '' ? undefined : e.target.value === 'true' 
-              })}
-              className="px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all font-medium"
-            >
-              <option value="">All Items</option>
-              <option value="true">💰 Sellable</option>
-              <option value="false">🔒 Not Sellable</option>
-            </select>
-
-            {/* Low Stock Toggle */}
-            <button
-              onClick={() => setFilter({ ...filter, low_stock: !filter.low_stock })}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
-                filter.low_stock
-                  ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/50'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {filter.low_stock ? '✓ Low Stock' : 'Low Stock'}
-            </button>
-
-            {/* Add Button */}
             <button
               onClick={() => setShowAddModal(true)}
               className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-indigo-500/50 transition-all hover:scale-105 active:scale-95"
@@ -201,11 +167,10 @@ export default function ItemsPage() {
           </div>
         </motion.div>
 
-        {/* Items Grid/Table */}
         {isLoading ? (
           <LoadingState />
         ) : filteredItems.length === 0 ? (
-          <EmptyState hasFilters={!!searchTerm || !!filter.item_type || filter.can_sell !== undefined || !!filter.low_stock} />
+          <EmptyState hasFilters={!!searchTerm || !!filter.item_type} />
         ) : (
           <div className="space-y-4">
             {filteredItems.map((item, index) => (
@@ -220,9 +185,8 @@ export default function ItemsPage() {
           </div>
         )}
 
-        {/* Enhanced Modal */}
         {(showAddModal || editingItem) && (
-          <EnhancedItemForm
+          <SimpleItemForm
             onClose={() => {
               setShowAddModal(false);
               setEditingItem(null);
@@ -231,13 +195,12 @@ export default function ItemsPage() {
               loadItems();
               setShowAddModal(false);
               setEditingItem(null);
-              showToast(editingItem ? 'Item updated successfully' : 'Item created successfully', 'success');
+              showToast(editingItem ? 'Item updated' : 'Item created', 'success');
             }}
             editItem={editingItem || undefined}
           />
         )}
 
-        {/* Toast */}
         <AnimatePresence>
           {toast && (
             <motion.div
@@ -264,38 +227,183 @@ export default function ItemsPage() {
   );
 }
 
-// Modern Stats Card with animation
-function StatsCard({ 
-  label, 
-  value, 
-  icon, 
-  gradient, 
-  delay,
-  pulse = false 
-}: { 
-  label: string; 
-  value: number; 
-  icon: string; 
-  gradient: string;
-  delay: number;
-  pulse?: boolean;
-}) {
+// Simple Item Form - No external dependencies
+function SimpleItemForm({ onClose, onSuccess, editItem }: any) {
+  const [formData, setFormData] = useState({
+    name: editItem?.name || '',
+    sku: editItem?.sku || '',
+    description: editItem?.description || '',
+    item_type: editItem?.item_type || 'part',
+    current_stock: editItem?.current_stock || 0,
+    min_stock: editItem?.min_stock || 0,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const itemData = {
+        ...formData,
+        user_id: user.id,
+        store_id: 'default',
+      };
+
+      if (editItem) {
+        const { error } = await supabase
+          .from('items')
+          .update(itemData)
+          .eq('id', editItem.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('items')
+          .insert([itemData]);
+        if (error) throw error;
+      }
+
+      onSuccess();
+    } catch (err: any) {
+      console.error('Save error:', err);
+      setError(err.message || 'Failed to save item');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between">
+          <h2 className="text-2xl font-bold">{editItem ? 'Edit Item' : 'Create Item'}</h2>
+          <button onClick={onClose} className="text-2xl">✕</button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">{error}</div>}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Name *</label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">SKU *</label>
+              <input
+                type="text"
+                required
+                value={formData.sku}
+                onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Type *</label>
+            <select
+              value={formData.item_type}
+              onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="part">⚙️ Part</option>
+              <option value="component">🔧 Component</option>
+              <option value="assembly">🏗️ Assembly</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Current Stock</label>
+              <input
+                type="number"
+                value={formData.current_stock}
+                onChange={(e) => setFormData({ ...formData, current_stock: Number(e.target.value) })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Min Stock</label>
+              <input
+                type="number"
+                value={formData.min_stock}
+                onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-6 py-3 border rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function StatsCard({ label, value, icon, gradient, delay, pulse = false }: any) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ delay }}
-      className={`relative overflow-hidden bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all group ${
-        pulse ? 'animate-pulse' : ''
-      }`}
+      className={`bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border p-6 hover:shadow-xl transition-all ${pulse ? 'animate-pulse' : ''}`}
     >
-      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${gradient} opacity-10 rounded-full -mr-8 -mt-8 group-hover:scale-150 transition-transform`}></div>
+      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${gradient} opacity-10 rounded-full -mr-8 -mt-8`}></div>
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
           <span className="text-2xl">{icon}</span>
-          <span className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
-            {value}
-          </span>
+          <span className={`text-3xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>{value}</span>
         </div>
         <p className="text-sm font-medium text-slate-600">{label}</p>
       </div>
@@ -303,23 +411,12 @@ function StatsCard({
   );
 }
 
-// Modern Item Card
-function ItemCard({ 
-  item, 
-  index,
-  onEdit, 
-  onDelete 
-}: { 
-  item: Item; 
-  index: number;
-  onEdit: () => void; 
-  onDelete: () => void;
-}) {
+function ItemCard({ item, index, onEdit, onDelete }: any) {
   const typeConfig = {
     part: { icon: '⚙️', color: 'from-yellow-500 to-orange-500', bg: 'bg-yellow-50' },
     component: { icon: '🔧', color: 'from-purple-500 to-pink-500', bg: 'bg-purple-50' },
     assembly: { icon: '🏗️', color: 'from-indigo-500 to-purple-500', bg: 'bg-indigo-50' },
-  }[item.item_type];
+  }[item.item_type] || { icon: '📦', color: 'from-blue-500 to-cyan-500', bg: 'bg-blue-50' };
 
   const isLowStock = item.track_inventory && item.available_stock <= item.min_stock_level;
 
@@ -328,96 +425,52 @@ function ItemCard({
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 p-6 hover:shadow-xl transition-all group"
+      className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border p-6 hover:shadow-xl transition-all"
     >
       <div className="flex flex-col md:flex-row md:items-center gap-4">
-        {/* Icon & Type */}
         <div className={`flex-shrink-0 w-16 h-16 rounded-xl ${typeConfig.bg} flex items-center justify-center text-3xl`}>
           {typeConfig.icon}
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className="text-xl font-bold text-slate-900 truncate">{item.name}</h3>
+            <h3 className="text-xl font-bold">{item.name}</h3>
             <span className={`px-3 py-1 rounded-full text-xs font-bold text-white bg-gradient-to-r ${typeConfig.color}`}>
               {item.item_type}
             </span>
-            {item.can_sell && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                💰 Sellable
-              </span>
-            )}
-            {isLowStock && (
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 animate-pulse">
-                ⚠️ Low Stock
-              </span>
-            )}
+            {isLowStock && <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 animate-pulse">⚠️ Low Stock</span>}
           </div>
-          <p className="text-sm text-slate-600 mb-2">SKU: <span className="font-mono font-semibold">{item.sku}</span></p>
-          {item.description && (
-            <p className="text-sm text-slate-500 line-clamp-1">{item.description}</p>
-          )}
+          <p className="text-sm text-slate-600">SKU: <span className="font-mono font-semibold">{item.sku}</span></p>
+          {item.description && <p className="text-sm text-slate-500 line-clamp-1">{item.description}</p>}
         </div>
 
-        {/* Stock */}
         {item.track_inventory && (
           <div className="flex gap-4">
             <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">Current</p>
-              <p className={`text-2xl font-bold ${isLowStock ? 'text-red-600' : 'text-slate-900'}`}>
-                {item.current_stock}
-              </p>
+              <p className="text-xs text-slate-500">Current</p>
+              <p className={`text-2xl font-bold ${isLowStock ? 'text-red-600' : 'text-slate-900'}`}>{item.current_stock}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">Available</p>
-              <p className={`text-2xl font-bold ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>
-                {item.available_stock}
-              </p>
+              <p className="text-xs text-slate-500">Available</p>
+              <p className={`text-2xl font-bold ${isLowStock ? 'text-red-600' : 'text-green-600'}`}>{item.available_stock}</p>
             </div>
-            {item.committed_stock > 0 && (
-              <div className="text-center">
-                <p className="text-xs text-slate-500 mb-1">Committed</p>
-                <p className="text-2xl font-bold text-orange-600">{item.committed_stock}</p>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Price */}
-        {item.sell_price && (
-          <div className="text-center">
-            <p className="text-xs text-slate-500 mb-1">Price</p>
-            <p className="text-2xl font-bold text-indigo-600">${item.sell_price.toFixed(2)}</p>
-          </div>
-        )}
-
-        {/* Actions */}
         <div className="flex gap-2">
-          <button
-            onClick={onEdit}
-            className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-xl hover:bg-indigo-200 font-semibold transition-all hover:scale-105 active:scale-95"
-          >
-            ✏️ Edit
-          </button>
-          <button
-            onClick={onDelete}
-            className="px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 font-semibold transition-all hover:scale-105 active:scale-95"
-          >
-            🗑️
-          </button>
+          <button onClick={onEdit} className="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-xl hover:bg-indigo-200 font-semibold">✏️ Edit</button>
+          <button onClick={onDelete} className="px-4 py-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 font-semibold">🗑️</button>
         </div>
       </div>
     </motion.div>
   );
 }
 
-// Loading State with Skeletons
 function LoadingState() {
   return (
     <div className="space-y-4">
       {[1, 2, 3, 4, 5].map((i) => (
-        <div key={i} className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-6 animate-pulse">
+        <div key={i} className="bg-white/80 rounded-2xl shadow-lg p-6 animate-pulse">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-slate-200 rounded-xl"></div>
             <div className="flex-1">
@@ -432,21 +485,16 @@ function LoadingState() {
   );
 }
 
-// Empty State
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg p-16 text-center"
+      className="bg-white/80 rounded-2xl shadow-lg p-16 text-center"
     >
       <div className="text-8xl mb-6">📭</div>
-      <h3 className="text-2xl font-bold text-slate-900 mb-2">
-        {hasFilters ? 'No items match your filters' : 'No items yet'}
-      </h3>
-      <p className="text-slate-600 mb-6">
-        {hasFilters ? 'Try adjusting your filters' : 'Get started by adding your first item'}
-      </p>
+      <h3 className="text-2xl font-bold mb-2">{hasFilters ? 'No items match' : 'No items yet'}</h3>
+      <p className="text-slate-600">{hasFilters ? 'Try different filters' : 'Add your first item'}</p>
     </motion.div>
   );
 }
