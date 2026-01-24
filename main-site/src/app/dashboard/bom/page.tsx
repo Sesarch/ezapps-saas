@@ -89,12 +89,21 @@ export default function BomPage() {
 
   async function fetchItems() {
     if (!store) return
-    const { data } = await supabase
-      .from('items')
-      .select('*')
-      .eq('store_id', store.id)
-      .order('name')
-    setItems(data || [])
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      // Fetch items by user_id (works with simplified RLS)
+      const { data } = await supabase
+        .from('items')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name')
+      
+      setItems(data || [])
+    } catch (err) {
+      console.error('Error fetching items:', err)
+    }
   }
 
   async function fetchBomItems() {
