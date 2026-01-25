@@ -62,39 +62,12 @@ export default function StoresPage() {
   }
 
   const disconnectStore = async (storeId: string, storeName: string) => {
-    if (!confirm(`Are you sure you want to disconnect "${storeName}"? This will remove all associated data.`)) {
+    if (!confirm(`Are you sure you want to disconnect "${storeName}"?`)) {
       return
     }
 
     try {
-      // First, delete any related records that reference this store
-      // Delete from order_line_items (via orders)
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('store_id', storeId)
-      
-      if (orders && orders.length > 0) {
-        const orderIds = orders.map(o => o.id)
-        await supabase
-          .from('order_line_items')
-          .delete()
-          .in('order_id', orderIds)
-      }
-
-      // Delete orders for this store
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('store_id', storeId)
-
-      // Delete products for this store
-      await supabase
-        .from('products')
-        .delete()
-        .eq('store_id', storeId)
-
-      // Now delete the store itself (with user_id check for RLS)
+      // Delete the store (database CASCADE will handle related records if configured)
       const { error } = await supabase
         .from('stores')
         .delete()
@@ -108,9 +81,9 @@ export default function StoresPage() {
         setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
         fetchStores()
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Disconnect error:', err)
-      setMessage({ type: 'error', text: 'An unexpected error occurred. Please try again.' })
+      setMessage({ type: 'error', text: `Failed to disconnect: ${err.message || 'Unknown error'}` })
     }
   }
 
