@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import ProductPanel from '@/components/ProductPanel';
 
 interface Store {
   id: string;
@@ -40,7 +39,6 @@ export default function BOMBuilderPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [bomData, setBomData] = useState<Record<string, BOMItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const supabase = createClient();
 
@@ -298,8 +296,7 @@ export default function BOMBuilderPage() {
                     return (
                       <div
                         key={product.id}
-                        onClick={() => setSelectedProduct(product)}
-                        className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-green-100 hover:border-green-300"
+                        className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-green-100"
                       >
                         <div className="flex gap-4 mb-4">
                           {product.image && (
@@ -355,8 +352,7 @@ export default function BOMBuilderPage() {
                   {productsNeedingBOM.map(product => (
                     <div
                       key={product.id}
-                      onClick={() => setSelectedProduct(product)}
-                      className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all cursor-pointer border-2 border-orange-100 hover:border-orange-300"
+                      className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-orange-100"
                     >
                       <div className="flex gap-4">
                         {product.image && (
@@ -370,15 +366,9 @@ export default function BOMBuilderPage() {
                           <h3 className="font-bold text-lg text-gray-900 mb-2">
                             {product.title}
                           </h3>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedProduct(product);
-                            }}
-                            className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-semibold hover:bg-orange-600"
-                          >
-                            + Add BOM
-                          </button>
+                          <p className="text-sm text-orange-600 font-medium">
+                            No BOM configured
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -387,19 +377,6 @@ export default function BOMBuilderPage() {
               </div>
             )}
           </div>
-        )}
-
-        {/* Product Panel */}
-        {selectedProduct && currentStore && (
-          <ProductPanel
-            product={selectedProduct}
-            storeId={currentStore.id}
-            onClose={() => setSelectedProduct(null)}
-            onSuccess={() => {
-              setSelectedProduct(null);
-              loadStoreData(currentStore);
-            }}
-          />
         )}
       </div>
     </div>
