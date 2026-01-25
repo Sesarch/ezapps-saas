@@ -27,13 +27,14 @@ export default function StoresPage() {
     }
   }, [searchParams])
 
-  // Fetch user's stores
+  // Fetch user's stores (only active ones)
   const fetchStores = async () => {
     if (user) {
       const { data } = await supabase
         .from('stores')
         .select('*, platforms(*)')
         .eq('user_id', user.id)
+        .neq('status', 'disconnected')  // Don't show disconnected stores
       setStores(data || [])
     }
   }
@@ -67,23 +68,51 @@ export default function StoresPage() {
     }
 
     try {
-      // Delete the store (database CASCADE will handle related records if configured)
-      const { error } = await supabase
+      console.log('Attempting to disconnect store:', storeId)
+      
+      // Try approach 1: Mark as disconnected (UPDATE with proper WHERE)
+      const { data: updateData, error: updateError } = await supabase
         .from('stores')
-        .delete()
+        .update({ 
+          status: 'disconnected',
+          access_token: null,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', storeId)
         .eq('user_id', user?.id)
+        .select()
 
-      if (error) {
-        console.error('Delete store error:', error)
-        setMessage({ type: 'error', text: `Failed to disconnect store: ${error.message}` })
-      } else {
-        setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
-        fetchStores()
+      if (updateError) {
+        console.error('Update approach failed:', updateError)
+        throw updateError
       }
+
+      console.log('Successfully marked as disconnected:', updateData)
+      setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
+      fetchStores()
+      
     } catch (err: any) {
       console.error('Disconnect error:', err)
-      setMessage({ type: 'error', text: `Failed to disconnect: ${err.message || 'Unknown error'}` })
+      
+      // If update failed, try direct SQL through RPC
+      try {
+        console.log('Trying RPC approach...')
+        const { data: rpcData, error: rpcError } = await supabase.rpc('disconnect_store', {
+          store_id: storeId,
+          current_user_id: user?.id
+        })
+        
+        if (rpcError) {
+          console.error('RPC approach also failed:', rpcError)
+          setMessage({ type: 'error', text: `Failed to disconnect: ${err.message || 'Database error'}` })
+        } else {
+          setMessage({ type: 'success', text: `${storeName} has been disconnected.` })
+          fetchStores()
+        }
+      } catch (rpcErr: any) {
+        console.error('RPC not available:', rpcErr)
+        setMessage({ type: 'error', text: `Failed to disconnect: ${err.message || 'Unknown error'}. Please contact support.` })
+      }
     }
   }
 
@@ -158,6 +187,7 @@ export default function StoresPage() {
                   onChange={(e) => setShopDomain(e.target.value)}
                   placeholder="your-store-name"
                   className="flex-1 px-4 py-3 border border-gray-300 rounded-l-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  onKeyDown={(e) => e.key === 'Enter' && connectShopify()}
                 />
                 <span className="px-4 py-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-xl text-gray-500">
                   .myshopify.com
@@ -204,6 +234,15 @@ export default function StoresPage() {
           </div>
         </div>
       </div>
+
+      {/* Debug Info (remove in production) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+          <p className="text-xs font-mono text-yellow-800">
+            Debug: User ID: {user?.id || 'none'} | Stores: {stores.length}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
