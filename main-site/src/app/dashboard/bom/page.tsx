@@ -1,384 +1,285 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import Link from 'next/link';
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import ProductPanel from '@/components/ProductPanel'
 
-interface Store {
-  id: string;
-  store_name: string;
-  store_url: string;
-  platform_id: string;
-  status?: string;
+interface Item {
+  id: string
+  name: string
+  sku: string | null
+  item_type: string
+  current_stock: number
 }
 
-interface Product {
-  id: number;
-  title: string;
-  handle: string;
-  image?: string;
-  variants?: any[];
+interface BomItem {
+  id: string
+  shopify_product_id: string
+  shopify_variant_id: string
+  product_title: string
+  variant_title: string | null
+  item_id: string
+  quantity_needed: number
+  items?: Item
 }
 
-interface BOMItem {
-  id: string;
-  shopify_product_id: string;
-  item_id: string;
-  quantity: number;
-  items?: {
-    name: string;
-    sku: string;
-    current_stock: number;
-    unit?: string;
-  };
+interface ProductGroup {
+  product_id: string
+  variant_id: string
+  product_title: string
+  variant_title: string | null
+  items: BomItem[]
 }
 
-export default function BOMBuilderPage() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [currentStore, setCurrentStore] = useState<Store | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [bomData, setBomData] = useState<Record<string, BOMItem[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = createClient();
+export default function EnhancedBomPage() {
+  const [bomItems, setBomItems] = useState<BomItem[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedProduct, setSelectedProduct] = useState<ProductGroup | null>(null)
+  
+  const supabase = createClient()
 
   useEffect(() => {
-    loadStoresAndData();
-  }, []);
+    fetchBomItems()
+  }, [])
 
-  const loadStoresAndData = async () => {
-    setIsLoading(true);
+  async function fetchBomItems() {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-      // Load active stores
-      const { data: storesData } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .neq('status', 'disconnected')
-        .order('created_at', { ascending: true });
-
-      if (storesData && storesData.length > 0) {
-        setStores(storesData);
-        const firstStore = storesData[0];
-        setCurrentStore(firstStore);
-        await loadStoreData(firstStore);
-      }
-    } catch (error) {
-      console.error('Error loading stores:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadStoreData = async (store: Store) => {
-    try {
-      // Load products from Shopify API
-      const response = await fetch(`/api/shopify/products?storeId=${store.id}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
-
-      // Load BOM data from database
-      const { data: bomItems } = await supabase
+      const { data, error } = await supabase
         .from('bom_items')
-        .select('*, items(name, sku, current_stock, unit)')
-        .eq('store_id', store.id);
+        .select(`
+          *,
+          items (
+            id,
+            name,
+            sku,
+            item_type,
+            current_stock
+          )
+        `)
+        .eq('user_id', user.id)
 
-      if (bomItems) {
-        const grouped = bomItems.reduce((acc: Record<string, BOMItem[]>, item) => {
-          const productId = String(item.shopify_product_id);
-          if (!acc[productId]) acc[productId] = [];
-          acc[productId].push(item);
-          return acc;
-        }, {});
-        setBomData(grouped);
-      }
-    } catch (error) {
-      console.error('Error loading store data:', error);
+      if (error) throw error
+      setBomItems(data || [])
+    } catch (err) {
+      console.error('Error fetching BOM:', err)
+    } finally {
+      setLoading(false)
     }
-  };
-
-  const handleStoreChange = async (storeId: string) => {
-    const store = stores.find(s => s.id === storeId);
-    if (store) {
-      setCurrentStore(store);
-      setIsLoading(true);
-      await loadStoreData(store);
-      setIsLoading(false);
-    }
-  };
-
-  const extractId = (id: string | number): string => {
-    if (typeof id === 'number') return String(id);
-    if (typeof id === 'string' && id.includes('gid://')) {
-      return id.split('/').pop() || id;
-    }
-    return String(id);
-  };
-
-  const calculateBuildQuantity = (productId: string): number => {
-    const bom = bomData[productId];
-    if (!bom || bom.length === 0) return 0;
-
-    return Math.min(
-      ...bom.map(item => {
-        const stock = item.items?.current_stock || 0;
-        return Math.floor(stock / item.quantity);
-      })
-    );
-  };
-
-  const findBottleneck = (productId: string): BOMItem | null => {
-    const bom = bomData[productId];
-    if (!bom || bom.length === 0) return null;
-
-    let minBuilds = Infinity;
-    let bottleneckItem: BOMItem | null = null;
-
-    bom.forEach(item => {
-      const stock = item.items?.current_stock || 0;
-      const possibleBuilds = Math.floor(stock / item.quantity);
-      if (possibleBuilds < minBuilds) {
-        minBuilds = possibleBuilds;
-        bottleneckItem = item;
-      }
-    });
-
-    return bottleneckItem;
-  };
-
-  const productsWithBOM = products.filter(p => bomData[extractId(p.id)]?.length > 0);
-  const productsNeedingBOM = products.filter(p => !bomData[extractId(p.id)] || bomData[extractId(p.id)].length === 0);
-
-  // No stores connected
-  if (!isLoading && stores.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-3xl shadow-2xl p-12 text-center border-4 border-indigo-100">
-            <div className="text-8xl mb-6">🏗️</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              No Store Connected
-            </h1>
-            <p className="text-lg text-gray-600 mb-8">
-              Connect a store to start building Bills of Materials for your products.
-            </p>
-            
-            <div className="bg-indigo-50 rounded-2xl p-6 mb-8 text-left">
-              <h3 className="font-bold text-indigo-900 mb-3">🏗️ What is BOM Builder?</h3>
-              <ul className="space-y-2 text-gray-700">
-                <li>✓ Create Bills of Materials for each product</li>
-                <li>✓ Define which items are needed to build products</li>
-                <li>✓ Track how many products you can build</li>
-                <li>✓ Identify inventory bottlenecks</li>
-              </ul>
-            </div>
-
-            <Link
-              href="/dashboard/stores"
-              className="inline-block px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all hover:scale-105"
-            >
-              🚀 Connect Your First Store
-            </Link>
-
-            <p className="text-sm text-gray-500 mt-6">
-              Workflow: Connect Store → Sync Products → Add Items → Build BOMs
-            </p>
-          </div>
-        </div>
-      </div>
-    );
   }
 
+  // Group BOM items by product/variant
+  const productGroups: ProductGroup[] = Object.values(
+    bomItems.reduce((acc, item) => {
+      const key = `${item.shopify_product_id}-${item.shopify_variant_id}`
+      if (!acc[key]) {
+        acc[key] = {
+          product_id: item.shopify_product_id,
+          variant_id: item.shopify_variant_id,
+          product_title: item.product_title,
+          variant_title: item.variant_title,
+          items: []
+        }
+      }
+      acc[key].items.push(item)
+      return acc
+    }, {} as Record<string, ProductGroup>)
+  )
+
+  function calculateBuildable(group: ProductGroup): number {
+    if (group.items.length === 0) return 0
+    
+    const quantities = group.items.map(bomItem => {
+      const stock = bomItem.items?.current_stock || 0
+      const needed = bomItem.quantity_needed
+      return Math.floor(stock / needed)
+    })
+    
+    return Math.min(...quantities)
+  }
+
+  function getBottleneck(group: ProductGroup): string | null {
+    if (group.items.length === 0) return null
+    
+    let minUnits = Infinity
+    let bottleneck = null
+    
+    group.items.forEach(bomItem => {
+      const stock = bomItem.items?.current_stock || 0
+      const needed = bomItem.quantity_needed
+      const canBuild = Math.floor(stock / needed)
+      
+      if (canBuild < minUnits) {
+        minUnits = canBuild
+        bottleneck = bomItem.items?.name || 'Unknown'
+      }
+    })
+    
+    return bottleneck
+  }
+
+  const getItemIcon = (type: string) => {
+    const icons: Record<string, string> = {
+      part: '🔧',
+      component: '⚙️',
+      assembly: '📦',
+      box: '📦',
+      packaging: '📦',
+      label: '🏷️'
+    }
+    return icons[type.toLowerCase()] || '📦'
+  }
+
+  const uniqueProducts = productGroups.length
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
-      <div className="max-w-[1800px] mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-indigo-600 mb-3">BOM Builder</h1>
-          <p className="text-slate-600 text-lg">
-            {currentStore ? `Build Bills of Materials for ${currentStore.store_name}` : 'Build Bills of Materials'}
-          </p>
-        </div>
+    <div className="p-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Bill of Materials</h1>
+        <p className="text-gray-600 mt-1">Click any product to manage its BOM</p>
+      </div>
 
-        {/* Store Selector */}
-        {stores.length > 1 && (
-          <div className="bg-white rounded-2xl shadow-xl p-4 mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              📱 Current Store:
-            </label>
-            <select
-              value={currentStore?.id || ''}
-              onChange={(e) => handleStoreChange(e.target.value)}
-              className="w-full md:w-auto px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
-            >
-              {stores.map(store => (
-                <option key={store.id} value={store.id}>
-                  {store.store_name} ({store.store_url})
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total Products</p>
-                <p className="text-3xl font-bold text-indigo-600">{products.length}</p>
-              </div>
-              <div className="text-4xl">📦</div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Products with BOM</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{uniqueProducts}</p>
             </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">With BOM</p>
-                <p className="text-3xl font-bold text-green-600">{productsWithBOM.length}</p>
-              </div>
-              <div className="text-4xl">✅</div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Need BOM</p>
-                <p className="text-3xl font-bold text-orange-600">{productsNeedingBOM.length}</p>
-              </div>
-              <div className="text-4xl">⚠️</div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm">Total BOM Entries</p>
-                <p className="text-3xl font-bold text-purple-600">
-                  {Object.values(bomData).flat().length}
-                </p>
-              </div>
-              <div className="text-4xl">📋</div>
-            </div>
+            <div className="text-3xl">📦</div>
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <div className="inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-600">Loading products...</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total BOM Entries</p>
+              <p className="text-3xl font-bold text-teal-600 mt-1">{bomItems.length}</p>
+            </div>
+            <div className="text-3xl">📋</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Avg Items per Product</p>
+              <p className="text-3xl font-bold text-blue-600 mt-1">
+                {uniqueProducts > 0 ? (bomItems.length / uniqueProducts).toFixed(1) : 0}
+              </p>
+            </div>
+            <div className="text-3xl">📊</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Product Cards */}
+      <div className="space-y-4">
+        {loading ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading BOMs...</p>
+          </div>
+        ) : productGroups.length === 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="text-5xl mb-4">📋</div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No BOM entries yet</h3>
+            <p className="text-gray-500 mb-4">Start by adding items to your products</p>
+            <p className="text-sm text-gray-400">
+              💡 Tip: Click any product to open its BOM panel
+            </p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {/* Products with BOM */}
-            {productsWithBOM.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  ✅ Products with BOM ({productsWithBOM.length})
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {productsWithBOM.map(product => {
-                    const productId = extractId(product.id);
-                    const bom = bomData[productId] || [];
-                    const buildQty = calculateBuildQuantity(productId);
-                    const bottleneck = findBottleneck(productId);
-
-                    return (
-                      <div
-                        key={product.id}
-                        className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-green-100"
-                      >
-                        <div className="flex gap-4 mb-4">
-                          {product.image && (
-                            <img
-                              src={product.image}
-                              alt={product.title}
-                              className="w-20 h-20 object-cover rounded-lg"
-                            />
-                          )}
-                          <div className="flex-1">
-                            <h3 className="font-bold text-lg text-gray-900 mb-1">
-                              {product.title}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              {bom.length} item{bom.length !== 1 ? 's' : ''} in BOM
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="bg-green-50 rounded-lg p-4 mb-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Can Build:</span>
-                            <span className="text-2xl font-bold text-green-600">
-                              {buildQty}
-                            </span>
-                          </div>
-                        </div>
-
-                        {bottleneck && (
-                          <div className="bg-orange-50 rounded-lg p-3">
-                            <p className="text-xs font-semibold text-orange-800 mb-1">
-                              🔴 Bottleneck:
-                            </p>
-                            <p className="text-sm text-orange-700">
-                              {bottleneck.items?.name} ({bottleneck.items?.current_stock || 0} {bottleneck.items?.unit || 'pcs'})
-                            </p>
-                          </div>
+          productGroups.map((group) => {
+            const buildable = calculateBuildable(group)
+            const bottleneck = getBottleneck(group)
+            
+            return (
+              <button
+                key={`${group.product_id}-${group.variant_id}`}
+                onClick={() => setSelectedProduct(group)}
+                className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-teal-500 transition-all text-left"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="text-3xl">📦</div>
+                      <div>
+                        <h3 className="text-lg font-bold text-gray-900">{group.product_title}</h3>
+                        {group.variant_title && group.variant_title !== 'Default Title' && (
+                          <p className="text-sm text-gray-500">Variant: {group.variant_title}</p>
                         )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Products needing BOM */}
-            {productsNeedingBOM.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                  ⚠️ Products Needing BOM ({productsNeedingBOM.length})
-                </h2>
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {productsNeedingBOM.map(product => (
-                    <div
-                      key={product.id}
-                      className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all border-2 border-orange-100"
-                    >
-                      <div className="flex gap-4">
-                        {product.image && (
-                          <img
-                            src={product.image}
-                            alt={product.title}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <h3 className="font-bold text-lg text-gray-900 mb-2">
-                            {product.title}
-                          </h3>
-                          <p className="text-sm text-orange-600 font-medium">
-                            No BOM configured
-                          </p>
-                        </div>
                       </div>
                     </div>
-                  ))}
+
+                    {/* BOM Items Preview */}
+                    <div className="space-y-2 mb-4">
+                      {group.items.slice(0, 3).map(bomItem => (
+                        <div key={bomItem.id} className="flex items-center gap-2 text-sm">
+                          <span className="text-lg">{getItemIcon(bomItem.items?.item_type || '')}</span>
+                          <span className="font-medium">{bomItem.items?.name || 'Unknown'}</span>
+                          <span className="text-gray-400">×</span>
+                          <span className="text-gray-600">{bomItem.quantity_needed}</span>
+                          <span className="text-gray-400 text-xs">
+                            ({bomItem.items?.current_stock || 0} in stock)
+                          </span>
+                        </div>
+                      ))}
+                      {group.items.length > 3 && (
+                        <p className="text-sm text-gray-400 pl-7">
+                          + {group.items.length - 3} more items
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Stats Row */}
+                    <div className="flex items-center gap-6 text-sm">
+                      <div>
+                        <span className="text-gray-500">Total Items:</span>
+                        <span className="font-semibold text-gray-900 ml-2">{group.items.length}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Can Build:</span>
+                        <span className={`font-semibold ml-2 ${buildable > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {buildable} units
+                        </span>
+                      </div>
+                      {bottleneck && buildable < 100 && (
+                        <div>
+                          <span className="text-gray-500">Bottleneck:</span>
+                          <span className="font-semibold text-orange-600 ml-2">{bottleneck}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="text-teal-500 text-2xl">
+                    →
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              </button>
+            )
+          })
         )}
       </div>
+
+      {/* Product Panel */}
+      {selectedProduct && (
+        <ProductPanel
+          productId={selectedProduct.product_id}
+          variantId={selectedProduct.variant_id}
+          productTitle={selectedProduct.product_title}
+          variantTitle={selectedProduct.variant_title}
+          onClose={() => setSelectedProduct(null)}
+          onUpdate={() => {
+            fetchBomItems()
+            setSelectedProduct(null)
+          }}
+        />
+      )}
     </div>
-  );
+  )
 }
