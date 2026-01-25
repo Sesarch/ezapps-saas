@@ -24,11 +24,9 @@ export default function StoresPage() {
 
     if (success === 'true' && shop) {
       setMessage({ type: 'success', text: `Successfully connected ${shop}!` })
-      // Clear URL params
       router.replace('/dashboard/stores')
     } else if (error) {
       setMessage({ type: 'error', text: 'Failed to connect store. Please try again.' })
-      // Clear URL params
       router.replace('/dashboard/stores')
     }
   }, [])
@@ -46,14 +44,14 @@ export default function StoresPage() {
         .from('stores')
         .select('*, platforms(*)')
         .eq('user_id', user.id)
-        .eq('is_active', true)  // ✅ FIXED: Use is_active instead of status
+        .eq('is_active', true)
         .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Fetch stores error:', error)
         setMessage({ type: 'error', text: 'Failed to load stores' })
       } else {
-        console.log('Fetched stores:', data) // Debug log
+        console.log('Fetched stores:', data)
         setStores(data || [])
       }
     } catch (err) {
@@ -76,13 +74,9 @@ export default function StoresPage() {
     setConnecting(true)
     setMessage(null)
 
-    // Clean up the input
     let shop = shopDomain.trim().toLowerCase()
-    
-    // Remove .myshopify.com if user included it
     shop = shop.replace(/\.myshopify\.com$/i, '')
 
-    // Redirect to Shopify OAuth
     window.location.href = `/api/auth/shopify?shop=${shop}`
   }
 
@@ -92,10 +86,9 @@ export default function StoresPage() {
     }
 
     try {
-      // Soft delete: Set is_active to false instead of deleting
       const { error } = await supabase
         .from('stores')
-        .update({ is_active: false })  // ✅ FIXED: Use is_active instead of status
+        .update({ is_active: false })
         .eq('id', storeId)
         .eq('user_id', user?.id)
 
@@ -130,7 +123,6 @@ export default function StoresPage() {
         <p className="text-gray-600 mt-1">Manage your e-commerce store connections</p>
       </div>
 
-      {/* Success/Error Messages */}
       {message && (
         <div className={`mb-6 px-4 py-3 rounded-xl text-sm ${
           message.type === 'success' 
@@ -141,15 +133,6 @@ export default function StoresPage() {
         </div>
       )}
 
-      {/* Debug Info - Remove this after confirming it works */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mb-6 px-4 py-3 rounded-xl text-sm bg-yellow-50 border border-yellow-200">
-          <p><strong>Debug:</strong> Found {stores.length} store(s)</p>
-          <p>User ID: {user?.id}</p>
-        </div>
-      )}
-
-      {/* Connected Stores */}
       {stores.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {stores.map((store) => (
@@ -186,7 +169,6 @@ export default function StoresPage() {
         </div>
       )}
 
-      {/* Connect Shopify Store */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
           <h2 className="text-lg font-semibold text-gray-900">Connect a Shopify Store</h2>
@@ -223,7 +205,6 @@ export default function StoresPage() {
         </div>
       </div>
 
-      {/* Other Platforms Coming Soon */}
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">More Platforms Coming Soon</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
@@ -236,7 +217,6 @@ export default function StoresPage() {
         </div>
       </div>
 
-      {/* Help Section */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-6">
         <div className="flex items-start gap-4">
           <div className="text-2xl">💡</div>
