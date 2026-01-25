@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 interface Item {
   id: string;
@@ -13,6 +14,7 @@ interface Item {
   unit?: string;
   current_stock: number;
   min_stock: number;
+  store_id: string;
   available_stock?: number;
   min_stock_level?: number;
   track_inventory?: boolean;
@@ -20,9 +22,18 @@ interface Item {
   created_at?: string;
 }
 
+interface Store {
+  id: string;
+  store_name: string;
+  store_url: string;
+  platform_id: string;
+}
+
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [currentStore, setCurrentStore] = useState<Store | null>(null);
+  const [allStores, setAllStores] = useState<Store[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -32,7 +43,7 @@ export default function ItemsPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    loadItems();
+    loadStoresAndItems();
   }, []);
 
   useEffect(() => {
@@ -50,12 +61,47 @@ export default function ItemsPage() {
     setToast({ message, type });
   };
 
-  const loadItems = async () => {
+  const loadStoresAndItems = async () => {
     setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Load user's active stores
+      const { data: storesData, error: storesError } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', user.id)
+        .neq('status', 'disconnected')
+        .order('created_at', { ascending: true });
+
+      if (storesError) throw storesError;
+
+      setAllStores(storesData || []);
+
+      // If user has stores, set first one as current and load its items
+      if (storesData && storesData.length > 0) {
+        const firstStore = storesData[0];
+        setCurrentStore(firstStore);
+        await loadItemsForStore(firstStore.id);
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      showToast('Failed to load data', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadItemsForStore = async (storeId: string) => {
     try {
       const { data, error } = await supabase
         .from('items')
         .select('*')
+        .eq('store_id', storeId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -63,7 +109,15 @@ export default function ItemsPage() {
     } catch (error) {
       console.error('Error loading items:', error);
       showToast('Failed to load items', 'error');
-    } finally {
+    }
+  };
+
+  const handleStoreChange = async (storeId: string) => {
+    const store = allStores.find(s => s.id === storeId);
+    if (store) {
+      setCurrentStore(store);
+      setIsLoading(true);
+      await loadItemsForStore(storeId);
       setIsLoading(false);
     }
   };
@@ -90,26 +144,94 @@ export default function ItemsPage() {
       const { error } = await supabase.from('items').delete().eq('id', id);
       if (error) throw error;
       
-      await loadItems();
+      if (currentStore) {
+        await loadItemsForStore(currentStore.id);
+      }
       showToast('Item deleted successfully', 'success');
     } catch (error: any) {
       showToast(`Failed to delete: ${error.message}`, 'error');
     }
   };
 
+  // No store connected - show connection prompt
+  if (!isLoading && allStores.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-2xl p-12 text-center border-4 border-indigo-100"
+          >
+            <div className="text-8xl mb-6">🏪</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              No Store Connected
+            </h1>
+            <p className="text-lg text-gray-600 mb-8">
+              Connect a store to start managing your inventory items.
+            </p>
+            
+            <div className="bg-indigo-50 rounded-2xl p-6 mb-8 text-left">
+              <h3 className="font-bold text-indigo-900 mb-3">📦 What are Items?</h3>
+              <ul className="space-y-2 text-gray-700">
+                <li>✓ Internal inventory (parts, components, materials)</li>
+                <li>✓ Used to build your products (BOMs)</li>
+                <li>✓ Track stock levels and costs</li>
+                <li>✓ Each store has its own items</li>
+              </ul>
+            </div>
+
+            <Link
+              href="/dashboard/stores"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-indigo-500/50 transition-all hover:scale-105"
+            >
+              🚀 Connect Your First Store
+            </Link>
+
+            <p className="text-sm text-gray-500 mt-6">
+              Supports: Shopify • WooCommerce • Wix • and more
+            </p>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
       <div className="max-w-[1600px] mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-indigo-600 mb-3">Items Management</h1>
-          <p className="text-slate-600 text-lg">Internal inventory</p>
+          <p className="text-slate-600 text-lg">
+            {currentStore ? `Inventory for ${currentStore.store_name}` : 'Internal inventory'}
+          </p>
         </div>
+
+        {/* Store Selector (if multiple stores) */}
+        {allStores.length > 1 && (
+          <div className="bg-white rounded-2xl shadow-xl p-4 mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              📱 Current Store:
+            </label>
+            <select
+              value={currentStore?.id || ''}
+              onChange={(e) => handleStoreChange(e.target.value)}
+              className="w-full md:w-auto px-4 py-2 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+            >
+              {allStores.map(store => (
+                <option key={store.id} value={store.id}>
+                  {store.store_name} ({store.store_url})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search items..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
@@ -117,7 +239,8 @@ export default function ItemsPage() {
 
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700"
+              disabled={!currentStore}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               ✨ Add Item
             </button>
@@ -132,8 +255,8 @@ export default function ItemsPage() {
         ) : filteredItems.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-lg p-16 text-center">
             <div className="text-6xl mb-4">📭</div>
-            <h3 className="text-2xl font-bold mb-2">No items found</h3>
-            <p className="text-slate-600">Get started by adding your first item</p>
+            <h3 className="text-2xl font-bold mb-2">No items yet</h3>
+            <p className="text-slate-600">Add your first item to get started</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -181,14 +304,15 @@ export default function ItemsPage() {
           </div>
         )}
 
-        {(showAddModal || editingItem) && (
+        {(showAddModal || editingItem) && currentStore && (
           <ItemForm
+            storeId={currentStore.id}
             onClose={() => {
               setShowAddModal(false);
               setEditingItem(null);
             }}
             onSuccess={() => {
-              loadItems();
+              loadItemsForStore(currentStore.id);
               setShowAddModal(false);
               setEditingItem(null);
               showToast(editingItem ? 'Item updated' : 'Item created', 'success');
@@ -214,7 +338,7 @@ export default function ItemsPage() {
   );
 }
 
-function ItemForm({ onClose, onSuccess, editItem }: any) {
+function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
   const [formData, setFormData] = useState({
     item_type: editItem?.item_type || 'part',
     unit: editItem?.unit || 'pcs',
@@ -229,7 +353,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
 
   const supabase = createClient();
 
-  // Common units grouped by category
   const units = [
     { category: '📦 Quantity', options: [
       { value: 'pcs', label: 'pcs (pieces)' },
@@ -275,6 +398,7 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
       const itemData = {
         ...formData,
         user_id: user.id,
+        store_id: storeId,  // Assign to current store!
       };
 
       if (editItem) {
@@ -320,7 +444,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
             </div>
           )}
 
-          {/* TOP SECTION: Type & Unit */}
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border-2 border-indigo-100">
             <h3 className="text-lg font-bold text-indigo-900 mb-4">📋 Categorization</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -367,7 +490,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
             </div>
           </div>
 
-          {/* BASIC INFORMATION */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-4">📝 Basic Information</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -413,7 +535,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
             </div>
           </div>
 
-          {/* STOCK MANAGEMENT */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-4">📊 Stock Management</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -446,7 +567,6 @@ function ItemForm({ onClose, onSuccess, editItem }: any) {
             </div>
           </div>
 
-          {/* ACTIONS */}
           <div className="flex gap-3 pt-4 border-t-2">
             <button
               type="button"
