@@ -34,7 +34,7 @@ export default function InventoryPage() {
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
-        .neq('status', 'disconnected')
+        .eq('is_active', true)  // ✅ FIXED: Use is_active instead of status
         .order('created_at', { ascending: true });
 
       if (error) {
