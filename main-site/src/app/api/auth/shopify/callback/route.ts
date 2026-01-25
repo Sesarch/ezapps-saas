@@ -10,8 +10,11 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get('state');
     const hmac = searchParams.get('hmac');
 
+    console.log('OAuth callback received:', { shop, hasCode: !!code, hasState: !!state });
+
     // Verify all required parameters are present
     if (!code || !shop || !state) {
+      console.error('Missing OAuth parameters:', { code: !!code, shop: !!shop, state: !!state });
       return NextResponse.redirect(
         new URL('/dashboard/stores?error=missing_params', request.url)
       );
@@ -29,6 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!userId) {
+      console.error('Missing user ID');
       return NextResponse.redirect(
         new URL('/dashboard/stores?error=missing_user', request.url)
       );
@@ -43,13 +47,17 @@ export async function GET(request: NextRequest) {
     }
 
     // Exchange code for access token
+    console.log('Exchanging code for access token...');
     const accessToken = await exchangeCodeForToken(shop, code);
 
     if (!accessToken) {
+      console.error('Failed to get access token');
       return NextResponse.redirect(
         new URL('/dashboard/stores?error=token_exchange_failed', request.url)
       );
     }
+
+    console.log('Access token received successfully');
 
     // Get Shopify platform ID from database
     const supabase = await createClient();
@@ -67,24 +75,56 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Store connection in database
-    const { error: storeError } = await supabase
+    // Check if store already exists
+    const { data: existingStore } = await supabase
       .from('stores')
-      .insert({
-        user_id: userId,
-        platform_id: platform.id,
-        store_name: shop.replace('.myshopify.com', ''),
-        store_url: shop,
-        access_token: accessToken,
-        status: 'active'
-      });
+      .select('id')
+      .eq('store_url', shop)
+      .eq('user_id', userId)
+      .single();
 
-    if (storeError) {
-      console.error('Database error:', storeError);
-      return NextResponse.redirect(
-        new URL('/dashboard/stores?error=database_error', request.url)
-      );
+    if (existingStore) {
+      // Update existing store
+      console.log('Updating existing store...');
+      const { error: updateError } = await supabase
+        .from('stores')
+        .update({
+          access_token: accessToken,
+          is_active: true,
+          refresh_token: null
+        })
+        .eq('id', existingStore.id);
+
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        return NextResponse.redirect(
+          new URL('/dashboard/stores?error=database_error', request.url)
+        );
+      }
+    } else {
+      // Create new store record
+      console.log('Creating new store record...');
+      const { error: storeError } = await supabase
+        .from('stores')
+        .insert({
+          user_id: userId,
+          platform_id: platform.id,
+          store_name: shop.replace('.myshopify.com', ''),
+          store_url: shop,
+          access_token: accessToken,
+          is_active: true,
+          refresh_token: null
+        });
+
+      if (storeError) {
+        console.error('Database insert error:', storeError);
+        return NextResponse.redirect(
+          new URL('/dashboard/stores?error=database_error', request.url)
+        );
+      }
     }
+
+    console.log('Store connection successful!');
 
     // Clear cookies
     const response = NextResponse.redirect(
@@ -123,7 +163,7 @@ function verifyShopifyHmac(params: URLSearchParams, hmac: string): boolean {
       .map(key => `${key}=${paramsObj[key]}`)
       .join('&');
 
-    // Generate HMAC
+    // Create HMAC
     const hash = crypto
       .createHmac('sha256', clientSecret)
       .update(sortedParams)
@@ -136,7 +176,7 @@ function verifyShopifyHmac(params: URLSearchParams, hmac: string): boolean {
   }
 }
 
-// Helper function to exchange authorization code for access token
+// Helper function to exchange code for access token
 async function exchangeCodeForToken(shop: string, code: string): Promise<string | null> {
   try {
     const clientId = process.env.SHOPIFY_CLIENT_ID;
@@ -160,13 +200,12 @@ async function exchangeCodeForToken(shop: string, code: string): Promise<string 
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Token exchange failed:', response.status, errorText);
+      console.error('Token exchange failed:', response.status);
       return null;
     }
 
     const data = await response.json();
-    return data.access_token || null;
+    return data.access_token;
   } catch (error) {
     console.error('Token exchange error:', error);
     return null;
