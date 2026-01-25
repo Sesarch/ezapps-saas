@@ -2,40 +2,64 @@
 
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function StoresPage() {
   const { user } = useAuth()
-  const searchParams = useSearchParams()
+  const router = useRouter()
   const [stores, setStores] = useState<any[]>([])
   const [shopDomain, setShopDomain] = useState('')
   const [connecting, setConnecting] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const supabase = createClient()
 
-  // Check for success/error from OAuth callback
+  // Check for success/error from URL params
   useEffect(() => {
-    const success = searchParams.get('success')
-    const error = searchParams.get('error')
-    const shop = searchParams.get('shop')
+    const params = new URLSearchParams(window.location.search)
+    const success = params.get('success')
+    const error = params.get('error')
+    const shop = params.get('shop')
 
     if (success === 'true' && shop) {
       setMessage({ type: 'success', text: `Successfully connected ${shop}!` })
+      // Clear URL params
+      router.replace('/dashboard/stores')
     } else if (error) {
       setMessage({ type: 'error', text: 'Failed to connect store. Please try again.' })
+      // Clear URL params
+      router.replace('/dashboard/stores')
     }
-  }, [searchParams])
+  }, [])
 
   // Fetch user's stores (only active ones)
   const fetchStores = async () => {
-    if (user) {
-      const { data } = await supabase
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
         .from('stores')
         .select('*, platforms(*)')
         .eq('user_id', user.id)
         .neq('status', 'disconnected')
-      setStores(data || [])
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Fetch stores error:', error)
+        setMessage({ type: 'error', text: 'Failed to load stores' })
+      } else {
+        console.log('Fetched stores:', data) // Debug log
+        setStores(data || [])
+      }
+    } catch (err) {
+      console.error('Fetch error:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -52,10 +76,10 @@ export default function StoresPage() {
     setConnecting(true)
     setMessage(null)
 
-    // Just clean up the input - let the API handle the domain formatting
+    // Clean up the input
     let shop = shopDomain.trim().toLowerCase()
     
-    // Remove .myshopify.com if user included it (API will add it back)
+    // Remove .myshopify.com if user included it
     shop = shop.replace(/\.myshopify\.com$/i, '')
 
     // Redirect to Shopify OAuth
@@ -68,15 +92,15 @@ export default function StoresPage() {
     }
 
     try {
-      // Delete the store (database CASCADE will handle related records if configured)
+      // Soft delete: Set status to 'disconnected' instead of deleting
       const { error } = await supabase
         .from('stores')
-        .delete()
+        .update({ status: 'disconnected' })
         .eq('id', storeId)
         .eq('user_id', user?.id)
 
       if (error) {
-        console.error('Delete store error:', error)
+        console.error('Disconnect store error:', error)
         setMessage({ type: 'error', text: `Failed to disconnect store: ${error.message}` })
       } else {
         setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
@@ -86,6 +110,17 @@ export default function StoresPage() {
       console.error('Disconnect error:', err)
       setMessage({ type: 'error', text: `Failed to disconnect: ${err.message || 'Unknown error'}` })
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+          <div className="h-64 bg-gray-100 rounded-xl"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -106,11 +141,19 @@ export default function StoresPage() {
         </div>
       )}
 
+      {/* Debug Info - Remove this after confirming it works */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="mb-6 px-4 py-3 rounded-xl text-sm bg-yellow-50 border border-yellow-200">
+          <p><strong>Debug:</strong> Found {stores.length} store(s)</p>
+          <p>User ID: {user?.id}</p>
+        </div>
+      )}
+
       {/* Connected Stores */}
       {stores.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {stores.map((store) => (
-            <div key={store.id} className="bg-white rounded-xl border border-gray-200 p-6">
+            <div key={store.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                   <span className="text-2xl">🛍️</span>
@@ -127,7 +170,7 @@ export default function StoresPage() {
                 </span>
                 <button 
                   onClick={() => disconnectStore(store.id, store.store_name)}
-                  className="text-sm text-gray-500 hover:text-red-600 transition-colors"
+                  className="text-sm text-gray-500 hover:text-red-600 transition-colors font-medium"
                 >
                   Disconnect
                 </button>
@@ -157,8 +200,9 @@ export default function StoresPage() {
                   type="text"
                   value={shopDomain}
                   onChange={(e) => setShopDomain(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && connectShopify()}
                   placeholder="your-store-name"
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-l-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-l-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                 />
                 <span className="px-4 py-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-xl text-gray-500">
                   .myshopify.com
@@ -171,7 +215,7 @@ export default function StoresPage() {
             <button
               onClick={connectShopify}
               disabled={connecting}
-              className="px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 h-fit"
+              className="px-6 py-3 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-fit"
             >
               {connecting ? 'Connecting...' : 'Connect Store'}
             </button>
