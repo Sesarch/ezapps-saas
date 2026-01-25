@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { motion } from 'framer-motion'
 import ItemTypeManager from './ItemTypeManager'
 
 interface ItemType {
@@ -10,13 +9,12 @@ interface ItemType {
   name: string
   icon: string
   color: string
-  is_system: boolean
 }
 
 interface Unit {
   id: string
   name: string
-  display_name: string
+  display_name: string | null
   category: string
 }
 
@@ -27,170 +25,130 @@ interface EnhancedItemFormProps {
 }
 
 export default function EnhancedItemForm({ onClose, onSuccess, editItem }: EnhancedItemFormProps) {
-  const [formData, setFormData] = useState({
-    name: editItem?.name || '',
-    sku: editItem?.sku || '',
-    description: editItem?.description || '',
-    item_type: editItem?.item_type || 'part',
-    unit_abbreviation: editItem?.unit_abbreviation || 'pcs',
-    current_stock: editItem?.current_stock || 0,
-    min_stock: editItem?.min_stock || 0,
-  })
-
+  const [name, setName] = useState(editItem?.name || '')
+  const [sku, setSku] = useState(editItem?.sku || '')
+  const [itemType, setItemType] = useState(editItem?.item_type || '')
+  const [unit, setUnit] = useState(editItem?.unit || 'pcs')
+  const [currentStock, setCurrentStock] = useState(editItem?.current_stock || 0)
+  const [minStock, setMinStock] = useState(editItem?.min_stock || 0)
+  const [description, setDescription] = useState(editItem?.description || '')
+  
   const [itemTypes, setItemTypes] = useState<ItemType[]>([])
   const [units, setUnits] = useState<Unit[]>([])
   const [showTypeManager, setShowTypeManager] = useState(false)
   const [showCustomUnit, setShowCustomUnit] = useState(false)
   const [customUnit, setCustomUnit] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
+  
   const supabase = createClient()
 
   useEffect(() => {
-    loadItemTypes()
-    loadUnits()
+    fetchItemTypes()
+    fetchUnits()
   }, [])
 
-  async function loadItemTypes() {
+  async function fetchItemTypes() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch custom types
       const { data, error } = await supabase
         .from('item_types')
         .select('*')
         .eq('user_id', user.id)
         .order('name')
 
-      if (error) {
-        console.error('Error loading item types:', error)
-        // Use fallback types if database query fails
-        setItemTypes([
-          { id: '1', name: 'part', icon: '🔧', color: 'orange', is_system: true },
-          { id: '2', name: 'component', icon: '⚙️', color: 'purple', is_system: true },
-          { id: '3', name: 'assembly', icon: '📦', color: 'indigo', is_system: true },
-        ])
-        return
-      }
+      if (error) throw error
 
+      // If no types, initialize defaults
       if (!data || data.length === 0) {
-        // Initialize default types
-        await initializeDefaultTypes(user.id)
+        const defaultTypes = [
+          { name: 'Part', icon: '🔧', color: '#10B981' },
+          { name: 'Component', icon: '⚙️', color: '#3B82F6' },
+          { name: 'Assembly', icon: '📦', color: '#8B5CF6' }
+        ]
+
+        const { data: { user: currentUser } } = await supabase.auth.getUser()
+        if (!currentUser) return
+
+        for (const type of defaultTypes) {
+          await supabase.from('item_types').insert({
+            user_id: currentUser.id,
+            ...type,
+            is_system: true
+          })
+        }
+
+        // Fetch again
+        const { data: newData } = await supabase
+          .from('item_types')
+          .select('*')
+          .eq('user_id', currentUser.id)
+        setItemTypes(newData || [])
       } else {
         setItemTypes(data)
       }
     } catch (err) {
-      console.error('Failed to load item types:', err)
-      // Use fallback
-      setItemTypes([
-        { id: '1', name: 'part', icon: '🔧', color: 'orange', is_system: true },
-        { id: '2', name: 'component', icon: '⚙️', color: 'purple', is_system: true },
-        { id: '3', name: 'assembly', icon: '📦', color: 'indigo', is_system: true },
-      ])
+      console.error('Error fetching types:', err)
     }
   }
 
-  async function initializeDefaultTypes(userId: string) {
-    const defaultTypes = [
-      { user_id: userId, name: 'part', icon: '🔧', color: 'orange', is_system: true },
-      { user_id: userId, name: 'component', icon: '⚙️', color: 'purple', is_system: true },
-      { user_id: userId, name: 'assembly', icon: '📦', color: 'indigo', is_system: true },
-    ]
-
-    const { data, error } = await supabase
-      .from('item_types')
-      .insert(defaultTypes)
-      .select()
-
-    if (!error && data) {
-      setItemTypes(data)
-    } else {
-      // Fallback to local types
-      setItemTypes(defaultTypes.map((t, i) => ({ ...t, id: String(i + 1) })))
-    }
+  async function fetchUnits() {
+    const { data } = await supabase
+      .from('units')
+      .select('*')
+      .order('category')
+      .order('name')
+    
+    setUnits(data || [])
   }
 
-  async function loadUnits() {
-    try {
-      const { data, error } = await supabase
-        .from('units')
-        .select('*')
-        .order('category, name')
-
-      if (error) {
-        console.error('Error loading units:', error)
-        // Use fallback units
-        setUnits([
-          { id: '1', name: 'pcs', display_name: 'pieces', category: 'quantity' },
-          { id: '2', name: 'box', display_name: 'boxes', category: 'quantity' },
-          { id: '3', name: 'kg', display_name: 'kilograms', category: 'weight' },
-        ])
-        return
-      }
-
-      setUnits(data || [])
-    } catch (err) {
-      console.error('Failed to load units:', err)
-      setUnits([
-        { id: '1', name: 'pcs', display_name: 'pieces', category: 'quantity' },
-        { id: '2', name: 'box', display_name: 'boxes', category: 'quantity' },
-        { id: '3', name: 'kg', display_name: 'kilograms', category: 'weight' },
-      ])
+  async function handleSubmit() {
+    if (!name.trim() || !itemType || !unit) {
+      alert('Please fill in all required fields')
+      return
     }
-  }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
     setLoading(true)
-    setError(null)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
       const itemData = {
-        ...formData,
         user_id: user.id,
-        store_id: 'default', // Update if you have store context
+        name: name.trim(),
+        sku: sku.trim() || null,
+        item_type: itemType,
+        unit,
+        current_stock: currentStock,
+        min_stock: minStock,
+        description: description.trim() || null
       }
 
       if (editItem) {
-        // Update existing item
         const { error } = await supabase
           .from('items')
           .update(itemData)
           .eq('id', editItem.id)
-
         if (error) throw error
       } else {
-        // Create new item
         const { error } = await supabase
           .from('items')
-          .insert([itemData])
-
+          .insert(itemData)
         if (error) throw error
       }
 
       onSuccess()
+      onClose()
     } catch (err: any) {
-      console.error('Save error:', err)
-      setError(err.message || 'Failed to save item')
+      console.error('Error saving item:', err)
+      alert(err.message || 'Failed to save item')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleAddCustomUnit() {
-    if (!customUnit.trim()) return
-
-    setFormData({ ...formData, unit_abbreviation: customUnit.trim() })
-    setShowCustomUnit(false)
-    setCustomUnit('')
-  }
-
-  // Group units by category
   const groupedUnits = units.reduce((acc, unit) => {
     if (!acc[unit.category]) {
       acc[unit.category] = []
@@ -199,121 +157,104 @@ export default function EnhancedItemForm({ onClose, onSuccess, editItem }: Enhan
     return acc
   }, {} as Record<string, Unit[]>)
 
-  const categoryIcons: Record<string, string> = {
-    quantity: '📦',
-    weight: '⚖️',
-    length: '📏',
-    volume: '🧪',
-    area: '📐',
-    other: '📋',
+  const categoryNames: Record<string, string> = {
+    quantity: '📦 Quantity',
+    weight: '⚖️ Weight',
+    length: '📏 Length',
+    volume: '🧪 Volume',
+    area: '📐 Area',
+    other: '📋 Other'
+  }
+
+  function handleCustomUnit() {
+    if (customUnit.trim()) {
+      setUnit(customUnit.trim())
+      setShowCustomUnit(false)
+      setCustomUnit('')
+    }
   }
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-        onClick={onClose}
-      >
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-100 sticky top-0 bg-white">
+            <h2 className="text-xl font-bold text-gray-900">
               {editItem ? 'Edit Item' : 'Create New Item'}
             </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
-            >
-              ✕
-            </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {error}
-              </div>
-            )}
-
-            {/* Basic Information */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+          <div className="p-6 space-y-6">
+            {/* Basic Info */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Basic Information</h3>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Item Name *
                   </label>
                   <input
                     type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="e.g., Steel Bolt M8"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., LED Strip 5m"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    SKU *
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    SKU
                   </label>
                   <input
                     type="text"
-                    required
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="e.g., BOLT-M8-001"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    placeholder="e.g., LED-5M-RGB"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
                 </div>
               </div>
 
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Description
                 </label>
                 <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   placeholder="Optional description..."
+                  rows={2}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 />
               </div>
             </div>
 
             {/* Categorization */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Categorization</h3>
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Categorization</h3>
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Item Type *
                 </label>
                 <select
-                  value={formData.item_type}
-                  onChange={(e) => setFormData({ ...formData, item_type: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  value={itemType}
+                  onChange={(e) => setItemType(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                 >
-                  {itemTypes.map((type) => (
-                    <option key={type.id} value={type.name}>
+                  <option value="">Select type...</option>
+                  {itemTypes.map(type => (
+                    <option key={type.id} value={type.name.toLowerCase()}>
                       {type.icon} {type.name}
                     </option>
                   ))}
                 </select>
-                
                 <button
                   type="button"
                   onClick={() => setShowTypeManager(true)}
-                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-sm text-teal-600 hover:text-teal-700 font-medium mt-2"
                 >
                   + Create Custom Type
                 </button>
@@ -321,126 +262,122 @@ export default function EnhancedItemForm({ onClose, onSuccess, editItem }: Enhan
             </div>
 
             {/* Stock Management */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Stock Management</h3>
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Stock Management</h3>
               
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Unit *
-                </label>
-                {!showCustomUnit ? (
-                  <select
-                    value={formData.unit_abbreviation}
-                    onChange={(e) => {
-                      if (e.target.value === 'custom') {
-                        setShowCustomUnit(true)
-                      } else {
-                        setFormData({ ...formData, unit_abbreviation: e.target.value })
-                      }
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    {Object.entries(groupedUnits).map(([category, categoryUnits]) => (
-                      <optgroup 
-                        key={category} 
-                        label={`${categoryIcons[category] || '📋'} ${category.charAt(0).toUpperCase() + category.slice(1)}`}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Unit *
+                  </label>
+                  {showCustomUnit ? (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={customUnit}
+                        onChange={(e) => setCustomUnit(e.target.value)}
+                        placeholder="Enter custom unit..."
+                        className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCustomUnit}
+                        className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600"
                       >
-                        {categoryUnits.map((unit) => (
-                          <option key={unit.id} value={unit.name}>
-                            {unit.name} ({unit.display_name})
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                    <option value="custom">✏️ Custom unit...</option>
-                  </select>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={customUnit}
-                      onChange={(e) => setCustomUnit(e.target.value)}
-                      placeholder="Enter unit abbreviation"
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCustomUnit}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                    >
-                      Add
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowCustomUnit(false)
-                        setCustomUnit('')
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomUnit(false)}
+                        className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={unit}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setShowCustomUnit(true)
+                        } else {
+                          setUnit(e.target.value)
+                        }
                       }}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
-                      Cancel
-                    </button>
-                  </div>
-                )}
+                      {Object.entries(groupedUnits).map(([category, categoryUnits]) => (
+                        <optgroup key={category} label={categoryNames[category] || category}>
+                          {categoryUnits.map(u => (
+                            <option key={u.id} value={u.name}>
+                              {u.name} ({u.display_name})
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                      <option value="__custom__">✏️ Custom unit...</option>
+                    </select>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Current Stock
                   </label>
                   <input
                     type="number"
-                    value={formData.current_stock}
-                    onChange={(e) => setFormData({ ...formData, current_stock: Number(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    value={currentStock}
+                    onChange={(e) => setCurrentStock(parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     min="0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Min Stock Level
                   </label>
                   <input
                     type="number"
-                    value={formData.min_stock}
-                    onChange={(e) => setFormData({ ...formData, min_stock: Number(e.target.value) })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    value={minStock}
+                    onChange={(e) => setMinStock(parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
                     min="0"
                   />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Actions */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Saving...' : editItem ? 'Update Item' : 'Create Item'}
-              </button>
-            </div>
-          </form>
-        </motion.div>
-      </motion.div>
+          <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+            <button
+              onClick={onClose}
+              disabled={loading}
+              className="px-6 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !name.trim() || !itemType || !unit}
+              className="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : editItem ? 'Update Item' : 'Create Item'}
+            </button>
+          </div>
+        </div>
+      </div>
 
-      {/* Item Type Manager Modal */}
+      {/* Type Manager Modal */}
       {showTypeManager && (
         <ItemTypeManager
           onClose={() => setShowTypeManager(false)}
-          onSuccess={() => {
+          onTypeCreated={() => {
+            fetchItemTypes()
             setShowTypeManager(false)
-            loadItemTypes() // Reload types
           }}
         />
       )}
