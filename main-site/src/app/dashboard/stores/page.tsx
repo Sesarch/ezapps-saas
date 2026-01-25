@@ -46,7 +46,7 @@ export default function StoresPage() {
         .from('stores')
         .select('*, platforms(*)')
         .eq('user_id', user.id)
-        .neq('status', 'disconnected')
+        .eq('is_active', true)  // ✅ FIXED: Use is_active instead of status
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -92,10 +92,10 @@ export default function StoresPage() {
     }
 
     try {
-      // Soft delete: Set status to 'disconnected' instead of deleting
+      // Soft delete: Set is_active to false instead of deleting
       const { error } = await supabase
         .from('stores')
-        .update({ status: 'disconnected' })
+        .update({ is_active: false })  // ✅ FIXED: Use is_active instead of status
         .eq('id', storeId)
         .eq('user_id', user?.id)
 
