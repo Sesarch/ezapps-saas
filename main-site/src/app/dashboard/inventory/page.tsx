@@ -15,7 +15,6 @@ export default function InventoryPage() {
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  // Fetch user's stores
   useEffect(() => {
     if (user) {
       fetchStores();
@@ -29,12 +28,11 @@ export default function InventoryPage() {
         return;
       }
 
-      // Get all active stores (not just Shopify)
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
-        .eq('is_active', true)  // ✅ FIXED: Use is_active instead of status
+        .eq('is_active', true)
         .order('created_at', { ascending: true });
 
       if (error) {
@@ -54,7 +52,6 @@ export default function InventoryPage() {
     }
   };
 
-  // Fetch products when store is selected
   useEffect(() => {
     if (selectedStore) {
       fetchProducts();
@@ -86,7 +83,6 @@ export default function InventoryPage() {
     setLoadingProducts(false);
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -95,7 +91,6 @@ export default function InventoryPage() {
     );
   }
 
-  // No stores connected - show beautiful popup
   if (stores.length === 0) {
     return (
       <NoStoreConnected
@@ -115,7 +110,6 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
       <div className="max-w-[1800px] mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold text-indigo-600 mb-3">Inventory Management</h1>
@@ -124,7 +118,6 @@ export default function InventoryPage() {
             </p>
           </div>
           
-          {/* Store Selector */}
           {stores.length > 1 && (
             <select
               value={selectedStore?.id || ''}
@@ -143,7 +136,6 @@ export default function InventoryPage() {
           )}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
@@ -178,14 +170,12 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 px-6 py-4 bg-red-50 text-red-700 border-2 border-red-200 rounded-xl">
             ⚠️ {error}
           </div>
         )}
 
-        {/* Products Table */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           <div className="px-6 py-4 border-b-2 border-gray-100 flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">Products</h2>
