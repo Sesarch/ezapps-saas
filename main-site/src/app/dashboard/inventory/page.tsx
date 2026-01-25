@@ -24,6 +24,11 @@ export default function InventoryPage() {
 
   const fetchStores = async () => {
     try {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       // Get all active stores (not just Shopify)
       const { data, error } = await supabase
         .from('stores')
