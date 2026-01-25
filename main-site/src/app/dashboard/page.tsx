@@ -30,11 +30,12 @@ export default function DashboardPage() {
         .eq('is_active', true)
         .then(({ data }) => setApps(data || []))
 
-      // Fetch connected stores
+      // Fetch connected stores (exclude disconnected)
       supabase
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
+        .neq('status', 'disconnected')
         .then(({ data }) => setStores(data || []))
 
       // Fetch subscription
