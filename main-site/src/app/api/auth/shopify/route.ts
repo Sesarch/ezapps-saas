@@ -5,74 +5,170 @@ import crypto from 'crypto';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
+    const code = searchParams.get('code');
     const shop = searchParams.get('shop');
+    const state = searchParams.get('state');
+    const hmac = searchParams.get('hmac');
 
-    if (!shop) {
-      return NextResponse.json({ error: 'Shop parameter is required' }, { status: 400 });
+    // Verify all required parameters are present
+    if (!code || !shop || !state) {
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=missing_params', request.url)
+      );
     }
 
-    // Verify user is authenticated
+    // Verify state parameter matches
+    const storedState = request.cookies.get('shopify_oauth_state')?.value;
+    const userId = request.cookies.get('shopify_user_id')?.value;
+
+    if (!storedState || state !== storedState) {
+      console.error('State mismatch:', { state, storedState });
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=invalid_state', request.url)
+      );
+    }
+
+    if (!userId) {
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=missing_user', request.url)
+      );
+    }
+
+    // Verify HMAC (security check from Shopify)
+    if (hmac && !verifyShopifyHmac(searchParams, hmac)) {
+      console.error('Invalid HMAC');
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=invalid_hmac', request.url)
+      );
+    }
+
+    // Exchange code for access token
+    const accessToken = await exchangeCodeForToken(shop, code);
+
+    if (!accessToken) {
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=token_exchange_failed', request.url)
+      );
+    }
+
+    // Get Shopify platform ID from database
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    const { data: platform } = await supabase
+      .from('platforms')
+      .select('id')
+      .eq('slug', 'shopify')
+      .single();
 
-    if (authError || !user) {
-      return NextResponse.redirect(new URL('/login', request.url));
+    if (!platform) {
+      console.error('Shopify platform not found in database');
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=platform_not_found', request.url)
+      );
     }
 
-    // Ensure shop has .myshopify.com domain
-    const shopDomain = shop.includes('.myshopify.com') 
-      ? shop 
-      : `${shop}.myshopify.com`;
+    // Store connection in database
+    const { error: storeError } = await supabase
+      .from('stores')
+      .insert({
+        user_id: userId,
+        platform_id: platform.id,
+        store_name: shop.replace('.myshopify.com', ''),
+        store_url: shop,
+        access_token: accessToken,
+        status: 'active'
+      });
 
-    // Get Shopify app credentials from environment
-    const clientId = process.env.SHOPIFY_CLIENT_ID;
-    const scopes = process.env.SHOPIFY_SCOPES || 'read_products,write_products,read_orders,write_orders,read_inventory,write_inventory';
-    
-    // Determine redirect URI based on environment
-    const redirectUri = process.env.NODE_ENV === 'production'
-      ? 'https://shopify.ezapps.app/api/auth/shopify/callback'
-      : 'http://localhost:3000/api/auth/shopify/callback';
-
-    if (!clientId) {
-      console.error('SHOPIFY_CLIENT_ID is not configured');
-      return NextResponse.json({ error: 'Shopify app is not properly configured' }, { status: 500 });
+    if (storeError) {
+      console.error('Database error:', storeError);
+      return NextResponse.redirect(
+        new URL('/dashboard/stores?error=database_error', request.url)
+      );
     }
 
-    // Generate state parameter for security
-    const state = crypto.randomBytes(16).toString('hex');
-    
-    // Store state in session for verification (using cookie)
+    // Clear cookies
     const response = NextResponse.redirect(
-      `https://${shopDomain}/admin/oauth/authorize?` +
-      `client_id=${clientId}&` +
-      `scope=${scopes}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `state=${state}&` +
-      `grant_options[]=per-user`
+      new URL(`/dashboard/stores?success=true&shop=${shop}`, request.url)
     );
 
-    // Set state cookie for verification in callback
-    response.cookies.set('shopify_oauth_state', state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 600 // 10 minutes
-    });
-
-    // Store user ID for callback
-    response.cookies.set('shopify_user_id', user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 600
-    });
+    response.cookies.delete('shopify_oauth_state');
+    response.cookies.delete('shopify_user_id');
 
     return response;
   } catch (error: any) {
-    console.error('Shopify OAuth initiation error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to initiate Shopify connection',
-      details: error.message 
-    }, { status: 500 });
+    console.error('Shopify OAuth callback error:', error);
+    return NextResponse.redirect(
+      new URL('/dashboard/stores?error=callback_failed', request.url)
+    );
+  }
+}
+
+// Helper function to verify Shopify HMAC
+function verifyShopifyHmac(params: URLSearchParams, hmac: string): boolean {
+  try {
+    const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+    if (!clientSecret) return false;
+
+    // Create a copy of params without hmac
+    const paramsObj: Record<string, string> = {};
+    params.forEach((value, key) => {
+      if (key !== 'hmac') {
+        paramsObj[key] = value;
+      }
+    });
+
+    // Sort and create query string
+    const sortedParams = Object.keys(paramsObj)
+      .sort()
+      .map(key => `${key}=${paramsObj[key]}`)
+      .join('&');
+
+    // Generate HMAC
+    const hash = crypto
+      .createHmac('sha256', clientSecret)
+      .update(sortedParams)
+      .digest('hex');
+
+    return hash === hmac;
+  } catch (error) {
+    console.error('HMAC verification error:', error);
+    return false;
+  }
+}
+
+// Helper function to exchange authorization code for access token
+async function exchangeCodeForToken(shop: string, code: string): Promise<string | null> {
+  try {
+    const clientId = process.env.SHOPIFY_CLIENT_ID;
+    const clientSecret = process.env.SHOPIFY_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      console.error('Missing Shopify credentials');
+      return null;
+    }
+
+    const response = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Token exchange failed:', response.status, errorText);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.access_token || null;
+  } catch (error) {
+    console.error('Token exchange error:', error);
+    return null;
   }
 }
