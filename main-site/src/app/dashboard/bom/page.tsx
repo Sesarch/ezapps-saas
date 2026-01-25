@@ -137,12 +137,12 @@ export default function BOMBuilderPage() {
     );
   };
 
-  const findBottleneck = (productId: string) => {
+  const findBottleneck = (productId: string): BOMItem | null => {
     const bom = bomData[productId];
     if (!bom || bom.length === 0) return null;
 
     let minBuilds = Infinity;
-    let bottleneckItem = null;
+    let bottleneckItem: BOMItem | null = null;
 
     bom.forEach(item => {
       const stock = item.items?.current_stock || 0;
