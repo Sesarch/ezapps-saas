@@ -1,6 +1,9 @@
 'use client'
+
 export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
+
 export default function GenerateLinkPage() {
   const [email, setEmail] = useState('sina@usa.com')
   const [result, setResult] = useState<string | null>(null)
