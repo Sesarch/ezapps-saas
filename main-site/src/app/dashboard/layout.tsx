@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
-export default function AdminLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
@@ -16,56 +16,47 @@ export default function AdminLayout({
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
+    // Move createClient INSIDE useEffect
+    const supabase = createClient()
+    
     if (!loading && !user) {
-      router.push('/login?redirect=/admin')
-      return
-    }
-
-    if (user) {
-      supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
-        .then(({ data }) => {
-          if (data?.is_admin) {
-            setIsAdmin(true)
-          } else {
-            setIsAdmin(false)
-            router.push('/dashboard')
-          }
-        })
+      router.push('/login?redirect=/dashboard')
     }
   }, [user, loading, router])
 
-  if (loading || isAdmin === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Verifying admin access...</p>
+          <p className="text-gray-400">Loading...</p>
         </div>
       </div>
     )
   }
 
-  if (!isAdmin) {
+  if (!user) {
     return null
   }
 
   const navigation = [
-    { name: 'Overview', href: '/admin', icon: '📊' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Subscriptions', href: '/admin/subscriptions', icon: '💳' },
-    { name: 'Stores', href: '/admin/stores', icon: '🏪' },
-    { name: 'Plans', href: '/admin/plans', icon: '📋' },
-    { name: 'Reports', href: '/admin/reports', icon: '📈' },
-    { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
+    { name: 'Dashboard', href: '/dashboard', icon: '📊' },
+    { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
+    { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
+    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
+    { name: 'Builds', href: '/dashboard/builds', icon: '🔨' },
+    { name: 'Parts', href: '/dashboard/parts', icon: '⚙️' },
+    { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🏭' },
+    { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
+    { name: 'Stores', href: '/dashboard/stores', icon: '🏪' },
+    { name: 'Items', href: '/dashboard/items', icon: '📱' },
+    { name: 'Apps', href: '/dashboard/apps', icon: '🎯' },
+    { name: 'Scanner', href: '/dashboard/scan', icon: '📷' },
+    { name: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
+    { name: 'Billing', href: '/dashboard/billing', icon: '💳' },
   ]
 
   return (
@@ -73,8 +64,8 @@ export default function AdminLayout({
       {/* Mobile Header */}
       <div className="lg:hidden bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xl">👑</span>
-          <span className="font-bold text-white">Admin</span>
+          <span className="text-xl">📦</span>
+          <span className="font-bold text-white">EZ Apps</span>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -102,15 +93,15 @@ export default function AdminLayout({
           <div className="flex flex-col h-full">
             {/* Logo */}
             <div className="hidden lg:flex items-center gap-3 h-16 px-6 border-b border-gray-700">
-              <span className="text-2xl">👑</span>
+              <span className="text-2xl">📦</span>
               <div>
                 <p className="font-bold text-white">EZ Apps</p>
-                <p className="text-xs text-gray-400">Super Admin</p>
+                <p className="text-xs text-gray-400">Dashboard</p>
               </div>
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-4 py-6 space-y-1">
+            <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
               {navigation.map((item) => {
                 const isActive = pathname === item.href
                 return (
@@ -139,7 +130,7 @@ export default function AdminLayout({
                 </div>
                 <div className="ml-3 overflow-hidden">
                   <p className="text-sm font-medium text-white truncate">{user?.email}</p>
-                  <p className="text-xs text-teal-400">Super Admin</p>
+                  <p className="text-xs text-teal-400">User</p>
                 </div>
               </div>
               <button
