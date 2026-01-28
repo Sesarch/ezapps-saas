@@ -84,14 +84,13 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (existingStore) {
-      // Update existing store
+      // Update existing store - REMOVED refresh_token
       console.log('Updating existing store...');
       const { error: updateError } = await supabase
         .from('stores')
         .update({
           access_token: accessToken,
-          is_active: true,
-          refresh_token: null
+          is_active: true
         })
         .eq('id', existingStore.id);
 
@@ -102,7 +101,7 @@ export async function GET(request: NextRequest) {
         );
       }
     } else {
-      // Create new store record
+      // Create new store record - REMOVED refresh_token
       console.log('Creating new store record...');
       const { error: storeError } = await supabase
         .from('stores')
@@ -112,8 +111,7 @@ export async function GET(request: NextRequest) {
           store_name: shop.replace('.myshopify.com', ''),
           store_url: shop,
           access_token: accessToken,
-          is_active: true,
-          refresh_token: null
+          is_active: true
         });
 
       if (storeError) {
