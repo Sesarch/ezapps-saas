@@ -3,7 +3,6 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
-
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
@@ -22,9 +21,10 @@ export default function AdminOverviewPage() {
   const [recentStores, setRecentStores] = useState<any[]>([])
   const [planDistribution, setPlanDistribution] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
+    
     async function fetchData() {
       // Fetch users count
       const { count: totalUsers } = await supabase
@@ -433,4 +433,3 @@ export default function AdminOverviewPage() {
     </div>
   )
 }
- 
