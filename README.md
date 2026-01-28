@@ -80,4 +80,4 @@ This is a private project.
 
 ## 📄 License
 
-Proprietary - All rights reserved 
+Proprietary - All rights reserved  
