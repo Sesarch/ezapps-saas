@@ -1,6 +1,7 @@
 'use client'
 
 export const dynamic = 'force-dynamic'
+
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -17,9 +18,10 @@ export default function AdminLayout({
   const pathname = usePathname()
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const supabase = createClient()
 
   useEffect(() => {
+    const supabase = createClient()
+    
     if (!loading && !user) {
       router.push('/login?redirect=/admin')
       return
