@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Store ID is required' }, { status: 400 });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient(); // FIXED: Added await
 
     // Get store details
     const { data: store, error: storeError } = await supabase
