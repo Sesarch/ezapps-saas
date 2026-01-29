@@ -18,7 +18,7 @@ export default function InventoryPage() {
     if (user) {
       fetchStores();
     }
-  }, [user]);
+ }, [user?.id]);
 
   const fetchStores = async () => {
     try {
