@@ -13,7 +13,6 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     if (user) {
@@ -27,6 +26,8 @@ export default function InventoryPage() {
         setLoading(false);
         return;
       }
+
+      const supabase = createClient(); // FIXED: Moved inside function
 
       const { data, error } = await supabase
         .from('stores')
