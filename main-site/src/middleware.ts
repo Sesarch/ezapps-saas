@@ -32,6 +32,14 @@ export async function middleware(request: NextRequest) {
   
   // Platform subdomain logic
   if (isPlatformSubdomain) {
+    // REDIRECT /add-platform on subdomain to main domain
+    if (url.pathname === '/add-platform') {
+      const mainDomain = process.env.NODE_ENV === 'production' 
+        ? 'https://ezapps.app/add-platform'
+        : 'http://localhost:3000/add-platform'
+      return NextResponse.redirect(mainDomain)
+    }
+    
     // Add platform to request headers so we can access it in components
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-platform', subdomain)
@@ -73,5 +81,6 @@ export const config = {
     '/login',
     '/signup',
     '/auth/:path*',
+    '/add-platform', // ADD THIS!
   ],
 }
