@@ -1,9 +1,12 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+
+const FETCH_COOLDOWN = 5000 // 5 seconds
+const LAST_FETCH_KEY = 'stores_last_fetch'
 
 export default function StoresPage() {
   const { user } = useAuth()
@@ -13,8 +16,6 @@ export default function StoresPage() {
   const [connecting, setConnecting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const lastFetchTime = useRef<number>(0)
-  const FETCH_COOLDOWN = 5000 // 5 seconds cooldown
 
   // Check for success/error from URL params
   useEffect(() => {
@@ -32,29 +33,37 @@ export default function StoresPage() {
     }
   }, [router])
 
-  // Fetch user's stores with cooldown
+  // Fetch stores with persistent cooldown using sessionStorage
   const fetchStores = useCallback(async (forceFetch = false) => {
     if (!user) {
       setLoading(false)
       return
     }
 
-    // Prevent fetching too frequently (unless forced)
+    // Check cooldown from sessionStorage (persists across component remounts)
+    const lastFetch = sessionStorage.getItem(LAST_FETCH_KEY)
     const now = Date.now()
-    if (!forceFetch && now - lastFetchTime.current < FETCH_COOLDOWN) {
-      console.log('Skipping fetch - too soon since last fetch')
-      return
+    
+    if (!forceFetch && lastFetch) {
+      const timeSinceLastFetch = now - parseInt(lastFetch)
+      if (timeSinceLastFetch < FETCH_COOLDOWN) {
+        console.log('Skipping fetch - cooldown active:', (FETCH_COOLDOWN - timeSinceLastFetch) / 1000, 'seconds remaining')
+        setLoading(false)
+        return
+      }
     }
 
-    // Don't fetch if tab is not visible
+    // Don't fetch if tab is not visible (unless forced)
     if (!forceFetch && document.hidden) {
       console.log('Skipping fetch - tab not visible')
+      setLoading(false)
       return
     }
 
     try {
       setLoading(true)
-      lastFetchTime.current = now
+      sessionStorage.setItem(LAST_FETCH_KEY, now.toString())
+      
       const supabase = createClient()
       
       const { data, error } = await supabase
@@ -80,24 +89,7 @@ export default function StoresPage() {
 
   // Initial fetch
   useEffect(() => {
-    fetchStores(true) // Force initial fetch
-  }, [fetchStores])
-
-  // Handle visibility change - only refetch if tab was hidden for a while
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Only refetch if it's been more than cooldown time
-        const timeSinceLastFetch = Date.now() - lastFetchTime.current
-        if (timeSinceLastFetch > FETCH_COOLDOWN) {
-          console.log('Tab became visible after long absence - refetching')
-          fetchStores(true)
-        }
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    fetchStores(true)
   }, [fetchStores])
 
   const connectShopify = () => {
@@ -134,7 +126,8 @@ export default function StoresPage() {
         setMessage({ type: 'error', text: `Failed to disconnect store: ${error.message}` })
       } else {
         setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
-        fetchStores(true) // Force refresh after disconnect
+        sessionStorage.removeItem(LAST_FETCH_KEY) // Clear cooldown
+        fetchStores(true)
       }
     } catch (err: any) {
       console.error('Disconnect error:', err)
