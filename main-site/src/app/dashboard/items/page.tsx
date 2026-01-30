@@ -1,5 +1,5 @@
 'use client';
-export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,12 +70,12 @@ export default function ItemsPage() {
         return;
       }
 
-      // Load user's active stores
+      // Load user's active stores - FIXED!
       const { data: storesData, error: storesError } = await supabase
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
-        .neq('status', 'disconnected')
+        .eq('is_active', true)
         .order('created_at', { ascending: true });
 
       if (storesError) throw storesError;
@@ -398,7 +398,7 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
       const itemData = {
         ...formData,
         user_id: user.id,
-        store_id: storeId,  // Assign to current store!
+        store_id: storeId,
       };
 
       if (editItem) {
