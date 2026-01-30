@@ -8,7 +8,7 @@ import Link from 'next/link'
 // ADMIN EMAILS - Add your admin email here
 const ADMIN_EMAILS = ['sesarch@yahoo.com', 'sina@usa.com']
 
-export default function AdminLayout({
+export default function SuperAdminLayout({
   children,
 }: {
   children: React.ReactNode
@@ -22,7 +22,7 @@ export default function AdminLayout({
   useEffect(() => {
     if (!user?.email) {
       if (!loading) {
-        router.push('/login?redirect=/admin')
+        router.push('/login?redirect=/superadmin')
       }
       return
     }
@@ -72,13 +72,13 @@ export default function AdminLayout({
   }
 
   const navigation = [
-    { name: 'Overview', href: '/admin', icon: '📊' },
-    { name: 'Users', href: '/admin/users', icon: '👥' },
-    { name: 'Subscriptions', href: '/admin/subscriptions', icon: '💳' },
-    { name: 'Stores', href: '/admin/stores', icon: '🏪' },
-    { name: 'Plans', href: '/admin/plans', icon: '📋' },
-    { name: 'Reports', href: '/admin/reports', icon: '📈' },
-    { name: 'Settings', href: '/admin/settings', icon: '⚙️' },
+    { name: 'Overview', href: '/superadmin', icon: '📊' },
+    { name: 'Users', href: '/superadmin/users', icon: '👥' },
+    { name: 'Subscriptions', href: '/superadmin/subscriptions', icon: '💳' },
+    { name: 'Stores', href: '/superadmin/stores', icon: '🏪' },
+    { name: 'Plans', href: '/superadmin/plans', icon: '📋' },
+    { name: 'Reports', href: '/superadmin/reports', icon: '📈' },
+    { name: 'Settings', href: '/superadmin/settings', icon: '⚙️' },
   ]
 
   return (
@@ -87,7 +87,7 @@ export default function AdminLayout({
       <div className="lg:hidden bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl">👑</span>
-          <span className="font-bold text-white">Admin</span>
+          <span className="font-bold text-white">Super Admin</span>
         </div>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
