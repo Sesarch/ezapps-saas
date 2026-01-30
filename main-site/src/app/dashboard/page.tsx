@@ -1,6 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -12,43 +11,47 @@ export default function DashboardPage() {
   const [apps, setApps] = useState<any[]>([])
   const [stores, setStores] = useState<any[]>([])
   const [subscription, setSubscription] = useState<any>(null)
-  const supabase = createClient()
 
   useEffect(() => {
-    if (user) {
-      // Fetch profile
-      supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-        .then(({ data }) => setProfile(data))
+    if (!user?.id) return
 
-      // Fetch apps
-      supabase
-        .from('apps')
-        .select('*')
-        .eq('is_active', true)
-        .then(({ data }) => setApps(data || []))
+    const supabase = createClient()
 
-      // Fetch connected stores (exclude disconnected)
-      supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .neq('status', 'disconnected')
-        .then(({ data }) => setStores(data || []))
+    // Fetch profile
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => setProfile(data))
 
-      // Fetch subscription
-      supabase
-        .from('subscriptions')
-        .select('*, plans(*)')
-        .eq('user_id', user.id)
-        .eq('status', 'active')
-        .single()
-        .then(({ data }) => setSubscription(data))
-    }
-  }, [user])
+    // Fetch apps
+    supabase
+      .from('apps')
+      .select('*')
+      .eq('is_active', true)
+      .then(({ data }) => setApps(data || []))
+
+    // Fetch connected stores - FIXED: Use is_active instead of status
+    supabase
+      .from('stores')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .then(({ data }) => {
+        console.log('Dashboard fetched stores:', data?.length || 0)
+        setStores(data || [])
+      })
+
+    // Fetch subscription
+    supabase
+      .from('subscriptions')
+      .select('*, plans(*)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single()
+      .then(({ data }) => setSubscription(data))
+  }, [user?.id])
 
   // Calculate days left in trial (14 days from signup)
   const getDaysLeft = () => {
