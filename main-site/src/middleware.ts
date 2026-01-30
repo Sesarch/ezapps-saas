@@ -23,6 +23,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
+  // ALLOW ADMIN ROUTES - Don't redirect!
+  if (url.pathname.startsWith('/admin')) {
+    return await updateSession(request)
+  }
+  
   // Extract subdomain (e.g., "shopify" from "shopify.ezapps.app")
   const subdomain = hostname.split('.')[0]
   
@@ -56,6 +61,7 @@ export async function middleware(request: NextRequest) {
   
   // Main domain logic - only allow dashboard access from platform subdomains
   // EXCEPT for /dashboard/stores which is needed to connect first store
+  // AND /admin routes which should stay on main domain
   if (isMainDomain && url.pathname.startsWith('/dashboard') && url.pathname !== '/dashboard/stores') {
     // Update session first to check authentication
     const response = await updateSession(request)
@@ -78,9 +84,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
+    '/admin/:path*', // ADD THIS!
     '/login',
     '/signup',
     '/auth/:path*',
-    '/add-platform', // ADD THIS!
+    '/add-platform',
   ],
 }
