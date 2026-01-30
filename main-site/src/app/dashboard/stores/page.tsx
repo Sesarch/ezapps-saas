@@ -1,11 +1,11 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const FETCH_COOLDOWN = 5000 // 5 seconds
+const FETCH_COOLDOWN = 3000 // 3 seconds
 const LAST_FETCH_KEY = 'stores_last_fetch'
 
 export default function StoresPage() {
@@ -33,64 +33,54 @@ export default function StoresPage() {
     }
   }, [router])
 
-  // Fetch stores with persistent cooldown using sessionStorage
-  const fetchStores = useCallback(async (forceFetch = false) => {
-    if (!user) {
+  // Fetch stores - DIRECT, NO useCallback
+  useEffect(() => {
+    if (!user?.id) {
       setLoading(false)
       return
     }
 
-    // Check cooldown from sessionStorage (persists across component remounts)
+    // Check cooldown
     const lastFetch = sessionStorage.getItem(LAST_FETCH_KEY)
-    const now = Date.now()
-    
-    if (!forceFetch && lastFetch) {
-      const timeSinceLastFetch = now - parseInt(lastFetch)
-      if (timeSinceLastFetch < FETCH_COOLDOWN) {
-        console.log('Skipping fetch - cooldown active:', (FETCH_COOLDOWN - timeSinceLastFetch) / 1000, 'seconds remaining')
+    if (lastFetch) {
+      const timeSince = Date.now() - parseInt(lastFetch)
+      if (timeSince < FETCH_COOLDOWN) {
+        console.log('Skipping fetch - cooldown active')
         setLoading(false)
         return
       }
     }
 
-    // Don't fetch if tab is not visible (unless forced)
-    if (!forceFetch && document.hidden) {
-      console.log('Skipping fetch - tab not visible')
-      setLoading(false)
-      return
-    }
+    const fetchStores = async () => {
+      try {
+        setLoading(true)
+        sessionStorage.setItem(LAST_FETCH_KEY, Date.now().toString())
+        
+        const supabase = createClient()
+        
+        const { data, error } = await supabase
+          .from('stores')
+          .select('*, platforms(*)')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
 
-    try {
-      setLoading(true)
-      sessionStorage.setItem(LAST_FETCH_KEY, now.toString())
-      
-      const supabase = createClient()
-      
-      const { data, error } = await supabase
-        .from('stores')
-        .select('*, platforms(*)')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Fetch stores error:', error)
-        setMessage({ type: 'error', text: 'Failed to load stores' })
-      } else {
-        console.log('Fetched stores:', data?.length || 0, 'stores')
-        setStores(data || [])
+        if (error) {
+          console.error('Fetch stores error:', error)
+          setMessage({ type: 'error', text: 'Failed to load stores' })
+        } else {
+          console.log('Fetched stores:', data?.length || 0)
+          setStores(data || [])
+        }
+      } catch (err) {
+        console.error('Fetch error:', err)
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error('Fetch error:', err)
-    } finally {
-      setLoading(false)
     }
-  }, [user])
 
-  // Initial fetch
-  useEffect(() => {
-    fetchStores(true)
-  }, [fetchStores])
+    fetchStores()
+  }, [user?.id]) // ONLY depend on user.id
 
   const connectShopify = () => {
     if (!shopDomain) {
@@ -126,8 +116,18 @@ export default function StoresPage() {
         setMessage({ type: 'error', text: `Failed to disconnect store: ${error.message}` })
       } else {
         setMessage({ type: 'success', text: `${storeName} has been disconnected successfully.` })
-        sessionStorage.removeItem(LAST_FETCH_KEY) // Clear cooldown
-        fetchStores(true)
+        
+        // Refetch stores
+        sessionStorage.removeItem(LAST_FETCH_KEY)
+        const supabase2 = createClient()
+        const { data } = await supabase2
+          .from('stores')
+          .select('*, platforms(*)')
+          .eq('user_id', user?.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+        
+        setStores(data || [])
       }
     } catch (err: any) {
       console.error('Disconnect error:', err)
