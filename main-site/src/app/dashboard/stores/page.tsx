@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -28,10 +28,10 @@ export default function StoresPage() {
       setMessage({ type: 'error', text: 'Failed to connect store. Please try again.' })
       router.replace('/dashboard/stores')
     }
-  }, [])
+  }, [router])
 
-  // Fetch user's stores (only active ones)
-  const fetchStores = async () => {
+  // Fetch user's stores (only active ones) - USE useCallback!
+  const fetchStores = useCallback(async () => {
     if (!user) {
       setLoading(false)
       return
@@ -60,11 +60,11 @@ export default function StoresPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
 
   useEffect(() => {
     fetchStores()
-  }, [user])
+  }, [fetchStores])
 
   const connectShopify = () => {
     if (!shopDomain) {
