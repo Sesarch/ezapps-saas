@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -41,7 +39,7 @@ export default function StoresPage() {
 
     try {
       setLoading(true)
-      const supabase = createClient()  // ← FIXED: Inside function
+      const supabase = createClient()
       
       const { data, error } = await supabase
         .from('stores')
@@ -89,7 +87,7 @@ export default function StoresPage() {
     }
 
     try {
-      const supabase = createClient()  // ← FIXED: Inside function
+      const supabase = createClient()
       
       const { error } = await supabase
         .from('stores')
