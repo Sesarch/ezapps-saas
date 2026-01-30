@@ -4,7 +4,9 @@ import { useAuth } from '@/components/AuthProvider'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+
+// ADMIN EMAILS - Add your admin email here
+const ADMIN_EMAILS = ['sesarch@yahoo.com', 'sina@usa.com']
 
 export default function AdminLayout({
   children,
@@ -18,41 +20,30 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    if (!user?.id) {
+    if (!user?.email) {
       if (!loading) {
         router.push('/login?redirect=/admin')
       }
       return
     }
 
-    const checkAdmin = async () => {
-      const supabase = createClient()
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user.id)
-        .single()
+    // Check if user email is in admin list
+    const adminCheck = ADMIN_EMAILS.includes(user.email.toLowerCase())
+    
+    console.log('Admin check:', { 
+      userEmail: user.email, 
+      isAdmin: adminCheck,
+      adminEmails: ADMIN_EMAILS 
+    })
 
-      console.log('Admin check:', { data, error, userId: user.id })
-
-      if (error) {
-        console.error('Error checking admin status:', error)
-        setIsAdmin(false)
-        return
-      }
-
-      if (data?.is_admin === true) {
-        setIsAdmin(true)
-      } else {
-        setIsAdmin(false)
-        alert('Access Denied: You do not have admin privileges')
-        router.push('/dashboard/stores')
-      }
+    if (adminCheck) {
+      setIsAdmin(true)
+    } else {
+      setIsAdmin(false)
+      alert('Access Denied: You do not have admin privileges')
+      router.push('/dashboard/stores')
     }
-
-    checkAdmin()
-  }, [user?.id, loading, router])
+  }, [user?.email, loading, router])
 
   if (loading || isAdmin === null) {
     return (
