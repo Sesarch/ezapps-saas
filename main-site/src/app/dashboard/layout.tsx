@@ -1,12 +1,9 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardLayout({
   children,
@@ -19,9 +16,6 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    // Move createClient INSIDE useEffect
-    const supabase = createClient()
-    
     if (!loading && !user) {
       router.push('/login?redirect=/dashboard')
     }
