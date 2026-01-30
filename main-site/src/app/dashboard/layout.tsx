@@ -105,34 +105,36 @@ export default function DashboardLayout({
         {/* Sidebar */}
         <aside className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-64 bg-gray-800 border-r border-gray-700
+          w-64 bg-gradient-to-b from-gray-800 to-gray-900 border-r border-gray-700
           transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0
         `}>
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="hidden lg:flex items-center gap-3 h-16 px-6 border-b border-gray-700">
-              <span className="text-2xl">📦</span>
+            <div className="hidden lg:flex items-center gap-3 h-16 px-6 border-b border-gray-700/50">
+              <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-xl">📦</span>
+              </div>
               <div>
-                <p className="font-bold text-white">EZ Apps</p>
+                <p className="font-bold text-white text-lg">EZ Apps</p>
                 <p className="text-xs text-gray-400">Dashboard</p>
               </div>
             </div>
 
             {/* Navigation with Groups */}
-            <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+            <nav className="flex-1 px-3 py-6 space-y-5 overflow-y-auto">
               {navigationGroups.map((group) => (
                 <div key={group.name}>
                   {/* Group Label */}
-                  <div className="px-3 mb-2">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  <div className="px-3 mb-3">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       {group.name}
                     </p>
                   </div>
                   
-                  {/* Group Items in Card */}
-                  <div className="bg-gray-900/50 rounded-xl p-2 space-y-1">
+                  {/* Group Items in Modern Card */}
+                  <div className="bg-gray-700/30 backdrop-blur-sm rounded-2xl p-2 space-y-1 border border-gray-600/20 shadow-lg">
                     {group.items.map((item) => {
                       const isActive = pathname === item.href
                       return (
@@ -140,14 +142,14 @@ export default function DashboardLayout({
                           key={item.name}
                           href={item.href}
                           onClick={() => setSidebarOpen(false)}
-                          className={`flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                          className={`flex items-center px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                             isActive
-                              ? 'bg-teal-600 text-white'
-                              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                              ? 'bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-500/20 scale-[1.02]'
+                              : 'text-gray-300 hover:bg-gray-600/40 hover:text-white hover:scale-[1.01]'
                           }`}
                         >
                           <span className="mr-3 text-lg">{item.icon}</span>
-                          {item.name}
+                          <span className={isActive ? 'font-semibold' : ''}>{item.name}</span>
                         </Link>
                       )
                     })}
@@ -157,21 +159,21 @@ export default function DashboardLayout({
             </nav>
 
             {/* User Section */}
-            <div className="p-4 border-t border-gray-700">
-              <div className="flex items-center mb-3">
-                <div className="w-10 h-10 bg-teal-600 rounded-full flex items-center justify-center text-white font-semibold">
+            <div className="p-4 border-t border-gray-700/50 bg-gray-800/50">
+              <div className="flex items-center mb-3 bg-gray-700/30 rounded-xl p-3 border border-gray-600/20">
+                <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                   {user?.email?.charAt(0).toUpperCase()}
                 </div>
-                <div className="ml-3 overflow-hidden">
-                  <p className="text-sm font-medium text-white truncate">{user?.email}</p>
-                  <p className="text-xs text-teal-400">User</p>
+                <div className="ml-3 overflow-hidden flex-1">
+                  <p className="text-sm font-semibold text-white truncate">{user?.email}</p>
+                  <p className="text-xs text-teal-400">Active User</p>
                 </div>
               </div>
               <button
                 onClick={signOut}
-                className="w-full flex items-center px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-300 hover:text-white bg-gray-700/30 hover:bg-red-600/20 border border-gray-600/20 hover:border-red-500/30 rounded-xl transition-all duration-200"
               >
-                <span className="mr-3">🚪</span>
+                <span className="mr-2">🚪</span>
                 Sign Out
               </button>
             </div>
@@ -181,7 +183,7 @@ export default function DashboardLayout({
         {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
         )}
