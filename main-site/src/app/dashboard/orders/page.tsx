@@ -1,5 +1,5 @@
 'use client'
-export const dynamic = 'force-dynamic'
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -53,6 +53,7 @@ export default function OrdersPage() {
         .from('stores')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_active', true)
         .limit(1)
 
       if (stores && stores.length > 0) {
@@ -91,7 +92,7 @@ export default function OrdersPage() {
     setSyncing(true)
     
     try {
-      const response = await fetch(`/api/shopify/orders?store=${store.store_url}`)
+      const response = await fetch(`https://ezapps.app/api/shopify/orders?store=${store.store_url}`)
       const data = await response.json()
       
       if (data.error) {
