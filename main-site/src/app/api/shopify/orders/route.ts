@@ -1,348 +1,242 @@
-'use client'
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
-interface Order {
-  id: string
-  shopify_order_id: string
-  order_number: string
-  order_name: string
-  customer_name: string | null
-  customer_email: string | null
-  total_price: number
-  fulfillment_status: string | null
-  financial_status: string | null
-  can_fulfill: boolean
-  missing_parts: string | null
-  order_date: string
-}
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const storeUrl = searchParams.get('store')
 
-interface Store {
-  id: string
-  store_url: string
-  access_token: string
-}
-
-export default function OrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [store, setStore] = useState<Store | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [syncing, setSyncing] = useState(false)
-  const [error, setError] = useState('')
-  const [filter, setFilter] = useState<'all' | 'unfulfilled' | 'fulfilled'>('all')
-
-  const supabase = createClient()
-
-  useEffect(() => {
-    fetchStore()
-  }, [])
-
-  useEffect(() => {
-    if (store) {
-      fetchOrders()
-    }
-  }, [store])
-
-  async function fetchStore() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data: stores } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .limit(1)
-
-      if (stores && stores.length > 0) {
-        setStore(stores[0])
-      } else {
-        setError('Please connect a store first')
-        setLoading(false)
-      }
-    } catch (err) {
-      console.error('Error fetching store:', err)
-      setLoading(false)
-    }
+  if (!storeUrl) {
+    return NextResponse.json({ error: 'Store URL required' }, { status: 400 })
   }
 
-  async function fetchOrders() {
-    if (!store) return
-    try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('shopify_orders')
-        .select('*')
-        .eq('store_id', store.id)
-        .order('order_date', { ascending: false })
+  try {
+    const { data: store, error: storeError } = await supabase
+      .from('stores')
+      .select('*')
+      .eq('store_url', storeUrl)
+      .single()
 
-      if (error) throw error
-      setOrders(data || [])
-    } catch (err) {
-      console.error('Error fetching orders:', err)
-    } finally {
-      setLoading(false)
+    if (storeError || !store) {
+      console.error('Store lookup error:', storeError)
+      return NextResponse.json({ error: 'Store not found', storeUrl }, { status: 404 })
     }
-  }
 
-  async function syncOrders() {
-    if (!store) return
-    setSyncing(true)
+    let shopDomain = store.store_url
+    shopDomain = shopDomain.replace('https://', '').replace('http://', '')
+
+    const shopifyUrl = `https://${shopDomain}/admin/api/2024-10/orders.json?status=any&limit=50`
     
-    try {
-      // FIXED: Call API from main domain, not subdomain
-      const response = await fetch(`https://ezapps.app/api/shopify/orders?store=${store.store_url}`)
-      const data = await response.json()
+    console.log('Fetching orders from:', shopifyUrl)
+
+    const response = await fetch(shopifyUrl, {
+      headers: {
+        'X-Shopify-Access-Token': store.access_token,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('Shopify API error:', response.status, errorText)
+      return NextResponse.json({ 
+        error: 'Failed to fetch orders from Shopify',
+        details: errorText 
+      }, { status: response.status })
+    }
+
+    const data = await response.json()
+    const orders = data.orders || []
+
+    for (const order of orders) {
+      // Determine fulfillment status
+      let fulfillmentStatus = 'unfulfilled'
       
-      if (data.error) {
-        alert('Error: ' + data.error)
-        setSyncing(false)
-        return
+      if (order.fulfillment_status === 'fulfilled') {
+        fulfillmentStatus = 'fulfilled'
+      } else if (order.fulfillment_status === 'partial') {
+        fulfillmentStatus = 'partial'
+      } else if (order.fulfillments && order.fulfillments.length > 0) {
+        const lineItemCount = order.line_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
+        const fulfilledCount = order.fulfillments.reduce((sum: number, f: any) => {
+          return sum + (f.line_items?.reduce((s: number, li: any) => s + li.quantity, 0) || 0)
+        }, 0)
+        
+        if (fulfilledCount >= lineItemCount) {
+          fulfillmentStatus = 'fulfilled'
+        } else if (fulfilledCount > 0) {
+          fulfillmentStatus = 'partial'
+        }
       }
       
-      if (data.orders) {
-        for (const order of data.orders) {
-          const orderData = {
+      const orderData = {
+        store_id: store.id,
+        shopify_order_id: order.id.toString(),
+        order_number: order.order_number?.toString() || '',
+        order_name: order.name || '',
+        customer_name: order.customer?.first_name 
+          ? `${order.customer.first_name} ${order.customer.last_name || ''}`.trim()
+          : null,
+        customer_email: order.customer?.email || null,
+        total_price: parseFloat(order.total_price) || 0,
+        fulfillment_status: fulfillmentStatus,
+        financial_status: order.financial_status || null,
+        order_date: order.created_at,
+        updated_at: new Date().toISOString()
+      }
+
+      const { data: savedOrder, error: orderError } = await supabase
+        .from('shopify_orders')
+        .upsert(orderData, { onConflict: 'store_id,shopify_order_id' })
+        .select()
+        .single()
+
+      if (orderError) {
+        console.error('Error saving order:', orderError)
+        continue
+      }
+
+      if (order.line_items && order.line_items.length > 0) {
+        for (const item of order.line_items) {
+          const lineItemData = {
             store_id: store.id,
-            shopify_order_id: order.id.toString(),
-            order_number: order.order_number?.toString() || '',
-            order_name: order.name || '',
-            customer_name: order.customer?.first_name 
-              ? `${order.customer.first_name} ${order.customer.last_name || ''}`.trim()
-              : null,
-            customer_email: order.customer?.email || null,
-            total_price: parseFloat(order.total_price) || 0,
-            fulfillment_status: order.fulfillment_status || 'unfulfilled',
-            financial_status: order.financial_status || null,
-            order_date: order.created_at,
-            updated_at: new Date().toISOString()
+            order_id: savedOrder.id,
+            shopify_line_item_id: item.id.toString(),
+            shopify_product_id: item.product_id?.toString() || null,
+            shopify_variant_id: item.variant_id?.toString() || null,
+            product_title: item.title || '',
+            variant_title: item.variant_title || null,
+            quantity: item.quantity || 1,
+            price: parseFloat(item.price) || 0
           }
 
           await supabase
-            .from('shopify_orders')
-            .upsert(orderData, { onConflict: 'store_id,shopify_order_id' })
+            .from('order_line_items')
+            .upsert(lineItemData, { onConflict: 'order_id,shopify_line_item_id' })
         }
-        
-        await fetchOrders()
-        alert(`Synced ${data.orders.length} orders!`)
       }
-    } catch (err) {
-      console.error('Error syncing orders:', err)
-      alert('Failed to sync orders')
-    } finally {
-      setSyncing(false)
     }
+
+    // Recalculate committed inventory
+    await recalculateCommitted(store.id)
+
+    return NextResponse.json({ 
+      orders,
+      message: `Synced ${orders.length} orders and recalculated committed inventory`
+    })
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
 
-  const filteredOrders = orders.filter(order => {
-    if (filter === 'unfulfilled') return !order.fulfillment_status || order.fulfillment_status === 'unfulfilled'
-    if (filter === 'fulfilled') return order.fulfillment_status === 'fulfilled'
-    return true
-  })
+// POST endpoint to manually recalculate committed inventory
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { storeId } = body
 
-  const unfulfilledCount = orders.filter(o => !o.fulfillment_status || o.fulfillment_status === 'unfulfilled').length
-  const fulfilledCount = orders.filter(o => o.fulfillment_status === 'fulfilled').length
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.total_price || 0), 0)
+    if (!storeId) {
+      return NextResponse.json({ error: 'Store ID required' }, { status: 400 })
+    }
 
-  if (loading && !store) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
+    await recalculateCommitted(storeId)
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Committed inventory recalculated successfully' 
+    })
+  } catch (error) {
+    console.error('Error in POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
+}
 
-  if (error && !store) {
-    return (
-      <div className="p-8">
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
-          {error}. <a href="/dashboard/stores" className="underline">Go to Stores</a>
-        </div>
-      </div>
-    )
+async function recalculateCommitted(storeId: string) {
+  try {
+    // Try calling the database function first
+    const { error: rpcError } = await supabase.rpc('recalculate_committed', {
+      p_store_id: storeId
+    })
+    
+    if (rpcError) {
+      console.error('RPC error, falling back to direct calculation:', rpcError)
+      // Fallback: Do the calculation directly in code
+      await fallbackRecalculate(storeId)
+    } else {
+      console.log('Committed inventory recalculated via database function')
+    }
+  } catch (error) {
+    console.error('Error recalculating committed:', error)
+    // Try fallback
+    await fallbackRecalculate(storeId)
   }
+}
 
-  return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-        <p className="text-gray-600 mt-1">Sync and manage orders from Shopify</p>
-      </div>
+async function fallbackRecalculate(storeId: string) {
+  try {
+    // Reset all parts to 0 committed
+    await supabase
+      .from('parts')
+      .update({ committed: 0 })
+      .eq('store_id', storeId)
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Orders</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{orders.length}</p>
-            </div>
-            <div className="text-3xl">🛒</div>
-          </div>
-        </div>
+    // Get all unfulfilled orders with their line items
+    const { data: lineItems } = await supabase
+      .from('order_line_items')
+      .select(`
+        quantity,
+        shopify_variant_id,
+        shopify_orders!inner(fulfillment_status)
+      `)
+      .eq('store_id', storeId)
+      .or('fulfillment_status.eq.unfulfilled,fulfillment_status.is.null', { foreignTable: 'shopify_orders' })
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Unfulfilled</p>
-              <p className="text-3xl font-bold text-red-600 mt-1">{unfulfilledCount}</p>
-            </div>
-            <div className="text-3xl">⏳</div>
-          </div>
-        </div>
+    if (!lineItems || lineItems.length === 0) {
+      console.log('No unfulfilled order line items found')
+      return
+    }
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Fulfilled</p>
-              <p className="text-3xl font-bold text-green-600 mt-1">{fulfilledCount}</p>
-            </div>
-            <div className="text-3xl">✅</div>
-          </div>
-        </div>
+    // Get all BOM items for this store
+    const { data: bomItems } = await supabase
+      .from('bom_items')
+      .select('part_id, shopify_variant_id, quantity_needed')
+      .eq('store_id', storeId)
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Revenue</p>
-              <p className="text-3xl font-bold text-teal-600 mt-1">${totalRevenue.toFixed(2)}</p>
-            </div>
-            <div className="text-3xl">💰</div>
-          </div>
-        </div>
-      </div>
+    if (!bomItems || bomItems.length === 0) {
+      console.log('No BOM items found')
+      return
+    }
 
-      {/* Actions */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'all' ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              All ({orders.length})
-            </button>
-            <button
-              onClick={() => setFilter('unfulfilled')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'unfulfilled' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Unfulfilled ({unfulfilledCount})
-            </button>
-            <button
-              onClick={() => setFilter('fulfilled')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                filter === 'fulfilled' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              Fulfilled ({fulfilledCount})
-            </button>
-          </div>
+    // Calculate committed for each part
+    const partCommitted: Record<string, number> = {}
 
-          <button
-            onClick={syncOrders}
-            disabled={syncing}
-            className="flex items-center px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium disabled:opacity-50"
-          >
-            {syncing ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <span className="mr-2">🔄</span> Sync Orders
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+    for (const lineItem of lineItems) {
+      const variantId = lineItem.shopify_variant_id
+      if (!variantId) continue
 
-      {/* Orders Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="p-12 text-center">
-            <div className="text-5xl mb-4">🛒</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-500 mb-4">
-              {orders.length === 0 ? 'Click "Sync Orders" to import from Shopify' : 'No orders match this filter'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">ORDER</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">CUSTOMER</th>
-                  <th className="text-left py-4 px-6 text-sm font-semibold text-gray-600">DATE</th>
-                  <th className="text-right py-4 px-6 text-sm font-semibold text-gray-600">TOTAL</th>
-                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">PAYMENT</th>
-                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">FULFILLMENT</th>
-                  <th className="text-center py-4 px-6 text-sm font-semibold text-gray-600">CAN FULFILL</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="py-4 px-6">
-                      <p className="font-medium text-gray-900">{order.order_name}</p>
-                      <p className="text-sm text-gray-500">#{order.order_number}</p>
-                    </td>
-                    <td className="py-4 px-6">
-                      <p className="text-gray-900">{order.customer_name || 'Guest'}</p>
-                      <p className="text-sm text-gray-500">{order.customer_email || '-'}</p>
-                    </td>
-                    <td className="py-4 px-6 text-gray-600">
-                      {new Date(order.order_date).toLocaleDateString()}
-                    </td>
-                    <td className="py-4 px-6 text-right font-medium text-gray-900">
-                      ${order.total_price?.toFixed(2)}
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        order.financial_status === 'paid' 
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {order.financial_status || 'pending'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        order.fulfillment_status === 'fulfilled'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {order.fulfillment_status || 'unfulfilled'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      {order.can_fulfill ? (
-                        <span className="text-green-600 text-xl">✅</span>
-                      ) : (
-                        <span className="text-red-600 text-xl" title={order.missing_parts || 'Missing parts'}>❌</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  )
+      const matchingBoms = bomItems.filter(b => b.shopify_variant_id === variantId)
+      
+      for (const bom of matchingBoms) {
+        const committed = lineItem.quantity * bom.quantity_needed
+        partCommitted[bom.part_id] = (partCommitted[bom.part_id] || 0) + committed
+      }
+    }
+
+    // Update parts with calculated committed values
+    for (const [partId, committed] of Object.entries(partCommitted)) {
+      await supabase
+        .from('parts')
+        .update({ committed })
+        .eq('id', partId)
+    }
+
+    console.log('Fallback committed calculation complete:', partCommitted)
+  } catch (error) {
+    console.error('Fallback recalculate error:', error)
+  }
 }
