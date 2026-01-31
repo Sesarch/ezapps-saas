@@ -46,14 +46,14 @@ export default function DashboardLayout({
       ]
     },
     {
-      name: 'Inventory',
-      items: [
-        { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
-        { name: 'Items', href: '/dashboard/items', icon: '📱' },
-        { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
-        { name: 'Builds', href: '/dashboard/builds', icon: '🔨' },
-      ]
-    },
+  name: 'Inventory',
+  items: [
+    { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
+    { name: 'Items', href: '/dashboard/items', icon: '📱' },
+    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
+    { name: 'Builds', href: '/dashboard/builds', icon: '🔨' },
+  ]
+},
     {
       name: 'Operations',
       items: [
