@@ -6,12 +6,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// CORS headers to allow requests from subdomains
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders })
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const storeUrl = searchParams.get('store')
 
   if (!storeUrl) {
-    return NextResponse.json({ error: 'Store URL required' }, { status: 400 })
+    return NextResponse.json({ error: 'Store URL required' }, { status: 400, headers: corsHeaders })
   }
 
   try {
@@ -23,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     if (storeError || !store) {
       console.error('Store lookup error:', storeError)
-      return NextResponse.json({ error: 'Store not found', storeUrl }, { status: 404 })
+      return NextResponse.json({ error: 'Store not found', storeUrl }, { status: 404, headers: corsHeaders })
     }
 
     let shopDomain = store.store_url
@@ -46,7 +58,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ 
         error: 'Failed to fetch orders from Shopify',
         details: errorText 
-      }, { status: response.status })
+      }, { status: response.status, headers: corsHeaders })
     }
 
     const data = await response.json()
@@ -127,10 +139,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       orders,
       message: `Synced ${orders.length} orders and recalculated committed inventory`
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     console.error('Error fetching orders:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders })
   }
 }
 
@@ -141,7 +153,7 @@ export async function POST(request: NextRequest) {
     const { storeId } = body
 
     if (!storeId) {
-      return NextResponse.json({ error: 'Store ID required' }, { status: 400 })
+      return NextResponse.json({ error: 'Store ID required' }, { status: 400, headers: corsHeaders })
     }
 
     await recalculateCommitted(storeId)
@@ -149,10 +161,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       message: 'Committed inventory recalculated successfully' 
-    })
+    }, { headers: corsHeaders })
   } catch (error) {
     console.error('Error in POST:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders })
   }
 }
 
