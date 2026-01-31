@@ -51,7 +51,6 @@ export default function DashboardLayout({
     { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
     { name: 'Items', href: '/dashboard/items', icon: '📱' },
     { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
-    { name: 'Builds', href: '/dashboard/builds', icon: '🔨' },
   ]
 },
     {
