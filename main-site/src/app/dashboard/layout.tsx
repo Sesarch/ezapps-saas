@@ -36,7 +36,7 @@ export default function DashboardLayout({
     return null
   }
 
-  // Organized navigation with groups
+  // Organized navigation with groups - UPDATED!
   const navigationGroups = [
     {
       name: 'Overview',
@@ -49,7 +49,7 @@ export default function DashboardLayout({
       name: 'Inventory',
       items: [
         { name: 'Inventory', href: '/dashboard/inventory', icon: '📦' },
-        { name: 'Parts', href: '/dashboard/parts', icon: '⚙️' },
+        { name: 'Items', href: '/dashboard/items', icon: '📱' },
         { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
         { name: 'Builds', href: '/dashboard/builds', icon: '🔨' },
       ]
@@ -67,7 +67,6 @@ export default function DashboardLayout({
       items: [
         { name: 'Apps', href: '/dashboard/apps', icon: '🎯' },
         { name: 'Scanner', href: '/dashboard/scan', icon: '📷' },
-        { name: 'Items', href: '/dashboard/items', icon: '📱' },
       ]
     },
     {
