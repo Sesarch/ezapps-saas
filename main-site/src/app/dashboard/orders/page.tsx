@@ -93,6 +93,13 @@ export default function OrdersPage() {
     
     try {
       const response = await fetch(`https://ezapps.app/api/shopify/orders?store=${store.store_url}`)
+      
+      if (!response.ok) {
+        alert('Error: Failed to connect to Shopify API')
+        setSyncing(false)
+        return
+      }
+      
       const data = await response.json()
       
       if (data.error) {
@@ -101,35 +108,44 @@ export default function OrdersPage() {
         return
       }
       
-      if (data.orders) {
-        for (const order of data.orders) {
-          const orderData = {
-            store_id: store.id,
-            shopify_order_id: order.id.toString(),
-            order_number: order.order_number?.toString() || '',
-            order_name: order.name || '',
-            customer_name: order.customer?.first_name 
-              ? `${order.customer.first_name} ${order.customer.last_name || ''}`.trim()
-              : null,
-            customer_email: order.customer?.email || null,
-            total_price: parseFloat(order.total_price) || 0,
-            fulfillment_status: order.fulfillment_status || 'unfulfilled',
-            financial_status: order.financial_status || null,
-            order_date: order.created_at,
-            updated_at: new Date().toISOString()
-          }
-
-          await supabase
-            .from('shopify_orders')
-            .upsert(orderData, { onConflict: 'store_id,shopify_order_id' })
-        }
-        
-        await fetchOrders()
-        alert(`Synced ${data.orders.length} orders!`)
+      // Handle successful response
+      const ordersCount = data.orders?.length || 0
+      
+      if (ordersCount === 0) {
+        alert('✅ Successfully synced! No orders found in your Shopify store.')
+        setSyncing(false)
+        return
       }
+      
+      // Process orders if there are any
+      for (const order of data.orders) {
+        const orderData = {
+          store_id: store.id,
+          shopify_order_id: order.id.toString(),
+          order_number: order.order_number?.toString() || '',
+          order_name: order.name || '',
+          customer_name: order.customer?.first_name 
+            ? `${order.customer.first_name} ${order.customer.last_name || ''}`.trim()
+            : null,
+          customer_email: order.customer?.email || null,
+          total_price: parseFloat(order.total_price) || 0,
+          fulfillment_status: order.fulfillment_status || 'unfulfilled',
+          financial_status: order.financial_status || null,
+          order_date: order.created_at,
+          updated_at: new Date().toISOString()
+        }
+
+        await supabase
+          .from('shopify_orders')
+          .upsert(orderData, { onConflict: 'store_id,shopify_order_id' })
+      }
+      
+      await fetchOrders()
+      alert(`✅ Successfully synced ${ordersCount} order${ordersCount === 1 ? '' : 's'}!`)
+      
     } catch (err) {
       console.error('Error syncing orders:', err)
-      alert('Failed to sync orders')
+      alert('Error: Could not connect to the server')
     } finally {
       setSyncing(false)
     }
