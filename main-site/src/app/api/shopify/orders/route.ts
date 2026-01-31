@@ -241,3 +241,4 @@ async function fallbackRecalculate(storeId: string) {
     console.error('Fallback recalculate error:', error)
   }
 }
+ 
