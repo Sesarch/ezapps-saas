@@ -15,6 +15,7 @@ interface Item {
   current_stock: number;
   min_stock: number;
   store_id: string;
+  image_url?: string;
   available_stock?: number;
   min_stock_level?: number;
   track_inventory?: boolean;
@@ -70,7 +71,6 @@ export default function ItemsPage() {
         return;
       }
 
-      // Load user's active stores - FIXED!
       const { data: storesData, error: storesError } = await supabase
         .from('stores')
         .select('*')
@@ -82,7 +82,6 @@ export default function ItemsPage() {
 
       setAllStores(storesData || []);
 
-      // If user has stores, set first one as current and load its items
       if (storesData && storesData.length > 0) {
         const firstStore = storesData[0];
         setCurrentStore(firstStore);
@@ -153,7 +152,6 @@ export default function ItemsPage() {
     }
   };
 
-  // No store connected - show connection prompt
   if (!isLoading && allStores.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 md:p-8">
@@ -207,7 +205,6 @@ export default function ItemsPage() {
           </p>
         </div>
 
-        {/* Store Selector (if multiple stores) */}
         {allStores.length > 1 && (
           <div className="bg-white rounded-2xl shadow-xl p-4 mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -263,21 +260,37 @@ export default function ItemsPage() {
             {filteredItems.map((item) => (
               <div key={item.id} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-all">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold">{item.name}</h3>
-                      <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
-                        {item.item_type}
-                      </span>
-                      {item.unit && (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          {item.unit}
+                  <div className="flex items-center gap-4 flex-1">
+                    {/* Item Image */}
+                    {item.image_url ? (
+                      <img 
+                        src={item.image_url} 
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-xl border-2 border-gray-200"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center border-2 border-indigo-200">
+                        <span className="text-3xl">📦</span>
+                      </div>
+                    )}
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold">{item.name}</h3>
+                        <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                          {item.item_type}
                         </span>
-                      )}
+                        {item.unit && (
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                            {item.unit}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-600">SKU: {item.sku}</p>
+                      {item.description && <p className="text-sm text-slate-500 mt-1">{item.description}</p>}
                     </div>
-                    <p className="text-sm text-slate-600">SKU: {item.sku}</p>
-                    {item.description && <p className="text-sm text-slate-500 mt-1">{item.description}</p>}
                   </div>
+                  
                   <div className="flex items-center gap-4">
                     <div className="text-center">
                       <p className="text-sm text-slate-500">Stock</p>
@@ -347,8 +360,12 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
     description: editItem?.description || '',
     current_stock: editItem?.current_stock || 0,
     min_stock: editItem?.min_stock || 0,
+    image_url: editItem?.image_url || '',
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>(editItem?.image_url || '');
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState('');
 
   const supabase = createClient();
@@ -386,6 +403,66 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
     ]},
   ];
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be less than 5MB');
+        return;
+      }
+
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return formData.image_url || null;
+
+    setUploadingImage(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${user.id}/${storeId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('item-images')
+        .upload(fileName, imageFile, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (err: any) {
+      console.error('Image upload error:', err);
+      setError(`Failed to upload image: ${err.message}`);
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -395,8 +472,18 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Upload image if new file selected
+      let imageUrl = formData.image_url;
+      if (imageFile) {
+        const uploadedUrl = await uploadImage();
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const itemData = {
         ...formData,
+        image_url: imageUrl,
         user_id: user.id,
         store_id: storeId,
       };
@@ -443,6 +530,49 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
               ⚠️ {error}
             </div>
           )}
+
+          {/* Image Upload Section */}
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border-2 border-purple-100">
+            <h3 className="text-lg font-bold text-purple-900 mb-4">📸 Item Image</h3>
+            
+            <div className="flex items-center gap-6">
+              {/* Image Preview */}
+              <div className="flex-shrink-0">
+                {imagePreview ? (
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-xl border-2 border-purple-200"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl flex items-center justify-center border-2 border-purple-200">
+                    <span className="text-4xl">📦</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload Button */}
+              <div className="flex-1">
+                <label className="block">
+                  <span className="sr-only">Choose image</span>
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
+                  />
+                </label>
+                <p className="text-xs text-gray-500 mt-2">
+                  PNG, JPG, GIF up to 5MB
+                </p>
+                {imageFile && (
+                  <p className="text-sm text-purple-600 mt-2">
+                    ✓ {imageFile.name} selected
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border-2 border-indigo-100">
             <h3 className="text-lg font-bold text-indigo-900 mb-4">📋 Categorization</h3>
@@ -577,10 +707,10 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploadingImage}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              {loading ? '⏳ Saving...' : editItem ? '💾 Update Item' : '✨ Create Item'}
+              {loading || uploadingImage ? '⏳ Saving...' : editItem ? '💾 Update Item' : '✨ Create Item'}
             </button>
           </div>
         </form>
