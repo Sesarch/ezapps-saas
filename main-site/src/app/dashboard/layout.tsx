@@ -36,7 +36,7 @@ export default function DashboardLayout({
     return null
   }
 
-  // Organized navigation with groups - UPDATED!
+  // Organized navigation with groups - UPDATED FOR INVENTORY SUBFOLDER!
   const navigationGroups = [
     {
       name: 'Overview',
@@ -46,26 +46,27 @@ export default function DashboardLayout({
       ]
     },
     {
-  name: 'Inventory',
-  items: [
-    { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
-    { name: 'Items', href: '/dashboard/items', icon: '📱' },
-    { name: 'BOM', href: '/dashboard/bom', icon: '📋' },
-  ]
-},
+      name: 'Inventory',
+      items: [
+        { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
+        { name: 'Items', href: '/dashboard/inventory/items', icon: '📱' },
+        { name: 'BOM', href: '/dashboard/inventory/bom', icon: '📋' },
+        { name: 'Parts', href: '/dashboard/inventory/parts', icon: '🔧' },
+        { name: 'Suppliers', href: '/dashboard/inventory/suppliers', icon: '🏭' },
+      ]
+    },
     {
       name: 'Operations',
       items: [
-        { name: 'Orders', href: '/dashboard/orders', icon: '🛒' },
-        { name: 'Purchase Orders', href: '/dashboard/purchase-orders', icon: '📝' },
-        { name: 'Suppliers', href: '/dashboard/suppliers', icon: '🏭' },
+        { name: 'Orders', href: '/dashboard/inventory/orders', icon: '🛒' },
+        { name: 'Purchase Orders', href: '/dashboard/inventory/purchase-orders', icon: '📝' },
       ]
     },
     {
       name: 'Tools',
       items: [
         { name: 'Apps', href: '/dashboard/apps', icon: '🎯' },
-        { name: 'Scanner', href: '/dashboard/scan', icon: '📷' },
+        { name: 'Scanner', href: '/dashboard/inventory/scan', icon: '📷' },
       ]
     },
     {
@@ -193,4 +194,4 @@ export default function DashboardLayout({
       </div>
     </div>
   )
-} 
+}
