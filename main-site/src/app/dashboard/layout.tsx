@@ -36,7 +36,7 @@ export default function DashboardLayout({
     return null
   }
 
-  // FIXED NAVIGATION - Products now points to /products subfolder
+  // FIXED NAVIGATION - Parts removed, Items handles all internal inventory
   const navigationGroups = [
     {
       name: 'Overview',
@@ -51,7 +51,6 @@ export default function DashboardLayout({
         { name: 'Products', href: '/dashboard/inventory/products', icon: '📦' },
         { name: 'Items', href: '/dashboard/inventory/items', icon: '📱' },
         { name: 'BOM', href: '/dashboard/inventory/bom', icon: '📋' },
-        { name: 'Parts', href: '/dashboard/inventory/parts', icon: '🔧' },
         { name: 'Suppliers', href: '/dashboard/inventory/suppliers', icon: '🏭' },
       ]
     },
@@ -195,3 +194,12 @@ export default function DashboardLayout({
     </div>
   )
 }
+```
+
+---
+
+## ✅ STEP 3: Delete Parts Folder
+
+**Delete this folder:**
+```
+/main-site/src/app/dashboard/inventory/parts/
