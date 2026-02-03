@@ -36,7 +36,7 @@ export default function DashboardLayout({
     return null
   }
 
-  // Organized navigation with groups - UPDATED FOR INVENTORY SUBFOLDER!
+  // FIXED NAVIGATION - Products now points to /products subfolder
   const navigationGroups = [
     {
       name: 'Overview',
@@ -48,7 +48,7 @@ export default function DashboardLayout({
     {
       name: 'Inventory',
       items: [
-        { name: 'Products', href: '/dashboard/inventory', icon: '📦' },
+        { name: 'Products', href: '/dashboard/inventory/products', icon: '📦' },
         { name: 'Items', href: '/dashboard/inventory/items', icon: '📱' },
         { name: 'BOM', href: '/dashboard/inventory/bom', icon: '📋' },
         { name: 'Parts', href: '/dashboard/inventory/parts', icon: '🔧' },
