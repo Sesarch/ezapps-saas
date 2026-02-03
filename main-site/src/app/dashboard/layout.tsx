@@ -1,9 +1,3 @@
----
-
-## 🔧 QUICK FIX: Replace layout.tsx with clean code
-
-Replace `/main-site/src/app/dashboard/layout.tsx` with this CLEAN VERSION (no markdown, no instructions):
-```tsx
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
@@ -190,6 +184,3 @@ export default function DashboardLayout({
     </div>
   )
 }
-```
-
-**Save this, commit, and push!** 🚀
