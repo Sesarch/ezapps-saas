@@ -16,10 +16,6 @@ interface Item {
   min_stock: number;
   store_id: string;
   image_url?: string;
-  available_stock?: number;
-  min_stock_level?: number;
-  track_inventory?: boolean;
-  can_sell?: boolean;
   created_at?: string;
 }
 
@@ -98,7 +94,7 @@ export default function ItemsPage() {
   const loadItemsForStore = async (storeId: string) => {
     try {
       const { data, error } = await supabase
-        .from('parts')
+        .from('items')
         .select('*')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false });
@@ -140,7 +136,7 @@ export default function ItemsPage() {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
 
     try {
-      const { error } = await supabase.from('parts').delete().eq('id', id);
+      const { error } = await supabase.from('items').delete().eq('id', id);
       if (error) throw error;
       
       if (currentStore) {
@@ -440,6 +436,8 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${user.id}/${storeId}/${Date.now()}.${fileExt}`;
 
+      console.log('📤 Uploading image:', fileName);
+
       const { error: uploadError, data } = await supabase.storage
         .from('item-images')
         .upload(fileName, imageFile, {
@@ -447,15 +445,22 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
           upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('❌ Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('✅ Upload success:', data);
 
       const { data: { publicUrl } } = supabase.storage
         .from('item-images')
         .getPublicUrl(fileName);
 
+      console.log('🔗 Public URL:', publicUrl);
+
       return publicUrl;
     } catch (err: any) {
-      console.error('Image upload error:', err);
+      console.error('💥 Image upload error:', err);
       setError(`Failed to upload image: ${err.message}`);
       return null;
     } finally {
@@ -490,13 +495,13 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
 
       if (editItem) {
         const { error } = await supabase
-          .from('parts')
+          .from('items')
           .update(itemData)
           .eq('id', editItem.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('parts')
+          .from('items')
           .insert([itemData]);
         if (error) throw error;
       }
