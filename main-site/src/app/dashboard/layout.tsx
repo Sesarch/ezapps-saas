@@ -1,3 +1,9 @@
+---
+
+## 🔧 QUICK FIX: Replace layout.tsx with clean code
+
+Replace `/main-site/src/app/dashboard/layout.tsx` with this CLEAN VERSION (no markdown, no instructions):
+```tsx
 'use client'
 
 import { useAuth } from '@/components/AuthProvider'
@@ -36,7 +42,6 @@ export default function DashboardLayout({
     return null
   }
 
-  // FIXED NAVIGATION - Parts removed, Items handles all internal inventory
   const navigationGroups = [
     {
       name: 'Overview',
@@ -79,7 +84,6 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* Mobile Header */}
       <div className="lg:hidden bg-gray-800 border-b border-gray-700 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-xl">📦</span>
@@ -100,7 +104,6 @@ export default function DashboardLayout({
       </div>
 
       <div className="flex">
-        {/* Sidebar */}
         <aside className={`
           fixed lg:static inset-y-0 left-0 z-50
           w-64 bg-gradient-to-b from-gray-800 to-gray-900 border-r border-gray-700
@@ -109,7 +112,6 @@ export default function DashboardLayout({
           lg:translate-x-0
         `}>
           <div className="flex flex-col h-full">
-            {/* Logo */}
             <div className="hidden lg:flex items-center gap-3 h-16 px-6 border-b border-gray-700/50">
               <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
                 <span className="text-xl">📦</span>
@@ -120,18 +122,15 @@ export default function DashboardLayout({
               </div>
             </div>
 
-            {/* Navigation with Groups */}
             <nav className="flex-1 px-3 py-6 space-y-5 overflow-y-auto">
               {navigationGroups.map((group) => (
                 <div key={group.name}>
-                  {/* Group Label */}
                   <div className="px-3 mb-3">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                       {group.name}
                     </p>
                   </div>
                   
-                  {/* Group Items in Modern Card */}
                   <div className="bg-gray-700/30 backdrop-blur-sm rounded-2xl p-2 space-y-1 border border-gray-600/20 shadow-lg">
                     {group.items.map((item) => {
                       const isActive = pathname === item.href
@@ -156,7 +155,6 @@ export default function DashboardLayout({
               ))}
             </nav>
 
-            {/* User Section */}
             <div className="p-4 border-t border-gray-700/50 bg-gray-800/50">
               <div className="flex items-center mb-3 bg-gray-700/30 rounded-xl p-3 border border-gray-600/20">
                 <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
@@ -178,7 +176,6 @@ export default function DashboardLayout({
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
@@ -186,7 +183,6 @@ export default function DashboardLayout({
           />
         )}
 
-        {/* Main Content */}
         <main className="flex-1 min-h-screen">
           {children}
         </main>
@@ -196,10 +192,4 @@ export default function DashboardLayout({
 }
 ```
 
----
-
-## ✅ STEP 3: Delete Parts Folder
-
-**Delete this folder:**
-```
-/main-site/src/app/dashboard/inventory/parts/
+**Save this, commit, and push!** 🚀
