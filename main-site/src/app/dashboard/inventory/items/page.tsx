@@ -98,7 +98,7 @@ export default function ItemsPage() {
   const loadItemsForStore = async (storeId: string) => {
     try {
       const { data, error } = await supabase
-        .from('items')
+        .from('parts')
         .select('*')
         .eq('store_id', storeId)
         .order('created_at', { ascending: false });
@@ -140,7 +140,7 @@ export default function ItemsPage() {
     if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
 
     try {
-      const { error } = await supabase.from('items').delete().eq('id', id);
+      const { error } = await supabase.from('parts').delete().eq('id', id);
       if (error) throw error;
       
       if (currentStore) {
@@ -490,13 +490,13 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
 
       if (editItem) {
         const { error } = await supabase
-          .from('items')
+          .from('parts')
           .update(itemData)
           .eq('id', editItem.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
-          .from('items')
+          .from('parts')
           .insert([itemData]);
         if (error) throw error;
       }
