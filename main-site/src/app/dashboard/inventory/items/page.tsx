@@ -439,7 +439,7 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
       console.log('📤 Uploading image:', fileName);
 
       const { error: uploadError, data } = await supabase.storage
-        .from('item-images')
+        .from('part-images')
         .upload(fileName, imageFile, {
           cacheControl: '3600',
           upsert: false
@@ -453,7 +453,7 @@ function ItemForm({ storeId, onClose, onSuccess, editItem }: any) {
       console.log('✅ Upload success:', data);
 
       const { data: { publicUrl } } = supabase.storage
-        .from('item-images')
+        .from('part-images')
         .getPublicUrl(fileName);
 
       console.log('🔗 Public URL:', publicUrl);
