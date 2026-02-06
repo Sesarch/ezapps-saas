@@ -26,12 +26,12 @@ export default function Features() {
       description: 'Increase average order value with smart product recommendations, bundles, and checkout upsells.',
       gradient: 'from-turquoise-dark to-turquoise',
     },
-   {
-  icon: '📧',
-  title: 'Email / SMS Marketing',
-  description: 'Send targeted email campaigns and SMS messages to your customers',
-  gradient: 'from-peach-dark to-peach',
-},
+    {
+      icon: '📧',
+      title: 'Email / SMS Marketing',
+      description: 'Send targeted email campaigns and SMS messages to your customers',
+      gradient: 'from-peach-dark to-peach',
+    },
     {
       icon: '📝',
       title: 'EZ Form Builder',
