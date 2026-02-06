@@ -107,7 +107,7 @@ export default function Hero() {
 
               {/* Headline */}
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-                E-commerce Apps for
+                ERP, E-commerce Apps for
                 <span className="block bg-gradient-to-r from-[#97999B] to-[#F5DF4D] bg-clip-text text-transparent">Every Platform</span>
               </h1>
 
