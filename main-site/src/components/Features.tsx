@@ -49,7 +49,7 @@ export default function Features() {
             Six Powerful Apps
           </h2>
           <p className="text-xl text-gray-600">
-            Complete ERP and CRM solution for e-commerce. Manage inventory, customers, and operations across all major platforms.
+            Complete CRM and ERP solution for e-commerce. Manage inventory, customers, and operations across all major platforms.
           </p>
         </div>
 
