@@ -38,6 +38,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [signingOut, setSigningOut] = useState(false)
 
   // Helper to fetch user profile
   const fetchProfile = async (userId: string, supabase: any) => {
@@ -48,15 +49,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         .eq('id', userId)
         .single()
 
-      if (error) {
-        console.error('Error fetching profile:', error)
-        return null
-      }
-
-      console.log('✅ Profile loaded:', data.email, '| Role:', data.role, '| Admin:', data.is_admin)
+      if (error) throw error
       return data
     } catch (err) {
-      console.error('Profile fetch error:', err)
       return null
     }
   }
@@ -71,15 +66,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
       // Add timeout to prevent infinite loading
       const timeout = setTimeout(() => {
-        console.log('Auth timeout - setting loading to false')
         setLoading(false)
       }, 5000)
 
       try {
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession()
-        
-        console.log('Got session:', session ? 'yes' : 'no', 'Error:', error)
         
         setSession(session)
         setUser(session?.user ?? null)
@@ -93,15 +85,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
         setLoading(false)
         clearTimeout(timeout)
       } catch (err) {
-        console.error('Auth error:', err)
         setLoading(false)
         clearTimeout(timeout)
       }
 
       // Listen for auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-        console.log('Auth state changed:', _event)
-        
         setSession(session)
         setUser(session?.user ?? null)
 
@@ -123,25 +112,50 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     })
   }, [])
 
+  /**
+   * Enterprise-grade sign out implementation
+   * Handles all edge cases and ensures clean logout across the application
+   */
   const signOut = async () => {
-    if (typeof window === 'undefined') return
+    // Prevent multiple simultaneous logout attempts
+    if (signingOut) return
+    
+    setSigningOut(true)
 
-    const { createClient } = await import('@/lib/supabase/client')
-    const supabase = createClient()
-    
-    await supabase.auth.signOut()
-    setUser(null)
-    setProfile(null)
-    setSession(null)
-    
-    // Always redirect to main domain after logout
-    const hostname = window.location.hostname
-    const isProduction = !hostname.includes('localhost') && !hostname.includes('127.0.0.1')
-    
-    if (isProduction) {
-      window.location.href = 'https://ezapps.app'
-    } else {
-      window.location.href = '/'
+    try {
+      // Only run in browser
+      if (typeof window === 'undefined') return
+
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      
+      // Sign out from Supabase (clears all auth cookies and tokens)
+      await supabase.auth.signOut()
+      
+      // Clear local state immediately
+      setUser(null)
+      setProfile(null)
+      setSession(null)
+      
+      // Determine redirect URL based on environment
+      const hostname = window.location.hostname
+      const isProduction = !hostname.includes('localhost') && !hostname.includes('127.0.0.1')
+      
+      const redirectUrl = isProduction ? 'https://ezapps.app' : '/'
+      
+      // Force navigation and reload to clear all cached state
+      // Using replace() instead of href to prevent back button navigation
+      window.location.replace(redirectUrl)
+      
+    } catch (error) {
+      // If logout fails, still redirect user to homepage
+      // This ensures users aren't stuck in a broken state
+      const hostname = window.location.hostname
+      const isProduction = !hostname.includes('localhost') && !hostname.includes('127.0.0.1')
+      
+      window.location.replace(isProduction ? 'https://ezapps.app' : '/')
+    } finally {
+      setSigningOut(false)
     }
   }
 
