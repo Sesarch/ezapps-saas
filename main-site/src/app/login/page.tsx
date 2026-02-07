@@ -31,15 +31,40 @@ function LoginForm() {
     }
     
     if (data.user) {
-      // Check if there's a redirect parameter (e.g., /admin)
-      const redirectTo = searchParams.get('redirect')
-      if (redirectTo === '/admin') {
-        router.push('/admin')
+      // ✅ FETCH USER PROFILE TO CHECK ROLE
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, is_admin')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        setError('Database error granting user')
+        setLoading(false)
+        return
+      }
+
+      console.log('✅ User logged in:', email, '| Role:', profile?.role, '| Admin:', profile?.is_admin)
+
+      // ✅ REDIRECT BASED ON ROLE
+      if (profile?.role === 'super_admin' || profile?.is_admin === true) {
+        console.log('🔑 Redirecting to SUPERADMIN')
+        router.push('/superadmin')
         router.refresh()
         return
       }
 
-      // Always redirect to platform selection page
+      // Check if there's a redirect parameter
+      const redirectTo = searchParams.get('redirect')
+      if (redirectTo) {
+        router.push(redirectTo)
+        router.refresh()
+        return
+      }
+
+      // Regular user → platform selection
+      console.log('👤 Redirecting to ADD-PLATFORM')
       router.push('/add-platform')
       router.refresh()
     }
