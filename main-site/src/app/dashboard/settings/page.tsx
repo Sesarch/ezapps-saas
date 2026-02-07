@@ -1,5 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
+
 import { useAuth } from '@/components/AuthProvider'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -17,10 +18,6 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  
-  const [emailNotifications, setEmailNotifications] = useState(true)
-  const [marketingEmails, setMarketingEmails] = useState(false)
-  const [weeklyReport, setWeeklyReport] = useState(true)
   
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteText, setDeleteText] = useState('')
@@ -47,52 +44,119 @@ export default function SettingsPage() {
     setProfileLoading(true)
     setProfileMessage(null)
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        full_name: fullName,
-        company_name: companyName,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user?.id)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          company_name: companyName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user?.id)
 
-    if (error) {
-      setProfileMessage({ type: 'error', text: 'Failed to update profile. Please try again.' })
-    } else {
+      if (error) throw error
+
       setProfileMessage({ type: 'success', text: 'Profile updated successfully!' })
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setProfileMessage(null), 5000)
+    } catch (error: any) {
+      setProfileMessage({ 
+        type: 'error', 
+        text: error.message || 'Failed to update profile. Please try again.' 
+      })
+    } finally {
+      setProfileLoading(false)
     }
-    setProfileLoading(false)
   }
 
+  /**
+   * Enterprise-grade password change implementation
+   * Includes validation, error handling, and session refresh
+   */
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Prevent double submission
+    if (passwordLoading) return
+    
     setPasswordLoading(true)
     setPasswordMessage(null)
 
-    if (newPassword !== confirmPassword) {
-      setPasswordMessage({ type: 'error', text: 'New passwords do not match.' })
-      setPasswordLoading(false)
-      return
-    }
+    try {
+      // Client-side validation
+      if (newPassword !== confirmPassword) {
+        throw new Error('New passwords do not match')
+      }
 
-    if (newPassword.length < 8) {
-      setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters.' })
-      setPasswordLoading(false)
-      return
-    }
+      if (newPassword.length < 8) {
+        throw new Error('Password must be at least 8 characters')
+      }
 
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    })
+      // Password strength validation
+      const hasUpperCase = /[A-Z]/.test(newPassword)
+      const hasLowerCase = /[a-z]/.test(newPassword)
+      const hasNumber = /[0-9]/.test(newPassword)
+      
+      if (!hasUpperCase || !hasLowerCase || !hasNumber) {
+        throw new Error('Password must contain uppercase, lowercase, and number')
+      }
 
-    if (error) {
-      setPasswordMessage({ type: 'error', text: error.message })
-    } else {
-      setPasswordMessage({ type: 'success', text: 'Password changed successfully!' })
+      // Update password with timeout protection
+      const updatePromise = supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please try again')), 30000)
+      })
+
+      const { data, error } = await Promise.race([
+        updatePromise,
+        timeoutPromise
+      ]) as any
+
+      if (error) throw error
+
+      // Password updated successfully
+      setPasswordMessage({ 
+        type: 'success', 
+        text: 'Password changed successfully! Please use your new password next time you login.' 
+      })
+      
+      // Clear password fields immediately for security
       setNewPassword('')
       setConfirmPassword('')
+      
+      // Refresh session to ensure user stays logged in with new password
+      await supabase.auth.refreshSession()
+      
+      // Clear success message after 10 seconds
+      setTimeout(() => setPasswordMessage(null), 10000)
+
+    } catch (error: any) {
+      // User-friendly error messages
+      let errorMessage = 'Failed to update password'
+      
+      if (error.message.includes('match')) {
+        errorMessage = 'Passwords do not match'
+      } else if (error.message.includes('8 characters')) {
+        errorMessage = 'Password must be at least 8 characters'
+      } else if (error.message.includes('uppercase')) {
+        errorMessage = 'Password must contain uppercase, lowercase, and number'
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout - please check your connection and try again'
+      } else if (error.message.includes('same')) {
+        errorMessage = 'New password must be different from your current password'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setPasswordMessage({ type: 'error', text: errorMessage })
+      
+    } finally {
+      setPasswordLoading(false)
     }
-    setPasswordLoading(false)
   }
 
   const handleDeleteAccount = async () => {
@@ -101,16 +165,25 @@ export default function SettingsPage() {
     setDeleteLoading(true)
     
     try {
+      // Soft delete - mark as deleted instead of hard delete
       await supabase
         .from('profiles')
-        .delete()
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          status: 'deleted'
+        })
         .eq('id', user?.id)
 
+      // Sign out user
       await supabase.auth.signOut()
       
+      // Redirect to homepage with deletion confirmation
       window.location.href = '/?deleted=true'
     } catch (error) {
-      alert('Error deleting account. Please contact support.')
+      setPasswordMessage({ 
+        type: 'error', 
+        text: 'Error deleting account. Please contact support.' 
+      })
       setDeleteLoading(false)
     }
   }
@@ -124,6 +197,7 @@ export default function SettingsPage() {
 
       <div className="max-w-3xl space-y-6">
         
+        {/* Profile Information */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-gray-900">Profile Information</h2>
@@ -132,7 +206,9 @@ export default function SettingsPage() {
           <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
             {profileMessage && (
               <div className={`px-4 py-3 rounded-lg text-sm ${
-                profileMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                profileMessage.type === 'success' 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
               }`}>
                 {profileMessage.text}
               </div>
@@ -183,6 +259,7 @@ export default function SettingsPage() {
           </form>
         </div>
 
+        {/* Change Password */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
@@ -191,7 +268,9 @@ export default function SettingsPage() {
           <form onSubmit={handleChangePassword} className="p-6 space-y-4">
             {passwordMessage && (
               <div className={`px-4 py-3 rounded-lg text-sm ${
-                passwordMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                passwordMessage.type === 'success' 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
               }`}>
                 {passwordMessage.text}
               </div>
@@ -203,8 +282,9 @@ export default function SettingsPage() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
-                placeholder="Min. 8 characters"
+                disabled={passwordLoading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                placeholder="Min. 8 characters (uppercase, lowercase, number)"
               />
             </div>
 
@@ -214,7 +294,8 @@ export default function SettingsPage() {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all"
+                disabled={passwordLoading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="Confirm your new password"
               />
             </div>
@@ -231,6 +312,7 @@ export default function SettingsPage() {
           </form>
         </div>
 
+        {/* Account Information */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <h2 className="text-lg font-semibold text-gray-900">Account Information</h2>
@@ -258,6 +340,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Danger Zone */}
         <div className="bg-white rounded-xl border border-red-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-red-200 bg-red-50">
             <h2 className="text-lg font-semibold text-red-600">Danger Zone</h2>
