@@ -46,7 +46,7 @@ export default function DashboardPage() {
     // Fetch subscription
     supabase
       .from('subscriptions')
-      .select('*, plans(*)')
+      .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single()
@@ -100,7 +100,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-gray-500">Plan</p>
               <p className="text-2xl font-bold text-[#97999B] mt-1">
-                {subscription?.plans?.name || 'Trial'}
+                {subscription?.status === 'active' ? 'Active' : 'Trial'}
               </p>
             </div>
             <div className="text-3xl">⭐</div>
