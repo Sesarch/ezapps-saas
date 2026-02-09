@@ -1,14 +1,11 @@
 'use client'
 
 import { Suspense, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export const dynamic = 'force-dynamic'
 
 function ResetPasswordForm() {
-  const searchParams = useSearchParams()
-
   const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
   const [ready, setReady] = useState(false)
 
@@ -18,34 +15,42 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // ✅ Create Supabase client ONLY in browser
+  // ✅ Create client ONLY in browser
   useEffect(() => {
     setSupabase(createClient())
   }, [])
 
-  // ✅ Exchange recovery code for session (REQUIRED)
+  // ✅ Handle BOTH recovery hash + code flows
   useEffect(() => {
     if (!supabase) return
 
-    const code = searchParams.get('code')
+    const initSession = async () => {
+      // 1. Check if session already exists (hash-based recovery)
+      const { data } = await supabase.auth.getSession()
 
-    if (!code) {
-      setError('Invalid or expired reset link')
-      return
-    }
-
-    const exchangeSession = async () => {
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
-
-      if (error) {
-        setError('Reset link expired or already used')
-      } else {
+      if (data.session) {
         setReady(true)
+        return
       }
+
+      // 2. Fallback: check for ?code= flow
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get('code')
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error) {
+          setReady(true)
+          return
+        }
+      }
+
+      // 3. If neither worked → invalid/expired
+      setError('Reset link expired or already used')
     }
 
-    exchangeSession()
-  }, [supabase, searchParams])
+    initSession()
+  }, [supabase])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -71,7 +76,6 @@ function ResetPasswordForm() {
       }
 
       const { error } = await supabase.auth.updateUser({ password })
-
       if (error) throw error
 
       setSuccess(true)
