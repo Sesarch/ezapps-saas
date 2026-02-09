@@ -1,256 +1,126 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useState, useEffect, Suspense } from 'react'
+import { Suspense, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+export const dynamic = 'force-dynamic'
+
 function ResetPasswordForm() {
+  const supabase = createClient()
+
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [validToken, setValidToken] = useState(false)
-  const [checking, setChecking] = useState(true)
-
-  useEffect(() => {
-    const checkSession = async () => {
-      const supabase = createClient()
-
-      // Check URL for error params (Supabase redirects with error in URL)
-      const urlParams = new URLSearchParams(window.location.search)
-      const urlError = urlParams.get('error_description')
-      if (urlError) {
-        setError(urlError.replace(/\+/g, ' '))
-        setChecking(false)
-        return
-      }
-
-      // Listen for the PASSWORD_RECOVERY event from the hash fragment
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (event === 'PASSWORD_RECOVERY') {
-            setValidToken(true)
-            setChecking(false)
-          }
-        }
-      )
-
-      // Also check if there is already a session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setValidToken(true)
-        setChecking(false)
-      }
-
-      // If no session and no hash, show error
-      const hash = window.location.hash
-      if (!hash && !session) {
-        setError('Invalid or expired reset link. Please request a new one.')
-        setChecking(false)
-      }
-
-      // Timeout fallback
-      setTimeout(() => {
-        setChecking((prev) => {
-          if (prev) {
-            setError('Invalid or expired reset link. Please request a new one.')
-            return false
-          }
-          return prev
-        })
-      }, 5000)
-
-      return () => {
-        subscription.unsubscribe()
-      }
-    }
-
-    checkSession()
-  }, [])
-
-  const validatePassword = (pwd: string): string | null => {
-    if (pwd.length < 8) return 'Password must be at least 8 characters'
-    if (!/[A-Z]/.test(pwd)) return 'Password must include an uppercase letter'
-    if (!/[a-z]/.test(pwd)) return 'Password must include a lowercase letter'
-    if (!/[0-9]/.test(pwd)) return 'Password must include a number'
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    const validationError = validatePassword(password)
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
     setLoading(true)
 
     try {
-      const supabase = createClient()
+      if (password !== confirmPassword) {
+        throw new Error('Passwords do not match')
+      }
+
+      if (
+        password.length < 8 ||
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password)
+      ) {
+        throw new Error(
+          'Password must be at least 8 characters and include uppercase, lowercase, and a number'
+        )
+      }
 
       const { error: updateError } = await supabase.auth.updateUser({
-        password: password,
+        password,
       })
 
       if (updateError) {
-        setError(updateError.message)
-        setLoading(false)
-        return
+        throw updateError
       }
 
       setSuccess(true)
-      setPassword('')
-      setConfirmPassword('')
 
-      // Redirect to login after 3 seconds
+      // IMPORTANT: hard redirect after success
       setTimeout(() => {
         window.location.href = 'https://shopify.ezapps.app/login'
-      }, 3000)
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      }, 1500)
+    } catch (err: any) {
+      setError(err.message || 'Failed to update password')
     } finally {
       setLoading(false)
     }
   }
 
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying reset link...</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <a href="https://shopify.ezapps.app">
-            <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-          </a>
-          <h2 className="text-3xl font-bold text-gray-900">Set New Password</h2>
-          <p className="mt-2 text-gray-600">
-            Enter your new password below
-          </p>
-        </div>
+    <div className="flex min-h-screen items-center justify-center bg-white px-4">
+      <div className="w-full max-w-md rounded-lg border bg-white p-6 shadow">
+        <h2 className="mb-2 text-center text-xl font-semibold">
+          Set New Password
+        </h2>
+        <p className="mb-6 text-center text-sm text-gray-500">
+          Enter your new password below
+        </p>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          {success ? (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Password Updated!</h3>
-              <p className="text-gray-600 mb-4">
-                Your password has been successfully changed.
-              </p>
-              <p className="text-sm text-gray-500">Redirecting to login...</p>
-            </div>
-          ) : !validToken ? (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Invalid Reset Link</h3>
-              <p className="text-gray-600 mb-6">
-                This link has expired or is invalid. Please request a new password reset.
-              </p>
-              <a
-                href="https://shopify.ezapps.app/forgot-password"
-                className="inline-block py-3 px-6 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
-              >
-                Request New Reset Link
-              </a>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                  placeholder="Enter new password"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                  placeholder="Confirm new password"
-                />
-              </div>
-
-              <div className="text-xs text-gray-500 space-y-1">
-                <p className={password.length >= 8 ? 'text-green-600' : ''}>
-                  {password.length >= 8 ? '\u2713' : '\u2022'} At least 8 characters
-                </p>
-                <p className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>
-                  {/[A-Z]/.test(password) ? '\u2713' : '\u2022'} One uppercase letter
-                </p>
-                <p className={/[a-z]/.test(password) ? 'text-green-600' : ''}>
-                  {/[a-z]/.test(password) ? '\u2713' : '\u2022'} One lowercase letter
-                </p>
-                <p className={/[0-9]/.test(password) ? 'text-green-600' : ''}>
-                  {/[0-9]/.test(password) ? '\u2713' : '\u2022'} One number
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
-              >
-                {loading ? 'Updating...' : 'Update Password'}
-              </button>
-            </form>
-          )}
-
-          <div className="mt-6 text-center">
-            <a
-              href="https://shopify.ezapps.app/login"
-              className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to login
-            </a>
+        {error && (
+          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+            {error}
           </div>
+        )}
+
+        {success ? (
+          <div className="rounded bg-green-50 p-4 text-center text-green-600">
+            Password updated successfully. Redirecting…
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                New Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded border px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full rounded border px-3 py-2"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded bg-teal-500 py-2 text-white disabled:opacity-60"
+            >
+              {loading ? 'Updating…' : 'Update Password'}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-4 text-center">
+          <a
+            href="https://shopify.ezapps.app/login"
+            className="text-sm text-gray-500 hover:underline"
+          >
+            ← Back to login
+          </a>
         </div>
       </div>
     </div>
@@ -259,16 +129,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div />}>
       <ResetPasswordForm />
     </Suspense>
   )
