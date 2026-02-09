@@ -1,12 +1,12 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export const dynamic = 'force-dynamic'
 
 function ResetPasswordForm() {
-  const supabase = createClient()
+  const [supabase, setSupabase] = useState<any>(null)
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -14,8 +14,15 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  // ✅ Create Supabase client ONLY in browser
+  useEffect(() => {
+    setSupabase(createClient())
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!supabase) return
+
     setError(null)
     setLoading(true)
 
@@ -39,13 +46,10 @@ function ResetPasswordForm() {
         password,
       })
 
-      if (updateError) {
-        throw updateError
-      }
+      if (updateError) throw updateError
 
       setSuccess(true)
 
-      // IMPORTANT: hard redirect after success
       setTimeout(() => {
         window.location.href = 'https://shopify.ezapps.app/login'
       }, 1500)
@@ -106,7 +110,7 @@ function ResetPasswordForm() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !supabase}
               className="w-full rounded bg-teal-500 py-2 text-white disabled:opacity-60"
             >
               {loading ? 'Updating…' : 'Update Password'}
