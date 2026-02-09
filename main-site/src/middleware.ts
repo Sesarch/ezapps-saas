@@ -1,3 +1,13 @@
+// HARD REDIRECT: force all traffic to shopify.ezapps.app
+if (
+  process.env.NODE_ENV === 'production' &&
+  hostname === 'ezapps.app'
+) {
+  const redirectUrl = request.nextUrl.clone()
+  redirectUrl.hostname = 'shopify.ezapps.app'
+  return NextResponse.redirect(redirectUrl)
+}
+
 import { type NextRequest, NextResponse } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
