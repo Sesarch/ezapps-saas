@@ -2,121 +2,35 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-function ResetPasswordForm() {
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [validToken, setValidToken] = useState(false)
-  const [checking, setChecking] = useState(true)
-  const searchParams = useSearchParams()
-  const router = useRouter()
-
-  // Verify the user has a valid recovery session
-  useEffect(() => {
-    const checkSession = async () => {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session) {
-        setValidToken(true)
-      } else {
-        // Check if there's a hash fragment with access_token (Supabase redirects with hash)
-        const hash = window.location.hash
-        if (hash && hash.includes('access_token')) {
-          // Supabase will auto-detect the hash and create a session
-          // Wait a moment for it to process
-          setTimeout(async () => {
-            const { data: { session: newSession } } = await supabase.auth.getSession()
-            if (newSession) {
-              setValidToken(true)
-            } else {
-              setError('Invalid or expired reset link. Please request a new one.')
-            }
-            setChecking(false)
-          }, 1500)
-          return
-        } else {
-          setError('Invalid or expired reset link. Please request a new one.')
-        }
-      }
-      setChecking(false)
-    }
-
-    checkSession()
-  }, [])
-
-  const validatePassword = (pwd: string): string | null => {
-    if (pwd.length < 8) return 'Password must be at least 8 characters'
-    if (!/[A-Z]/.test(pwd)) return 'Password must include an uppercase letter'
-    if (!/[a-z]/.test(pwd)) return 'Password must include a lowercase letter'
-    if (!/[0-9]/.test(pwd)) return 'Password must include a number'
-    return null
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
-    // Validate password strength
-    const validationError = validatePassword(password)
-    if (validationError) {
-      setError(validationError)
-      return
-    }
-
     setLoading(true)
 
-    try {
-      const supabase = createClient()
-      
-      const { error: updateError } = await supabase.auth.updateUser({
-        password: password
-      })
+    const supabase = createClient()
 
-      if (updateError) {
-        setError(updateError.message)
-        setLoading(false)
-        return
-      }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://shopify.ezapps.app/reset-password',
+    })
 
-      setSuccess(true)
-      setPassword('')
-      setConfirmPassword('')
-
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        router.push('/login')
-      }, 3000)
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
+    if (error) {
+      setError(error.message)
       setLoading(false)
+      return
     }
-  }
 
-  // Loading state
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Verifying reset link...</p>
-        </div>
-      </div>
-    )
+    setSuccess(true)
+    setLoading(false)
   }
 
   return (
@@ -126,9 +40,9 @@ function ResetPasswordForm() {
           <Link href="/">
             <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Set New Password</h2>
+          <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
           <p className="mt-2 text-gray-600">
-            Enter your new password below
+            Enter your email and we&apos;ll send you a reset link
           </p>
         </div>
 
@@ -140,31 +54,23 @@ function ResetPasswordForm() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Password Updated!</h3>
-              <p className="text-gray-600 mb-4">
-                Your password has been successfully changed.
-              </p>
-              <p className="text-sm text-gray-500">
-                Redirecting to login...
-              </p>
-            </div>
-          ) : !validToken ? (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Invalid Reset Link</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Check your email</h3>
               <p className="text-gray-600 mb-6">
-                This link has expired or is invalid. Please request a new password reset.
+                We&apos;ve sent a password reset link to<br />
+                <span className="font-medium text-gray-900">{email}</span>
               </p>
-              <Link
-                href="/forgot-password"
-                className="inline-block py-3 px-6 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
+              <p className="text-sm text-gray-500 mb-6">
+                Didn&apos;t receive the email? Check your spam folder or try again.
+              </p>
+              <button
+                onClick={() => {
+                  setSuccess(false)
+                  setEmail('')
+                }}
+                className="text-teal-600 hover:text-teal-700 font-medium hover:underline"
               >
-                Request New Reset Link
-              </Link>
+                Try a different email
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -176,45 +82,16 @@ function ResetPasswordForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password
+                  Email Address
                 </label>
                 <input
-                  type="password"
+                  type="email"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                  placeholder="Enter new password"
+                  placeholder="john@example.com"
                 />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                  placeholder="Confirm new password"
-                />
-              </div>
-
-              <div className="text-xs text-gray-500 space-y-1">
-                <p className={password.length >= 8 ? 'text-green-600' : ''}>
-                  {password.length >= 8 ? '\u2713' : '\u2022'} At least 8 characters
-                </p>
-                <p className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>
-                  {/[A-Z]/.test(password) ? '\u2713' : '\u2022'} One uppercase letter
-                </p>
-                <p className={/[a-z]/.test(password) ? 'text-green-600' : ''}>
-                  {/[a-z]/.test(password) ? '\u2713' : '\u2022'} One lowercase letter
-                </p>
-                <p className={/[0-9]/.test(password) ? 'text-green-600' : ''}>
-                  {/[0-9]/.test(password) ? '\u2713' : '\u2022'} One number
-                </p>
               </div>
 
               <button
@@ -222,7 +99,7 @@ function ResetPasswordForm() {
                 disabled={loading}
                 className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
               >
-                {loading ? 'Updating...' : 'Update Password'}
+                {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
             </form>
           )}
@@ -241,21 +118,5 @@ function ResetPasswordForm() {
         </div>
       </div>
     </div>
-  )
-}
-
-// Default export wraps in Suspense (required by Next.js 15 for useSearchParams)
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    }>
-      <ResetPasswordForm />
-    </Suspense>
   )
 }
