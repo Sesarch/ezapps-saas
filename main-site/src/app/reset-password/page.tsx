@@ -4,8 +4,6 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 function ResetPasswordForm() {
   const [password, setPassword] = useState('')
@@ -15,11 +13,19 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false)
   const [validToken, setValidToken] = useState(false)
   const [checking, setChecking] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     const checkSession = async () => {
       const supabase = createClient()
+
+      // Check URL for error params (Supabase redirects with error in URL)
+      const urlParams = new URLSearchParams(window.location.search)
+      const urlError = urlParams.get('error_description')
+      if (urlError) {
+        setError(urlError.replace(/\+/g, ' '))
+        setChecking(false)
+        return
+      }
 
       // Listen for the PASSWORD_RECOVERY event from the hash fragment
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -38,7 +44,7 @@ function ResetPasswordForm() {
         setChecking(false)
       }
 
-      // If no session and no hash, wait a moment then show error
+      // If no session and no hash, show error
       const hash = window.location.hash
       if (!hash && !session) {
         setError('Invalid or expired reset link. Please request a new one.')
@@ -106,8 +112,9 @@ function ResetPasswordForm() {
       setPassword('')
       setConfirmPassword('')
 
+      // Redirect to login after 3 seconds
       setTimeout(() => {
-       window.location.href = 'https://shopify.ezapps.app/login'
+        window.location.href = 'https://shopify.ezapps.app/login'
       }, 3000)
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
@@ -131,9 +138,9 @@ function ResetPasswordForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <Link href="/">
+          <a href="https://shopify.ezapps.app">
             <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-          </Link>
+          </a>
           <h2 className="text-3xl font-bold text-gray-900">Set New Password</h2>
           <p className="mt-2 text-gray-600">
             Enter your new password below
@@ -165,12 +172,12 @@ function ResetPasswordForm() {
               <p className="text-gray-600 mb-6">
                 This link has expired or is invalid. Please request a new password reset.
               </p>
-              <Link
+              <a
                 href="https://shopify.ezapps.app/forgot-password"
                 className="inline-block py-3 px-6 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
               >
                 Request New Reset Link
-              </Link>
+              </a>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -234,7 +241,7 @@ function ResetPasswordForm() {
           )}
 
           <div className="mt-6 text-center">
-            <Link
+            <a
               href="https://shopify.ezapps.app/login"
               className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2"
             >
@@ -242,7 +249,7 @@ function ResetPasswordForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Back to login
-            </Link>
+            </a>
           </div>
         </div>
       </div>
