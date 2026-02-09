@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 function ResetPasswordForm() {
   const searchParams = useSearchParams()
 
-  const [supabase, setSupabase] = useState<any>(null)
+  const [supabase, setSupabase] = useState<ReturnType<typeof createClient> | null>(null)
   const [ready, setReady] = useState(false)
 
   const [password, setPassword] = useState('')
@@ -18,12 +18,12 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // ✅ Create Supabase client in browser
+  // ✅ Create Supabase client ONLY in browser
   useEffect(() => {
     setSupabase(createClient())
   }, [])
 
-  // ✅ VERY IMPORTANT: exchange recovery code for session
+  // ✅ Exchange recovery code for session (REQUIRED)
   useEffect(() => {
     if (!supabase) return
 
@@ -34,18 +34,20 @@ function ResetPasswordForm() {
       return
     }
 
-    supabase.auth
-      .exchangeCodeForSession(code)
-      .then(({ error }) => {
-        if (error) {
-          setError('Reset link expired or already used')
-        } else {
-          setReady(true)
-        }
-      })
+    const exchangeSession = async () => {
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+      if (error) {
+        setError('Reset link expired or already used')
+      } else {
+        setReady(true)
+      }
+    }
+
+    exchangeSession()
   }, [supabase, searchParams])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!supabase || !ready) return
 
@@ -68,9 +70,7 @@ function ResetPasswordForm() {
         )
       }
 
-      const { error } = await supabase.auth.updateUser({
-        password,
-      })
+      const { error } = await supabase.auth.updateUser({ password })
 
       if (error) throw error
 
@@ -79,8 +79,8 @@ function ResetPasswordForm() {
       setTimeout(() => {
         window.location.href = 'https://shopify.ezapps.app/login'
       }, 1500)
-    } catch (err: any) {
-      setError(err.message || 'Failed to update password')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update password')
     } finally {
       setLoading(false)
     }
@@ -109,9 +109,9 @@ function ResetPasswordForm() {
               type="password"
               placeholder="New password"
               required
+              disabled={!ready}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              disabled={!ready}
               className="w-full rounded border px-3 py-2"
             />
 
@@ -119,9 +119,9 @@ function ResetPasswordForm() {
               type="password"
               placeholder="Confirm password"
               required
+              disabled={!ready}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={!ready}
               className="w-full rounded border px-3 py-2"
             />
 
