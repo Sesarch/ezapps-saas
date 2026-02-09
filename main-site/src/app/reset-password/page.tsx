@@ -1,190 +1,119 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 
-export default function ResetPasswordPage() {
-  const [newPassword, setNewPassword] = useState('')
+function ResetPasswordForm() {
+  const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [validatingToken, setValidatingToken] = useState(true)
-  
-  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [validToken, setValidToken] = useState(false)
+  const [checking, setChecking] = useState(true)
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const router = useRouter()
 
+  // Verify the user has a valid recovery session
   useEffect(() => {
-    // Check if we have a valid recovery token
-    const checkToken = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        if (error || !session) {
-          setError('Invalid or expired password reset link. Please request a new one.')
-          setValidatingToken(false)
+    const checkSession = async () => {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        setValidToken(true)
+      } else {
+        // Check if there's a hash fragment with access_token (Supabase redirects with hash)
+        const hash = window.location.hash
+        if (hash && hash.includes('access_token')) {
+          // Supabase will auto-detect the hash and create a session
+          // Wait a moment for it to process
+          setTimeout(async () => {
+            const { data: { session: newSession } } = await supabase.auth.getSession()
+            if (newSession) {
+              setValidToken(true)
+            } else {
+              setError('Invalid or expired reset link. Please request a new one.')
+            }
+            setChecking(false)
+          }, 1500)
           return
+        } else {
+          setError('Invalid or expired reset link. Please request a new one.')
         }
-        
-        setValidatingToken(false)
-      } catch (err) {
-        setError('Invalid or expired password reset link. Please request a new one.')
-        setValidatingToken(false)
       }
+      setChecking(false)
     }
 
-    checkToken()
+    checkSession()
   }, [])
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const validatePassword = (pwd: string): string | null => {
+    if (pwd.length < 8) return 'Password must be at least 8 characters'
+    if (!/[A-Z]/.test(pwd)) return 'Password must include an uppercase letter'
+    if (!/[a-z]/.test(pwd)) return 'Password must include a lowercase letter'
+    if (!/[0-9]/.test(pwd)) return 'Password must include a number'
+    return null
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (loading) return
-    
-    setLoading(true)
     setError(null)
 
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    // Validate password strength
+    const validationError = validatePassword(password)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    setLoading(true)
+
     try {
-      // Validation
-      if (newPassword !== confirmPassword) {
-        throw new Error('Passwords do not match')
-      }
-
-      if (newPassword.length < 8) {
-        throw new Error('Password must be at least 8 characters')
-      }
-
-      // Password strength validation
-      const hasUpperCase = /[A-Z]/.test(newPassword)
-      const hasLowerCase = /[a-z]/.test(newPassword)
-      const hasNumber = /[0-9]/.test(newPassword)
+      const supabase = createClient()
       
-      if (!hasUpperCase || !hasLowerCase || !hasNumber) {
-        throw new Error('Password must contain uppercase, lowercase, and number')
-      }
-
-      // Update password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password
       })
 
-      if (error) throw error
+      if (updateError) {
+        setError(updateError.message)
+        setLoading(false)
+        return
+      }
 
       setSuccess(true)
-      
-      // Clear password fields
-      setNewPassword('')
+      setPassword('')
       setConfirmPassword('')
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => {
         router.push('/login')
       }, 3000)
-
-    } catch (error: any) {
-      let errorMessage = 'Failed to reset password'
-      
-      if (error.message.includes('match')) {
-        errorMessage = 'Passwords do not match'
-      } else if (error.message.includes('8 characters')) {
-        errorMessage = 'Password must be at least 8 characters'
-      } else if (error.message.includes('uppercase')) {
-        errorMessage = 'Password must contain uppercase, lowercase, and number'
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
-      setError(errorMessage)
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (validatingToken) {
+  // Loading state
+  if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Validating reset link...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error && !validatingToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <Link href="/">
-              <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-            </Link>
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">⚠️</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid Reset Link</h2>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm mb-6">
-              {error}
-            </div>
-
-            <p className="text-gray-600 text-sm mb-6">
-              Password reset links expire after a short time for security. Please request a new password reset link.
-            </p>
-
-            <Link
-              href="/forgot-password"
-              className="block w-full py-3 bg-teal-500 text-white rounded-xl font-semibold text-center hover:bg-teal-600 transition-colors"
-            >
-              Request New Reset Link
-            </Link>
-
-            <div className="mt-4 text-center">
-              <Link href="/login" className="text-sm text-teal-600 hover:text-teal-700 hover:underline">
-                Back to Login
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <Link href="/">
-              <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-            </Link>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">✅</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Reset Successful!</h2>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm mb-6">
-              Your password has been successfully reset. You can now login with your new password.
-            </div>
-
-            <p className="text-gray-600 text-sm mb-6 text-center">
-              Redirecting to login page...
-            </p>
-
-            <Link
-              href="/login"
-              className="block w-full py-3 bg-teal-500 text-white rounded-xl font-semibold text-center hover:bg-teal-600 transition-colors"
-            >
-              Go to Login
-            </Link>
-          </div>
+          <p className="text-gray-600">Verifying reset link...</p>
         </div>
       </div>
     )
@@ -197,94 +126,136 @@ export default function ResetPasswordPage() {
           <Link href="/">
             <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Reset Your Password</h2>
-          <p className="mt-2 text-gray-600">Enter your new password below</p>
+          <h2 className="text-3xl font-bold text-gray-900">Set New Password</h2>
+          <p className="mt-2 text-gray-600">
+            Enter your new password below
+          </p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8">
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
+          {success ? (
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-            )}
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Password Updated!</h3>
+              <p className="text-gray-600 mb-4">
+                Your password has been successfully changed.
+              </p>
+              <p className="text-sm text-gray-500">
+                Redirecting to login...
+              </p>
+            </div>
+          ) : !validToken ? (
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Invalid Reset Link</h3>
+              <p className="text-gray-600 mb-6">
+                This link has expired or is invalid. Please request a new password reset.
+              </p>
+              <Link
+                href="/forgot-password"
+                className="inline-block py-3 px-6 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
+              >
+                Request New Reset Link
+              </Link>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  placeholder="Enter new password"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  placeholder="Confirm new password"
+                />
+              </div>
+
+              <div className="text-xs text-gray-500 space-y-1">
+                <p className={password.length >= 8 ? 'text-green-600' : ''}>
+                  {password.length >= 8 ? '\u2713' : '\u2022'} At least 8 characters
+                </p>
+                <p className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>
+                  {/[A-Z]/.test(password) ? '\u2713' : '\u2022'} One uppercase letter
+                </p>
+                <p className={/[a-z]/.test(password) ? 'text-green-600' : ''}>
+                  {/[a-z]/.test(password) ? '\u2713' : '\u2022'} One lowercase letter
+                </p>
+                <p className={/[0-9]/.test(password) ? 'text-green-600' : ''}>
+                  {/[0-9]/.test(password) ? '\u2713' : '\u2022'} One number
+                </p>
+              </div>
+
+              <button
+                type="submit"
                 disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Min. 8 characters (uppercase, lowercase, number)"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                placeholder="Confirm your new password"
-              />
-            </div>
-
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-xs text-gray-600 font-medium mb-2">Password must contain:</p>
-              <ul className="text-xs text-gray-500 space-y-1">
-                <li className="flex items-center gap-2">
-                  <span className={newPassword.length >= 8 ? 'text-green-600' : 'text-gray-400'}>
-                    {newPassword.length >= 8 ? '✓' : '○'}
-                  </span>
-                  At least 8 characters
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/[A-Z]/.test(newPassword) ? 'text-green-600' : 'text-gray-400'}>
-                    {/[A-Z]/.test(newPassword) ? '✓' : '○'}
-                  </span>
-                  One uppercase letter
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/[a-z]/.test(newPassword) ? 'text-green-600' : 'text-gray-400'}>
-                    {/[a-z]/.test(newPassword) ? '✓' : '○'}
-                  </span>
-                  One lowercase letter
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className={/[0-9]/.test(newPassword) ? 'text-green-600' : 'text-gray-400'}>
-                    {/[0-9]/.test(newPassword) ? '✓' : '○'}
-                  </span>
-                  One number
-                </li>
-              </ul>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !newPassword || !confirmPassword}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Resetting Password...' : 'Reset Password'}
-            </button>
-          </form>
+                className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
+              >
+                {loading ? 'Updating...' : 'Update Password'}
+              </button>
+            </form>
+          )}
 
           <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-teal-600 hover:text-teal-700 hover:underline">
-              Back to Login
+            <Link
+              href="/login"
+              className="text-sm text-gray-600 hover:text-gray-900 flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+              Back to login
             </Link>
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+// Default export wraps in Suspense (required by Next.js 15 for useSearchParams)
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
