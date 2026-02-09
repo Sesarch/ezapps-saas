@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
     const supabase = createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://shopify.ezapps.app/reset-password',
+      redirectTo: 'https://shopify.ezapps.app/app/reset-password',
     })
 
     if (error) {
