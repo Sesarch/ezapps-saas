@@ -2,7 +2,7 @@ import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import Hero from '@/components/Hero'
 import Features from '@/components/Features'
-import Platforms from '@/components/Platforms'
+import AppsSection from '@/components/AppsSection'
 import Pricing from '@/components/Pricing'
 
 export default function Home() {
@@ -12,7 +12,7 @@ export default function Home() {
       <main>
         <Hero />
         <Features />
-        <Platforms />
+        <AppsSection />
         <Pricing />
       </main>
       <Footer />
