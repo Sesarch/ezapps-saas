@@ -61,13 +61,18 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // MAIN DOMAIN: Redirect logged-in users away from auth pages
+  // MAIN DOMAIN: ONLY redirect from /login and /signup if already logged in
+  // DON'T redirect from homepage or other public pages!
   if (isMainDomain) {
+    // Only redirect if on login/signup pages specifically
     if (user && (request.nextUrl.pathname === '/login' || 
                  request.nextUrl.pathname === '/signup')) {
-      // Already logged in → redirect to app subdomain
+      // Already logged in, on auth pages → redirect to app subdomain
       return NextResponse.redirect('https://shopify.ezapps.app/dashboard')
     }
+    
+    // For all other pages on main domain (homepage, pricing, etc.)
+    // Just continue - don't redirect!
   }
 
   return supabaseResponse
