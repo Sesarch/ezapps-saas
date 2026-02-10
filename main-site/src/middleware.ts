@@ -21,13 +21,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(`https://shopify.ezapps.app${url.pathname}${url.search}`)
     }
     
-    // For public/auth pages, just update session
+    // For public/auth pages, just update session (don't redirect!)
     return await updateSession(request)
   }
   
   // APP SUBDOMAIN (shopify.ezapps.app) - Authenticated pages only
   if (isAppSubdomain) {
-    // All pages here require authentication
+    // Update session and check authentication
     return await updateSession(request)
   }
   
@@ -37,10 +37,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/superadmin/:path*',
-    '/login',
-    '/signup',
-    '/auth/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (public folder)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
