@@ -20,7 +20,7 @@ function CallbackContent() {
 
       try {
         const supabase = createClient()
-
+        
         // Set the session using the tokens
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
@@ -44,11 +44,11 @@ function CallbackContent() {
           return
         }
 
-        // Session set successfully! Wait a moment for cookies to settle
+        // Session set successfully! Wait for cookies to settle
         await new Promise(resolve => setTimeout(resolve, 500))
-
-        // Use window.location for reliable redirect (not router.push)
-        window.location.href = '/dashboard'
+        
+        // Navigate to app subdomain dashboard
+        window.location.href = 'https://shopify.ezapps.app/dashboard'
       } catch (err) {
         console.error('Unexpected error:', err)
         setError('An error occurred. Redirecting to login...')
@@ -66,7 +66,7 @@ function CallbackContent() {
       <div className="text-center">
         {error ? (
           <>
-            <div className="text-red-500 mb-4 text-4xl">{'\u26A0\uFE0F'}</div>
+            <div className="text-red-500 mb-4 text-4xl">⚠️</div>
             <p className="text-gray-900 font-medium">{error}</p>
           </>
         ) : (
@@ -83,13 +83,11 @@ function CallbackContent() {
 
 export default function CallbackSubdomain() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      }
-    >
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
       <CallbackContent />
     </Suspense>
   )
