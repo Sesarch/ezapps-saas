@@ -31,7 +31,7 @@ function LoginForm() {
     }
     
     if (data.user) {
-      // ✅ FETCH USER PROFILE TO CHECK ROLE
+      // Fetch user profile to check role
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role, is_admin')
@@ -47,26 +47,23 @@ function LoginForm() {
 
       console.log('✅ User logged in:', email, '| Role:', profile?.role, '| Admin:', profile?.is_admin)
 
-      // ✅ REDIRECT BASED ON ROLE
+      // Super admin → superadmin page on app subdomain
       if (profile?.role === 'super_admin' || profile?.is_admin === true) {
         console.log('🔑 Redirecting to SUPERADMIN')
-        router.push('/superadmin')
-        router.refresh()
+        window.location.href = 'https://shopify.ezapps.app/superadmin'
         return
       }
 
       // Check if there's a redirect parameter
       const redirectTo = searchParams.get('redirect')
       if (redirectTo) {
-        router.push(redirectTo)
-        router.refresh()
+        window.location.href = `https://shopify.ezapps.app${redirectTo}`
         return
       }
 
-      // Regular user → platform selection
-      console.log('👤 Redirecting to ADD-PLATFORM')
-      router.push('/add-platform')
-      router.refresh()
+      // Regular user → dashboard on app subdomain
+      console.log('👤 Redirecting to DASHBOARD')
+      window.location.href = 'https://shopify.ezapps.app/dashboard'
     }
     
     setLoading(false)
@@ -150,23 +147,15 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Platform info */}
+        {/* Shopify branding */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600 mb-3">
-            Manage inventory across all major platforms
+            Powerful apps for your Shopify store
           </p>
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            <div className="px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-medium flex items-center gap-1">
-              🛍️ Shopify
-            </div>
-            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium flex items-center gap-1">
-              🛒 WooCommerce <span className="text-[10px] opacity-70">soon</span>
-            </div>
-            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium flex items-center gap-1">
-              📦 Etsy <span className="text-[10px] opacity-70">soon</span>
-            </div>
-            <div className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
-              +6 more
+          <div className="flex items-center justify-center gap-2">
+            <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+              <img src="/Shopify.png" alt="Shopify" className="h-5" />
+              <span>Shopify Apps</span>
             </div>
           </div>
         </div>
