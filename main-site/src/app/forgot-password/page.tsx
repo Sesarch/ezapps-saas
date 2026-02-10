@@ -17,10 +17,10 @@ export default function ForgotPasswordPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()  // ← FIXED: Inside handler
+    const supabase = createClient()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://ezapps.app/reset-password`,
+      redirectTo: 'https://ezapps.app/reset-password',
     })
 
     if (error) {
