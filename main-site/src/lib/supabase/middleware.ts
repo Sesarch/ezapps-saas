@@ -1,15 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// 🎯 PRODUCTION-ONLY - Cookie domain .ezapps.app for cross-domain auth
+// Works on BOTH: ezapps.app AND shopify.ezapps.app
+
 export async function updateSession(request: NextRequest) {
-  // Skip auth check for callback route
-  if (request.nextUrl.pathname === '/auth/callback-subdomain') {
+  const hostname = request.headers.get('host') || ''
+  const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
+  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
+  
+  // Skip auth check for callback routes
+  if (request.nextUrl.pathname === '/auth/callback-subdomain' || 
+      request.nextUrl.pathname === '/auth/callback') {
     return NextResponse.next({ request })
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = NextResponse.next({ request })
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -18,9 +24,6 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Check if we're in production
-  const isProduction = process.env.NODE_ENV === 'production'
-
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
@@ -28,20 +31,17 @@ export async function updateSession(request: NextRequest) {
       },
       setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-        supabaseResponse = NextResponse.next({
-          request,
-        })
+        supabaseResponse = NextResponse.next({ request })
         cookiesToSet.forEach(({ name, value, options }) => {
-          // Set domain to .ezapps.app in production for cross-subdomain access
-          const cookieOptions: Record<string, any> = isProduction
-            ? { 
-                ...options, 
-                domain: '.ezapps.app',
-                path: '/',
-                sameSite: 'lax',
-                secure: true,
-              }
-            : { ...options, path: '/' }
+          // 🔑 CRITICAL: Cookie domain MUST be .ezapps.app (with leading dot!)
+          // This allows cookies to work on BOTH ezapps.app AND shopify.ezapps.app
+          const cookieOptions: Record<string, any> = {
+            ...options,
+            domain: '.ezapps.app',  // ← THE DOT IS CRITICAL!
+            path: '/',
+            sameSite: 'lax',
+            secure: true,
+          }
           
           supabaseResponse.cookies.set(name, value, cookieOptions)
         })
@@ -52,33 +52,22 @@ export async function updateSession(request: NextRequest) {
   // Refresh the session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Get hostname to check if we're on a subdomain
-  const hostname = request.headers.get('host') || ''
-  const hostnameParts = hostname.split('.')
-  const isSubdomain = hostnameParts.length > 2 && !hostname.includes('localhost')
-
-  // Protected routes - redirect to login if not authenticated
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    // If on subdomain, redirect to main domain login
-    if (isSubdomain) {
-      const mainDomain = process.env.NODE_ENV === 'production' 
-        ? 'https://ezapps.app/login'
-        : 'http://localhost:3000/login'
-      return NextResponse.redirect(mainDomain)
+  // APP SUBDOMAIN: Require authentication for dashboard/superadmin
+  if (isAppSubdomain) {
+    if (!user && (request.nextUrl.pathname.startsWith('/dashboard') || 
+                   request.nextUrl.pathname.startsWith('/superadmin'))) {
+      // Not authenticated → redirect to main domain login
+      return NextResponse.redirect('https://ezapps.app/login')
     }
-    
-    // If on main domain, just go to login
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
   }
 
-  // Redirect logged-in users away from auth pages
-  // But only on main domain - subdomains shouldn't have login/signup pages
-  if (user && !isSubdomain && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/add-platform'
-    return NextResponse.redirect(url)
+  // MAIN DOMAIN: Redirect logged-in users away from auth pages
+  if (isMainDomain) {
+    if (user && (request.nextUrl.pathname === '/login' || 
+                 request.nextUrl.pathname === '/signup')) {
+      // Already logged in → redirect to app subdomain
+      return NextResponse.redirect('https://shopify.ezapps.app/dashboard')
+    }
   }
 
   return supabaseResponse
