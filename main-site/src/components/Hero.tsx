@@ -21,20 +21,10 @@ export default function Hero() {
         <div className="bg-white px-4 py-8">
           <div className="flex flex-col items-center text-center">
             
-            {/* Platform Logos */}
-            <div className="mb-6">
-              <p className="text-xs text-gray-600 mb-4 font-medium uppercase tracking-wider">Works with all major platforms</p>
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <img src="/Wix.png" alt="Wix" className="h-6 w-auto object-contain" />
-                <img src="/squarespace.png" alt="Squarespace" className="h-6 w-auto object-contain" />
-                <img src="/wooCommerce.png" alt="WooCommerce" className="h-6 w-auto object-contain" />
-                <img src="/BigCommerce.png" alt="BigCommerce" className="h-6 w-auto object-contain" />
-                <img src="/Shopify.png" alt="Shopify" className="h-8 w-auto object-contain" />
-                <img src="/opencart.png" alt="OpenCart" className="h-6 w-auto object-contain" />
-                <img src="/etsy.png" alt="Etsy" className="h-6 w-auto object-contain" />
-                <img src="/amazon.png" alt="Amazon" className="h-6 w-auto object-contain" />
-                <img src="/MagentoCommerce.png" alt="Magento" className="h-6 w-auto object-contain" />
-              </div>
+            {/* Shopify Branding */}
+            <div className="mb-6 flex items-center justify-center gap-3">
+              <img src="/Shopify.png" alt="Shopify" className="h-10 w-auto object-contain" />
+              <span className="text-sm font-semibold text-gray-600">Apps for Shopify</span>
             </div>
 
             {/* Badge */}
@@ -47,8 +37,8 @@ export default function Hero() {
 
             {/* Headline */}
             <h1 className="text-2xl font-bold text-gray-900 mb-4 leading-tight">
-              CRM, ERP, E-commerce Apps for
-              <span className="block bg-gradient-to-r from-[#97999B] to-[#F5DF4D] bg-clip-text text-transparent">Every Platform</span>
+              Powerful Apps for Your
+              <span className="block bg-gradient-to-r from-[#96BF48] to-[#5E8E3E] bg-clip-text text-transparent">Shopify Store</span>
             </h1>
 
             {/* Subheadline */}
@@ -81,20 +71,10 @@ export default function Hero() {
           <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="w-1/2 flex flex-col items-center text-center">
               
-              {/* Platform Logos */}
-              <div className="mb-8">
-                <p className="text-sm text-gray-600 mb-6 font-medium uppercase tracking-wider">Works seamlessly with all major platforms</p>
-                <div className="flex items-center justify-center gap-2">
-                  <img src="/Wix.png" alt="Wix" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/squarespace.png" alt="Squarespace" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/wooCommerce.png" alt="WooCommerce" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/BigCommerce.png" alt="BigCommerce" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto object-contain hover:scale-110 transition-transform mx-1" />
-                  <img src="/opencart.png" alt="OpenCart" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/etsy.png" alt="Etsy" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/amazon.png" alt="Amazon" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                  <img src="/MagentoCommerce.png" alt="Magento" className="h-10 w-auto object-contain hover:scale-110 transition-transform" />
-                </div>
+              {/* Shopify Branding */}
+              <div className="mb-8 flex items-center justify-center gap-4">
+                <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto object-contain" />
+                <span className="text-lg font-semibold text-gray-700">Apps for Shopify</span>
               </div>
 
               {/* Badge */}
@@ -107,8 +87,8 @@ export default function Hero() {
 
               {/* Headline */}
               <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
-                CRM, ERP, E-commerce Apps for
-                <span className="block bg-gradient-to-r from-[#97999B] to-[#F5DF4D] bg-clip-text text-transparent">Every Platform</span>
+                Powerful Apps for Your
+                <span className="block bg-gradient-to-r from-[#96BF48] to-[#5E8E3E] bg-clip-text text-transparent">Shopify Store</span>
               </h1>
 
               {/* Subheadline */}
