@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
   const isAppSubdomain = hostname.includes('shopify.ezapps.app')
   
-  // APP SUBDOMAIN: Force login/signup/auth pages to main domain
+  // APP SUBDOMAIN: Redirect login/signup to main domain
   if (isAppSubdomain) {
     if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password') {
       return NextResponse.redirect(`https://ezapps.app${pathname}${request.nextUrl.search}`)
@@ -25,11 +25,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Run on dashboard, superadmin, and auth pages (for domain routing only)
   matcher: [
     '/dashboard/:path*', 
     '/superadmin/:path*',
     '/login',
-    '/signup', 
+    '/signup',
     '/forgot-password',
     '/reset-password'
   ],
