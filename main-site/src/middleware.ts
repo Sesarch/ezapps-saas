@@ -4,17 +4,15 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const pathname = request.nextUrl.pathname
   
-  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
   const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
+  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
   
-  // If on shopify subdomain trying to access login/signup
-  // Redirect to main domain
-  if (isAppSubdomain && (pathname === '/login' || pathname === '/signup')) {
+  // Redirect auth pages from shopify subdomain to main domain
+  if (isAppSubdomain && (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password')) {
     return NextResponse.redirect(`https://ezapps.app${pathname}`)
   }
   
-  // If on main domain trying to access dashboard
-  // Redirect to shopify subdomain  
+  // Redirect dashboard from main domain to shopify subdomain
   if (isMainDomain && (pathname.startsWith('/dashboard') || pathname.startsWith('/superadmin'))) {
     return NextResponse.redirect(`https://shopify.ezapps.app${pathname}`)
   }
@@ -24,9 +22,11 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/superadmin/:path*', 
+    '/dashboard/:path*', 
+    '/superadmin/:path*',
     '/login',
-    '/signup'
+    '/signup',
+    '/forgot-password',
+    '/reset-password'
   ],
 }
