@@ -1,31 +1,25 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-// Route auth pages to main domain, app pages to shopify subdomain
+// Simple routing - don't touch login/signup/auth pages AT ALL
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const pathname = request.nextUrl.pathname
   
   const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
-  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
   
-  // APP SUBDOMAIN: Redirect login/signup/forgot-password to main domain
-  if (isAppSubdomain) {
-    if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password') {
-      return NextResponse.redirect(`https://ezapps.app${pathname}${request.nextUrl.search}`)
-    }
-  }
-  
-  // MAIN DOMAIN: Redirect dashboard/superadmin to app subdomain
+  // ONLY redirect dashboard/superadmin to app subdomain
+  // Everything else (including login) - don't touch!
   if (isMainDomain) {
     if (pathname.startsWith('/dashboard') || pathname.startsWith('/superadmin')) {
       return NextResponse.redirect(`https://shopify.ezapps.app${pathname}${request.nextUrl.search}`)
     }
   }
   
-  // Everything else - just continue
+  // Everything else - just pass through
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/superadmin/:path*', '/login', '/signup', '/forgot-password', '/reset-password'],
+  // ONLY run on dashboard and superadmin routes
+  matcher: ['/dashboard/:path*', '/superadmin/:path*'],
 }
