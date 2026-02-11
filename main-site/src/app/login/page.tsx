@@ -3,64 +3,39 @@
 export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [debugInfo, setDebugInfo] = useState<string[]>([])
-  const router = useRouter()
-
-  const addDebug = (msg: string) => {
-    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
-  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
-    setDebugInfo([])
     setLoading(true)
 
-    addDebug('Starting login...')
-    
-    const supabase = createClient()
-    addDebug('Supabase client created')
-
     try {
-      addDebug(`Attempting sign in for: ${email}`)
-      
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       })
 
-      if (signInError) {
-        addDebug(`ERROR: ${signInError.message}`)
-        setError(`Login failed: ${signInError.message}`)
-        setLoading(false)
-        return
-      }
-      
-      if (!data.user) {
-        addDebug('ERROR: No user returned')
-        setError('No user data received')
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Login failed')
         setLoading(false)
         return
       }
 
-      addDebug(`Success! User ID: ${data.user.id}`)
-      addDebug('Using window.location.replace...')
-
-      // Use replace instead of href - forces navigation
-      window.location.replace('https://shopify.ezapps.app/dashboard')
+      // Success - redirect
+      window.location.href = 'https://shopify.ezapps.app/dashboard'
       
     } catch (err: any) {
-      addDebug(`EXCEPTION: ${err.message}`)
-      setError(`Exception: ${err.message}`)
+      setError('An error occurred')
       setLoading(false)
     }
   }
@@ -69,7 +44,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Login</h2>
+          <Link href="/">
+            <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
+          </Link>
+          <h2 className="text-3xl font-bold text-gray-900">Welcome back</h2>
+          <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -77,14 +56,6 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm font-bold">
                 ⚠️ {error}
-              </div>
-            )}
-
-            {debugInfo.length > 0 && (
-              <div className="bg-blue-50 border border-blue-300 text-blue-800 px-4 py-3 rounded-lg text-xs font-mono max-h-40 overflow-y-auto">
-                {debugInfo.map((msg, i) => (
-                  <div key={i}>{msg}</div>
-                ))}
               </div>
             )}
 
@@ -104,9 +75,17 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <Link 
+                  href="/forgot-password" 
+                  className="text-sm text-teal-600 hover:text-teal-700 hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <input
                 type="password"
                 required
@@ -127,8 +106,26 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4 text-xs text-gray-500 text-center">
-            Debug mode - watch for messages above
+          <p className="mt-6 text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link 
+              href="/signup" 
+              className="font-medium text-teal-600 hover:text-teal-700 hover:underline"
+            >
+              Sign up free
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-8 text-center">
+          <p className="text-sm text-gray-600 mb-3">
+            Powerful apps for your Shopify store
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
+              <img src="/Shopify.png" alt="Shopify" className="h-5" />
+              <span>Shopify Apps</span>
+            </div>
           </div>
         </div>
       </div>
