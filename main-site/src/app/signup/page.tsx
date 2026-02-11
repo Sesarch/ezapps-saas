@@ -1,72 +1,59 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const supabase = createClient()
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-    
-    if (data.user) {
-      // Fetch user profile to check role
-      const { data: profile, error: profileError } = await supabase
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        setError(signInError.message)
+        setLoading(false)
+        return
+      }
+      
+      if (!data.user) {
+        setError('Login failed')
+        setLoading(false)
+        return
+      }
+
+      const { data: profile } = await supabase
         .from('profiles')
         .select('role, is_admin')
         .eq('id', data.user.id)
         .single()
 
-      if (profileError) {
-        console.error('Error fetching profile:', profileError)
-        setError('Database error granting user')
-        setLoading(false)
-        return
-      }
+      await new Promise(resolve => setTimeout(resolve, 500))
 
-      console.log('✅ User logged in:', email, '| Role:', profile?.role, '| Admin:', profile?.is_admin)
-
-      // Super admin → superadmin page on app subdomain
       if (profile?.role === 'super_admin' || profile?.is_admin === true) {
-        console.log('🔑 Redirecting to SUPERADMIN')
         window.location.href = 'https://shopify.ezapps.app/superadmin'
-        return
+      } else {
+        window.location.href = 'https://shopify.ezapps.app/dashboard'
       }
-
-      // Check if there's a redirect parameter
-      const redirectTo = searchParams.get('redirect')
-      if (redirectTo) {
-        window.location.href = `https://shopify.ezapps.app${redirectTo}`
-        return
-      }
-
-      // Regular user → dashboard on app subdomain
-      console.log('👤 Redirecting to DASHBOARD')
-      window.location.href = 'https://shopify.ezapps.app/dashboard'
+    } catch (err: any) {
+      setError(err.message || 'An error occurred')
+      setLoading(false)
     }
-    
-    setLoading(false)
   }
 
   return (
@@ -88,7 +75,6 @@ function LoginForm() {
               </div>
             )}
 
-            {/* Email Field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -98,12 +84,12 @@ function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
                 placeholder="john@example.com"
               />
             </div>
 
-            {/* Password Field */}
             <div>
               <div className="flex justify-between items-center mb-1">
                 <label className="block text-sm font-medium text-gray-700">
@@ -121,16 +107,16 @@ function LoginForm() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                disabled={loading}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
                 placeholder="Enter your password"
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
+              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -147,7 +133,6 @@ function LoginForm() {
           </p>
         </div>
 
-        {/* Shopify branding */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600 mb-3">
             Powerful apps for your Shopify store
