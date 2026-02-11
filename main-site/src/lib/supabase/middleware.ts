@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// ONLY HANDLE COOKIES - NO REDIRECTS!
+// ONLY handle cookies - NEVER redirect!
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -34,8 +34,9 @@ export async function updateSession(request: NextRequest) {
     },
   })
 
-  // Just refresh session - NO REDIRECTS!
+  // Just refresh session - NO REDIRECTS EVER!
   await supabase.auth.getUser()
 
+  // Return response WITHOUT any redirects
   return supabaseResponse
 }
