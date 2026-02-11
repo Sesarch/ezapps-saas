@@ -1,24 +1,23 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
 
-    console.log('🔑 Starting login for:', email)
+    const supabase = createClient()
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -27,44 +26,32 @@ function LoginForm() {
       })
 
       if (signInError) {
-        console.error('❌ Login error:', signInError)
         setError(signInError.message)
         setLoading(false)
         return
       }
       
       if (!data.user) {
-        console.error('❌ No user returned')
-        setError('Login failed - no user data')
+        setError('Login failed')
         setLoading(false)
         return
       }
 
-      console.log('✅ Login successful for:', data.user.email)
-
-      // Check if super admin
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, is_admin')
         .eq('id', data.user.id)
         .single()
 
-      console.log('👤 User role:', profile?.role, '| Admin:', profile?.is_admin)
-
-      // Small delay to ensure session is set
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      // Redirect based on role
       if (profile?.role === 'super_admin' || profile?.is_admin === true) {
-        console.log('🔑 Redirecting to superadmin...')
         window.location.href = 'https://shopify.ezapps.app/superadmin'
       } else {
-        console.log('👤 Redirecting to dashboard...')
         window.location.href = 'https://shopify.ezapps.app/dashboard'
       }
     } catch (err: any) {
-      console.error('❌ Unexpected error:', err)
-      setError(err.message || 'An unexpected error occurred')
+      setError(err.message || 'An error occurred')
       setLoading(false)
     }
   }
