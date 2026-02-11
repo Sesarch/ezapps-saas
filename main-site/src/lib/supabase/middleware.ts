@@ -33,7 +33,6 @@ export async function updateSession(request: NextRequest) {
     },
   })
 
-  // Just refresh session - absolutely NO redirects
   await supabase.auth.getUser()
 
   return supabaseResponse
