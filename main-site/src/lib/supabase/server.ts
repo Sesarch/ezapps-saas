@@ -3,36 +3,40 @@ import { cookies } from 'next/headers'
 
 export async function createClient() {
   const cookieStore = await cookies()
-
-  // Check if we're in production
   const isProduction = process.env.NODE_ENV === 'production'
-
+  
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         async getAll() {
+          // Get all cookies - they should include domain cookies
           return cookieStore.getAll()
         },
         async setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              // Set domain to .ezapps.app in production for cross-subdomain access
+              // CRITICAL: Always set domain to .ezapps.app in production
               const cookieOptions: Record<string, any> = isProduction
                 ? { 
-                    ...options, 
+                    ...options,
                     domain: '.ezapps.app',
                     path: '/',
                     sameSite: 'lax' as const,
                     secure: true,
+                    httpOnly: false, // Important for client-side access
                   }
-                : { ...options, path: '/' }
+                : { 
+                    ...options, 
+                    path: '/',
+                  }
               
-              cookieStore.set(name, value, cookieOptions)
+              await cookieStore.set(name, value, cookieOptions)
             }
-          } catch {
-            // Ignore - called from Server Component
+          } catch (error) {
+            // Server Component context - cookies already set
+            console.log('Cookie set error (expected in Server Component):', error)
           }
         },
       },
