@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
+  const router = useRouter()
 
   const addDebug = (msg: string) => {
     setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
@@ -51,11 +53,10 @@ export default function LoginPage() {
       }
 
       addDebug(`Success! User ID: ${data.user.id}`)
-      addDebug('Redirecting to dashboard...')
+      addDebug('Using window.location.replace...')
 
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      window.location.href = 'https://shopify.ezapps.app/dashboard'
+      // Use replace instead of href - forces navigation
+      window.location.replace('https://shopify.ezapps.app/dashboard')
       
     } catch (err: any) {
       addDebug(`EXCEPTION: ${err.message}`)
@@ -127,7 +128,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-4 text-xs text-gray-500 text-center">
-            Debug mode enabled - errors will be visible above
+            Debug mode - watch for messages above
           </div>
         </div>
       </div>
