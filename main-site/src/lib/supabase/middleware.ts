@@ -1,20 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// 🎯 PRODUCTION-ONLY - Cookie domain .ezapps.app for cross-domain auth
-// Works on BOTH: ezapps.app AND shopify.ezapps.app
-
+// ONLY HANDLE COOKIES - NO REDIRECTS!
 export async function updateSession(request: NextRequest) {
-  const hostname = request.headers.get('host') || ''
-  const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
-  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
-  
-  // Skip auth check for callback routes
-  if (request.nextUrl.pathname === '/auth/callback-subdomain' || 
-      request.nextUrl.pathname === '/auth/callback') {
-    return NextResponse.next({ request })
-  }
-
   let supabaseResponse = NextResponse.next({ request })
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -33,47 +21,21 @@ export async function updateSession(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
         supabaseResponse = NextResponse.next({ request })
         cookiesToSet.forEach(({ name, value, options }) => {
-          // 🔑 CRITICAL: Cookie domain MUST be .ezapps.app (with leading dot!)
-          // This allows cookies to work on BOTH ezapps.app AND shopify.ezapps.app
           const cookieOptions: Record<string, any> = {
             ...options,
-            domain: '.ezapps.app',  // ← THE DOT IS CRITICAL!
+            domain: '.ezapps.app',
             path: '/',
             sameSite: 'lax',
             secure: true,
           }
-          
           supabaseResponse.cookies.set(name, value, cookieOptions)
         })
       },
     },
   })
 
-  // Refresh the session
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // APP SUBDOMAIN: Require authentication for dashboard/superadmin
-  if (isAppSubdomain) {
-    if (!user && (request.nextUrl.pathname.startsWith('/dashboard') || 
-                   request.nextUrl.pathname.startsWith('/superadmin'))) {
-      // Not authenticated → redirect to main domain login
-      return NextResponse.redirect('https://ezapps.app/login')
-    }
-  }
-
-  // MAIN DOMAIN: ONLY redirect from /login and /signup if already logged in
-  // DON'T redirect from homepage or other public pages!
-  if (isMainDomain) {
-    // Only redirect if on login/signup pages specifically
-    if (user && (request.nextUrl.pathname === '/login' || 
-                 request.nextUrl.pathname === '/signup')) {
-      // Already logged in, on auth pages → redirect to app subdomain
-      return NextResponse.redirect('https://shopify.ezapps.app/dashboard')
-    }
-    
-    // For all other pages on main domain (homepage, pricing, etc.)
-    // Just continue - don't redirect!
-  }
+  // Just refresh session - NO REDIRECTS!
+  await supabase.auth.getUser()
 
   return supabaseResponse
 }
