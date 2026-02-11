@@ -9,15 +9,15 @@ export async function middleware(request: NextRequest) {
   
   // APP SUBDOMAIN: Redirect auth pages to main domain
   if (isAppSubdomain) {
-    if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password') {
-      return NextResponse.redirect(`https://ezapps.app${pathname}${request.nextUrl.search}`)
+    if (pathname === '/login' || pathname === '/signup') {
+      return NextResponse.redirect(`https://ezapps.app${pathname}`)
     }
   }
   
-  // MAIN DOMAIN: Redirect dashboard/superadmin to app subdomain
+  // MAIN DOMAIN: Redirect dashboard to app subdomain
   if (isMainDomain) {
     if (pathname.startsWith('/dashboard') || pathname.startsWith('/superadmin')) {
-      return NextResponse.redirect(`https://shopify.ezapps.app${pathname}${request.nextUrl.search}`)
+      return NextResponse.redirect(`https://shopify.ezapps.app${pathname}`)
     }
   }
   
@@ -25,12 +25,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // DO NOT include /login here - middleware should not run on login page AT ALL
   matcher: [
     '/dashboard/:path*', 
-    '/superadmin/:path*',
-    '/login',
-    '/signup',
-    '/forgot-password',
-    '/reset-password'
+    '/superadmin/:path*'
   ],
 }
