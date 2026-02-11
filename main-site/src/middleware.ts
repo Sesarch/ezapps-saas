@@ -1,21 +1,31 @@
 import { type NextRequest, NextResponse } from 'next/server'
 
-// SIMPLE - Just route between domains, NO AUTH CHECKS
+// Route auth pages to main domain, app pages to shopify subdomain
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
   const pathname = request.nextUrl.pathname
   
-  // If on main domain trying to access dashboard → redirect to app subdomain
-  if (hostname.includes('ezapps.app') && !hostname.includes('shopify.')) {
-    if (pathname.startsWith('/dashboard') || pathname.startsWith('/superadmin')) {
-      return NextResponse.redirect(`https://shopify.ezapps.app${pathname}`)
+  const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
+  const isAppSubdomain = hostname.includes('shopify.ezapps.app')
+  
+  // APP SUBDOMAIN: Redirect login/signup/forgot-password to main domain
+  if (isAppSubdomain) {
+    if (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password') {
+      return NextResponse.redirect(`https://ezapps.app${pathname}${request.nextUrl.search}`)
     }
   }
   
-  // Everything else - just continue, NO REDIRECTS
+  // MAIN DOMAIN: Redirect dashboard/superadmin to app subdomain
+  if (isMainDomain) {
+    if (pathname.startsWith('/dashboard') || pathname.startsWith('/superadmin')) {
+      return NextResponse.redirect(`https://shopify.ezapps.app${pathname}${request.nextUrl.search}`)
+    }
+  }
+  
+  // Everything else - just continue
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/superadmin/:path*'],
+  matcher: ['/dashboard/:path*', '/superadmin/:path*', '/login', '/signup', '/forgot-password', '/reset-password'],
 }
