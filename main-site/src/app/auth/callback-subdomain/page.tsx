@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -21,15 +23,13 @@ function CallbackContent() {
       try {
         const supabase = createClient()
         
-        // Set the session using the tokens
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         })
 
         if (error) {
-          console.error('Error setting session:', error)
-          setError('Failed to authenticate. Redirecting to login...')
+          setError('Failed to authenticate')
           setTimeout(() => {
             window.location.href = 'https://ezapps.app/login'
           }, 2000)
@@ -37,21 +37,18 @@ function CallbackContent() {
         }
 
         if (!data.session) {
-          setError('No session created. Redirecting to login...')
+          setError('No session created')
           setTimeout(() => {
             window.location.href = 'https://ezapps.app/login'
           }, 2000)
           return
         }
 
-        // Session set successfully! Wait for cookies to settle
         await new Promise(resolve => setTimeout(resolve, 500))
         
-        // Navigate to app subdomain dashboard
         window.location.href = 'https://shopify.ezapps.app/dashboard'
       } catch (err) {
-        console.error('Unexpected error:', err)
-        setError('An error occurred. Redirecting to login...')
+        setError('An error occurred')
         setTimeout(() => {
           window.location.href = 'https://ezapps.app/login'
         }, 2000)
@@ -73,7 +70,6 @@ function CallbackContent() {
           <>
             <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-gray-600">Setting up your session...</p>
-            <p className="text-sm text-gray-500 mt-2">Please wait...</p>
           </>
         )}
       </div>
