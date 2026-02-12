@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server'
+import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
@@ -6,6 +7,9 @@ export async function middleware(request: NextRequest) {
   
   const isMainDomain = hostname.includes('ezapps.app') && !hostname.includes('shopify.')
   const isAppSubdomain = hostname.includes('shopify.ezapps.app')
+  
+  // Update Supabase session
+  const response = await updateSession(request)
   
   // Redirect auth pages from shopify subdomain to main domain
   if (isAppSubdomain && (pathname === '/login' || pathname === '/signup' || pathname === '/forgot-password' || pathname === '/reset-password')) {
@@ -17,7 +21,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(`https://shopify.ezapps.app${pathname}`)
   }
   
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
