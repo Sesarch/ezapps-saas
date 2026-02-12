@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
   
-  // Define the main domain and recognized platform subdomains
+  // Define domains
   const mainDomain = 'ezapps.app'
   const isMainDomain = hostname === mainDomain || hostname === `www.${mainDomain}` || hostname.includes('localhost')
   
@@ -26,7 +26,6 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        // ADDED TYPE DEFINITION HERE TO FIX THE BUILD ERROR
         setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
@@ -35,7 +34,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => {
             const cookieOptions: Record<string, any> = {
               ...options,
-              domain: '.ezapps.app', // Share session across subdomains
+              domain: '.ezapps.app', // Required for cross-subdomain sessions
               path: '/',
               sameSite: 'lax',
               secure: true,
@@ -50,21 +49,24 @@ export async function middleware(request: NextRequest) {
   // Refresh session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Accessing Dashboard on Main Domain: Redirect to platform selection
+  // 1. Handle Main Domain Dashboard Access
   if (isMainDomain && url.pathname.startsWith('/dashboard')) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    // Stay on the main domain dashboard where your files exist
+    return supabaseResponse
   }
 
-  // Accessing Protected Subdomain routes without auth
+  // 2. Handle Subdomain Dashboard Access
   if (isPlatformSubdomain && url.pathname.startsWith('/dashboard')) {
     if (!user) {
-      return NextResponse.redirect(new URL(`https://${mainDomain}/login?redirect=${hostname}${url.pathname}`, request.url))
+      // Redirect to main domain login if session is missing
+      return NextResponse.redirect(new URL(`https://${mainDomain}/login`, request.url))
     }
   }
 
+  // 3. Set platform context header
   if (isPlatformSubdomain) {
     supabaseResponse.headers.set('x-platform', subdomain)
   }
@@ -75,7 +77,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Exclude internal routes and static assets from middleware
+     * Exclude API and static assets from middleware to prevent 401 errors
      */
     '/((?!api|_next/static|_next/image|favicon.ico|logo.png|Shopify.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
