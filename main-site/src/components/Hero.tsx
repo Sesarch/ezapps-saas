@@ -40,11 +40,14 @@ export default function Hero() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-4 px-6 py-3 bg-green-50 text-green-700 rounded-full mb-8 border border-green-100 shadow-sm"
+              className="inline-flex items-center gap-3 px-5 py-2 bg-green-50 text-green-700 rounded-full mb-8 border border-green-100 shadow-sm"
             >
-              {/* Logo is now 3x bigger (h-15 instead of h-5) */}
-              <img src="/Shopify.png" alt="Shopify" className="h-15 w-auto object-contain" />
-              <span className="text-lg font-black tracking-tight uppercase">Official App Suite</span>
+              {/* Logo is now exactly 48px (h-12), which is a clean 3x size */}
+              <img src="/Shopify.png" alt="Shopify" className="h-12 w-auto object-contain" />
+              <div className="flex flex-col leading-tight">
+                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Official</span>
+                <span className="text-sm font-black uppercase">App Suite</span>
+              </div>
             </motion.div>
 
             <motion.h1 
