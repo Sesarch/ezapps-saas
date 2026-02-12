@@ -13,21 +13,35 @@ export function createClient() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-
-        /**
-         * 🔥 CRITICAL FIX
-         * Use localStorage instead of cookies
-         * This fixes:
-         * - password reset hanging
-         * - subdomain auth issues
-         * - updateUser never resolving
-         */
-        storage: window.localStorage,
-
-        /**
-         * Optional but recommended
-         */
         flowType: 'pkce',
+      },
+      cookies: {
+        getAll() {
+          return document.cookie
+            .split('; ')
+            .filter(Boolean)
+            .map(cookie => {
+              const [name, ...rest] = cookie.split('=')
+              return { name, value: rest.join('=') }
+            })
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            const cookieOptions = [
+              `${name}=${value}`,
+              'path=/',
+              'domain=.ezapps.app',
+              'samesite=lax',
+              'secure',
+            ]
+            
+            if (options?.maxAge) {
+              cookieOptions.push(`max-age=${options.maxAge}`)
+            }
+            
+            document.cookie = cookieOptions.join('; ')
+          })
+        },
       },
     }
   )
