@@ -16,12 +16,24 @@ export default function DashboardLayout({
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient() // Create inside useEffect
+      const supabase = createClient()
       
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
         router.push('https://ezapps.app/login')
+        return
+      }
+
+      // Check if user is admin - if so, redirect to superadmin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_admin')
+        .eq('id', user.id)
+        .single()
+      
+      if (profile?.is_admin || profile?.role === 'super_admin') {
+        router.push('https://shopify.ezapps.app/superadmin')
         return
       }
       
