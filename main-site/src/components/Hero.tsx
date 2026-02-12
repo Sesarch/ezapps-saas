@@ -13,6 +13,17 @@ export default function Hero() {
     { name: 'Forms', icon: '📝', label: 'Data' }
   ]
 
+  const upcomingPlatforms = [
+    { name: 'WooCommerce', src: '/platforms/wooCommerce.png' },
+    { name: 'Wix', src: '/platforms/Wix.png' },
+    { name: 'BigCommerce', src: '/platforms/BigCommerce.png' },
+    { name: 'Squarespace', src: '/platforms/squarespace.png' },
+    { name: 'Magento', src: '/platforms/MagentoCommerce.png' },
+    { name: 'OpenCart', src: '/platforms/opencart.png' },
+    { name: 'Etsy', src: '/platforms/etsy.png' },
+    { name: 'Amazon', src: '/platforms/amazon.png' }
+  ]
+
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white">
       {/* Background Subtle Gradient Blobs */}
@@ -22,7 +33,7 @@ export default function Hero() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
           
           {/* LEFT: Marketing Copy */}
           <div className="text-center lg:text-left">
@@ -31,7 +42,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full mb-6 border border-green-100"
             >
-              <img src="/Shopify.png" alt="Shopify" className="h-5 w-5 object-contain" />
+              <img src="/platforms/Shopify.png" alt="Shopify" className="h-5 w-5 object-contain" />
               <span className="text-sm font-bold tracking-wide uppercase">Official Shopify App Suite</span>
             </motion.div>
 
@@ -88,12 +99,30 @@ export default function Hero() {
                 </motion.div>
               ))}
             </div>
-            
-            {/* Visual Decoration */}
             <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl" />
           </div>
-
         </div>
+
+        {/* BOTTOM: Upcoming Platforms Section */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="pt-12 border-t border-gray-100 text-center"
+        >
+          <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-8">More platforms coming soon</p>
+          <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-12 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+            {upcomingPlatforms.map((platform) => (
+              <div key={platform.name} className="h-8 lg:h-10 w-auto flex items-center group relative" title={platform.name}>
+                <img 
+                  src={platform.src} 
+                  alt={platform.name} 
+                  className="h-full w-auto object-contain transition-transform group-hover:scale-110" 
+                />
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   )
