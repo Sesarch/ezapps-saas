@@ -5,7 +5,6 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
   
-  // Identify if we are on the main domain
   const mainDomain = 'ezapps.app'
   const isMainDomain = hostname === mainDomain || hostname === `www.${mainDomain}` || hostname.includes('localhost')
   
@@ -23,7 +22,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, {
               ...options,
-              domain: '.ezapps.app', // Critical for session persistence
+              domain: '.ezapps.app',
               path: '/',
               sameSite: 'lax',
               secure: true,
@@ -36,15 +35,33 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Logic for the Main Domain
-  if (isMainDomain && url.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
-    
-    // Redirect base /dashboard to the working inventory subfolder
-    if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
-      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+  if (isMainDomain) {
+    // Check role if user is hitting dashboard or superadmin paths
+    if (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin')) {
+      if (!user) return NextResponse.redirect(new URL('/login', request.url))
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_admin')
+        .eq('id', user.id)
+        .single()
+
+      const isAdmin = profile?.is_admin === true || profile?.role === 'super_admin'
+
+      // 1. If Admin tries to go to user dashboard, send to superadmin
+      if (isAdmin && url.pathname.startsWith('/dashboard')) {
+        return NextResponse.redirect(new URL('/superadmin', request.url))
+      }
+
+      // 2. If Normal User tries to go to superadmin, send to inventory
+      if (!isAdmin && url.pathname.startsWith('/superadmin')) {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
+
+      // 3. Handle the base /dashboard redirect for non-admins
+      if (!isAdmin && (url.pathname === '/dashboard' || url.pathname === '/dashboard/')) {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
     }
   }
 
