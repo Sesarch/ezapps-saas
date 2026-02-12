@@ -55,7 +55,7 @@ export async function middleware(request: NextRequest) {
     if (!user) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    return NextResponse.redirect(new URL('/add-platform', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   // Accessing Protected Subdomain routes without auth
