@@ -34,11 +34,17 @@ export default function Hero() {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-3 mb-8 justify-center lg:justify-start"
+              className="flex items-center gap-6 mb-12 justify-center lg:justify-start"
             >
-              <img src="/Shopify.png" alt="Shopify" className="h-10 w-auto" />
-              <div className="h-6 w-[1px] bg-slate-300 mx-2" />
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Enterprise Solutions Partner</span>
+              {/* Shopify Logo: Scaled to h-16 (Large Corporation style) */}
+              <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto object-contain" />
+              
+              <div className="h-12 w-[2px] bg-slate-300 mx-2" />
+              
+              {/* Slogan: Significantly bigger and bolder */}
+              <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight">
+                Enterprise Solutions Partner
+              </span>
             </motion.div>
 
             <motion.h1 
@@ -85,7 +91,7 @@ export default function Hero() {
         <div className="mt-32 pt-16 border-t border-slate-200">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
             <div className="text-center lg:text-left">
-              <p className="text-3xl font-black text-slate-900">2,500+</p>
+              <p className="text-4xl font-black text-slate-900">2,500+</p>
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Active Merchants</p>
             </div>
             
@@ -99,7 +105,7 @@ export default function Hero() {
             </div>
 
             <div className="text-center lg:text-right">
-              <p className="text-3xl font-black text-slate-900">99.9%</p>
+              <p className="text-4xl font-black text-slate-900">99.9%</p>
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Uptime Record</p>
             </div>
           </div>
