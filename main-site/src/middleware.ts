@@ -9,11 +9,6 @@ export async function middleware(request: NextRequest) {
   const mainDomain = 'ezapps.app'
   const isMainDomain = hostname === mainDomain || hostname === `www.${mainDomain}` || hostname.includes('localhost')
   
-  // Extract platform from subdomain
-  const subdomain = hostname.split('.')[0]
-  const validPlatforms = ['shopify', 'woocommerce', 'wix', 'bigcommerce', 'squarespace', 'magento', 'opencart', 'etsy', 'amazon']
-  const isPlatformSubdomain = validPlatforms.includes(subdomain)
-
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -34,7 +29,7 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) => {
             const cookieOptions: Record<string, any> = {
               ...options,
-              domain: '.ezapps.app', // Required for cross-subdomain sessions
+              domain: '.ezapps.app',
               path: '/',
               sameSite: 'lax',
               secure: true,
@@ -46,29 +41,16 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Refresh session
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. Handle Main Domain Dashboard Access
+  // If user tries to access any dashboard path on the main domain
   if (isMainDomain && url.pathname.startsWith('/dashboard')) {
     if (!user) {
+      // If not logged in, send to login
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    // Stay on the main domain dashboard where your files exist
+    // If logged in, STAY HERE (do not redirect to add-platform)
     return supabaseResponse
-  }
-
-  // 2. Handle Subdomain Dashboard Access
-  if (isPlatformSubdomain && url.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      // Redirect to main domain login if session is missing
-      return NextResponse.redirect(new URL(`https://${mainDomain}/login`, request.url))
-    }
-  }
-
-  // 3. Set platform context header
-  if (isPlatformSubdomain) {
-    supabaseResponse.headers.set('x-platform', subdomain)
   }
 
   return supabaseResponse
@@ -76,9 +58,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Exclude API and static assets from middleware to prevent 401 errors
-     */
     '/((?!api|_next/static|_next/image|favicon.ico|logo.png|Shopify.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
