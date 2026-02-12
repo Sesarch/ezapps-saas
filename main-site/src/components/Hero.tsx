@@ -5,136 +5,105 @@ import { motion } from 'framer-motion'
 
 export default function Hero() {
   const apps = [
-    { name: 'Inventory', icon: '📦', label: 'ERP' },
-    { name: 'Loyalty', icon: '🎁', label: 'CRM' },
-    { name: 'Reviews', icon: '⭐', label: 'Social' },
-    { name: 'Upsell', icon: '📈', label: 'Revenue' },
-    { name: 'Marketing', icon: '📧', label: 'Growth' },
-    { name: 'Forms', icon: '📝', label: 'Data' }
+    { name: 'Inventory ERP', icon: '📦', path: '/products/inventory' },
+    { name: 'Loyalty CRM', icon: '🎁', path: '/products/loyalty' },
+    { name: 'Social Reviews', icon: '⭐', path: '/products/reviews' },
+    { name: 'Revenue Upsell', icon: '📈', path: '/products/upsell' },
+    { name: 'Growth Marketing', icon: '📧', path: '/products/marketing' },
+    { name: 'Data Intelligence', icon: '📝', path: '/products/forms' }
   ]
 
-  const upcomingPlatforms = [
+  const partners = [
     { name: 'WooCommerce', src: '/wooCommerce.png' },
     { name: 'Wix', src: '/Wix.png' },
     { name: 'BigCommerce', src: '/BigCommerce.png' },
-    { name: 'Squarespace', src: '/squarespace.png' },
-    { name: 'Magento', src: '/MagentoCommerce.png' },
-    { name: 'OpenCart', src: '/opencart.png' },
-    { name: 'Etsy', src: '/etsy.png' },
     { name: 'Amazon', src: '/amazon.png' }
   ]
 
   return (
-    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white">
-      {/* Background Subtle Gradient Blobs */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-50 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-purple-50 rounded-full blur-[120px]" />
-      </div>
+    <section className="relative pt-32 pb-24 lg:pt-52 lg:pb-40 overflow-hidden bg-[#f8fafc]">
+      {/* Structural Background Pattern */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
-          {/* LEFT: Marketing Copy */}
-          <div className="text-center lg:text-left">
+          {/* LEFT: Institutional Marketing */}
+          <div className="lg:col-span-7 text-center lg:text-left">
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-3 px-5 py-2 bg-green-50 text-green-700 rounded-full mb-8 border border-green-100 shadow-sm"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-3 mb-8 justify-center lg:justify-start"
             >
-              <img src="/Shopify.png" alt="Shopify" className="h-12 w-auto object-contain" />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Official</span>
-                <span className="text-sm font-black uppercase">App Suite</span>
-              </div>
+              <img src="/Shopify.png" alt="Shopify" className="h-10 w-auto" />
+              <div className="h-6 w-[1px] bg-slate-300 mx-2" />
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">Enterprise Solutions Partner</span>
             </motion.div>
 
             <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-5xl lg:text-7xl font-bold text-gray-900 leading-[1.1] mb-6"
+              className="text-6xl lg:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter"
             >
-              The Ultimate <span className="text-teal-600">ERP & CRM</span> for Shopify.
+              Unified Commerce. <br/>
+              <span className="text-slate-500">Global Scale.</span>
             </motion.h1>
 
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-gray-600 mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0"
-            >
-              Scale your store with 6 elite apps in one dashboard. Real-time inventory intelligence, automated loyalty, and high-performance marketing tools.
+            <motion.p className="text-xl text-slate-600 mb-12 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+              EZ Apps provides the mission-critical infrastructure for high-volume Shopify merchants. Integrate ERP, CRM, and automated marketing into a single, secure ecosystem.
             </motion.p>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
-            >
-              <Link href="/signup" className="px-8 py-4 bg-teal-500 text-white rounded-2xl font-bold text-lg hover:bg-teal-600 transition-all shadow-xl shadow-teal-500/25 hover:scale-105 active:scale-95">
-                Start Free Trial
+            <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
+              <Link href="/signup" className="px-10 py-5 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-2xl shadow-slate-900/20">
+                Book Enterprise Demo
               </Link>
-              <Link href="#pricing" className="px-8 py-4 bg-gray-50 text-gray-700 border-2 border-gray-200 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all">
-                View Pricing
+              <Link href="/case-studies" className="px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all">
+                Read Case Studies
               </Link>
-            </motion.div>
+            </div>
           </div>
 
-          {/* RIGHT: Modern App Icons Grid */}
-          <div className="relative">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {/* RIGHT: Clickable App Ecosystem Grid */}
+          <div className="lg:col-span-5">
+            <div className="grid grid-cols-2 gap-4">
               {apps.map((app, i) => (
-                <motion.div
-                  key={app.name}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.1 * i }}
-                  whileHover={{ y: -5 }}
-                  className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col items-center justify-center text-center"
-                >
-                  <div className="text-4xl mb-3">{app.icon}</div>
-                  <p className="font-bold text-gray-900 text-sm">{app.name}</p>
-                  <span className="mt-1 px-2 py-0.5 bg-gray-50 text-gray-400 text-[10px] font-bold rounded uppercase tracking-widest">
-                    {app.label}
-                  </span>
-                </motion.div>
+                <Link href={app.path} key={app.name}>
+                  <motion.div
+                    whileHover={{ scale: 1.02, backgroundColor: '#ffffff' }}
+                    className="group p-8 rounded-2xl border border-slate-100 bg-slate-50/50 shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{app.icon}</div>
+                    <h3 className="font-bold text-slate-900 text-lg mb-1">{app.name}</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Explore Solution →</p>
+                  </motion.div>
+                </Link>
               ))}
             </div>
-            <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl" />
           </div>
         </div>
 
-        {/* BOTTOM: Upcoming Platforms Section */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="pt-12 border-t border-gray-100 text-center"
-        >
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-10">More platforms coming soon</p>
-          <div className="flex flex-wrap justify-center items-end gap-x-10 gap-y-12">
-            {upcomingPlatforms.map((platform) => (
-              <div key={platform.name} className="flex flex-col items-center gap-3 group">
-                <div className="h-8 lg:h-10 w-auto flex items-center opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">
-                  <img 
-                    src={platform.src} 
-                    alt={platform.name} 
-                    className="h-full w-auto object-contain transition-transform group-hover:scale-110" 
-                  />
+        {/* TRUST ROW: Customer Base & Platforms */}
+        <div className="mt-32 pt-16 border-t border-slate-200">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+            <div className="text-center lg:text-left">
+              <p className="text-3xl font-black text-slate-900">2,500+</p>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Active Merchants</p>
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-12 grayscale opacity-30">
+              {partners.map(p => (
+                <div key={p.name} className="flex flex-col items-center gap-3">
+                  <img src={p.src} alt={p.name} className="h-8 w-auto object-contain" />
+                  <span style={{ color: '#E7E7E7' }} className="text-[10px] font-black uppercase tracking-widest">{p.name}</span>
                 </div>
-                {/* Platform Name in #E7E7E7 */}
-                <span 
-                  className="text-[11px] font-bold tracking-tight uppercase transition-colors group-hover:text-gray-400"
-                  style={{ color: '#E7E7E7' }}
-                >
-                  {platform.name}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <div className="text-center lg:text-right">
+              <p className="text-3xl font-black text-slate-900">99.9%</p>
+              <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Uptime Record</p>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   )
