@@ -11,36 +11,65 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    setDebugInfo('Starting login...')
 
     try {
+      setDebugInfo('Creating Supabase client...')
       const supabase = createClient()
       
+      setDebugInfo('Calling signInWithPassword...')
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
+        setDebugInfo('Login error: ' + error.message)
         setError(error.message)
         setLoading(false)
         return
       }
 
       if (!data.user) {
+        setDebugInfo('No user returned')
         setError('Login failed')
         setLoading(false)
         return
       }
 
-      // Success - redirect to subdomain
-      window.location.href = 'https://shopify.ezapps.app/dashboard'
+      setDebugInfo('Login successful! Checking profile...')
+
+      // Check user role to determine where to redirect
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, is_admin')
+        .eq('id', data.user.id)
+        .single()
+
+      if (profileError) {
+        setDebugInfo('Profile error: ' + profileError.message)
+      }
+
+      setDebugInfo('Profile loaded. Admin: ' + (profile?.is_admin || profile?.role === 'super_admin'))
+
+      // If admin, go to superadmin
+      if (profile?.is_admin || profile?.role === 'super_admin') {
+        setDebugInfo('Redirecting to superadmin...')
+        window.location.href = '/superadmin'
+      } else {
+        // Regular user, go to dashboard
+        setDebugInfo('Redirecting to dashboard...')
+        window.location.href = '/dashboard'
+      }
       
     } catch (err: any) {
+      setDebugInfo('Catch error: ' + err.message)
       setError('An error occurred')
       setLoading(false)
     }
@@ -62,6 +91,12 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm font-bold">
                 ⚠️ {error}
+              </div>
+            )}
+
+            {debugInfo && (
+              <div className="bg-blue-50 border-2 border-blue-500 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                🔍 {debugInfo}
               </div>
             )}
 
