@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -17,21 +18,26 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+      const supabase = createClient()
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Login failed')
+      if (error) {
+        setError(error.message)
         setLoading(false)
         return
       }
 
-      // Success - redirect
+      if (!data.user) {
+        setError('Login failed')
+        setLoading(false)
+        return
+      }
+
+      // Success - redirect to subdomain
       window.location.href = 'https://shopify.ezapps.app/dashboard'
       
     } catch (err: any) {
