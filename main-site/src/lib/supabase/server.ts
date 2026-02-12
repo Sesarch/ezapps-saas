@@ -11,13 +11,11 @@ export async function createClient() {
     {
       cookies: {
         async getAll() {
-          // Get all cookies - they should include domain cookies
           return cookieStore.getAll()
         },
         async setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           try {
             for (const { name, value, options } of cookiesToSet) {
-              // CRITICAL: Always set domain to .ezapps.app in production
               const cookieOptions: Record<string, any> = isProduction
                 ? { 
                     ...options,
@@ -25,7 +23,6 @@ export async function createClient() {
                     path: '/',
                     sameSite: 'lax' as const,
                     secure: true,
-                    httpOnly: false, // Important for client-side access
                   }
                 : { 
                     ...options, 
@@ -36,7 +33,6 @@ export async function createClient() {
             }
           } catch (error) {
             // Server Component context - cookies already set
-            console.log('Cookie set error (expected in Server Component):', error)
           }
         },
       },
