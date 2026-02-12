@@ -17,44 +17,31 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    setDebug('Creating Supabase client...')
+    setDebug('Connecting to Supabase...')
 
     try {
       const supabase = createClient()
-      setDebug('Client created. Calling signInWithPassword...')
       
-      // Add timeout to prevent infinite hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login timeout after 10 seconds')), 10000)
-      })
-      
-      const loginPromise = supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
-      
-      const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any
 
       if (error) {
-        setDebug('Error: ' + error.message)
+        setDebug('Login failed: ' + error.message)
         setError(error.message)
         setLoading(false)
         return
       }
 
-      if (!data.user) {
-        setDebug('No user returned')
-        setError('Login failed')
-        setLoading(false)
-        return
+      if (data.user) {
+        setDebug('Success! Redirecting to platform selection...')
+        // FIX: Redirect to add-platform on the main domain to sync session
+        window.location.href = '/add-platform'
       }
-
-      setDebug('Success! Redirecting...')
-      // Success - just go to dashboard
-      window.location.href = '/dashboard'
       
     } catch (err: any) {
-      setDebug('Catch error: ' + err.message)
+      setDebug('Error: ' + err.message)
       setError(err.message || 'An error occurred')
       setLoading(false)
     }
@@ -80,15 +67,13 @@ export default function LoginPage() {
             )}
 
             {debug && (
-              <div className="bg-blue-50 border border-blue-300 text-blue-700 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-blue-50 border border-blue-300 text-blue-700 px-4 py-2 rounded-lg text-xs">
                 🔍 {debug}
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
                 type="email"
                 required
@@ -102,13 +87,8 @@ export default function LoginPage() {
 
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <Link 
-                  href="/forgot-password" 
-                  className="text-sm text-teal-600 hover:text-teal-700 hover:underline"
-                >
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <Link href="/forgot-password" title="Reset your password" className="text-sm text-teal-600 hover:text-teal-700 hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -126,7 +106,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50"
+              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
@@ -134,25 +114,10 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link 
-              href="/signup" 
-              className="font-medium text-teal-600 hover:text-teal-700 hover:underline"
-            >
+            <Link href="/signup" className="font-medium text-teal-600 hover:text-teal-700 hover:underline">
               Sign up free
             </Link>
           </p>
-        </div>
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600 mb-3">
-            Powerful apps for your Shopify store
-          </p>
-          <div className="flex items-center justify-center gap-2">
-            <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium flex items-center gap-2">
-              <img src="/Shopify.png" alt="Shopify" className="h-5" />
-              <span>Shopify Apps</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
