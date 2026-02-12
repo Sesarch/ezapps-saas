@@ -43,13 +43,17 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // If user tries to access any dashboard path on the main domain
+  // ROUTING LOGIC
   if (isMainDomain && url.pathname.startsWith('/dashboard')) {
     if (!user) {
-      // If not logged in, send to login
       return NextResponse.redirect(new URL('/login', request.url))
     }
-    // If logged in, STAY HERE (do not redirect to add-platform)
+    
+    // If user hits exactly "/dashboard", send them to the working inventory page
+    if (url.pathname === '/dashboard') {
+      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+    }
+    
     return supabaseResponse
   }
 
