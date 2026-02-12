@@ -2,7 +2,6 @@
 
 export const dynamic = 'force-dynamic'
 import { useState } from 'react'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -30,9 +29,24 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        setStatus('Success! Opening Inventory...')
-        // FIX: Redirect directly to the existing physical folder
-        window.location.href = '/dashboard/inventory'
+        setStatus('Checking permissions...')
+        
+        // Check the profile for admin status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, is_admin')
+          .eq('id', data.user.id)
+          .single()
+
+        const isAdmin = profile?.is_admin === true || profile?.role === 'super_admin'
+
+        if (isAdmin) {
+          setStatus('Success! Opening Admin Panel...')
+          window.location.href = '/superadmin'
+        } else {
+          setStatus('Success! Opening Inventory...')
+          window.location.href = '/dashboard/inventory'
+        }
       }
     } catch (err: any) {
       setError('A connection error occurred. Please refresh.')
