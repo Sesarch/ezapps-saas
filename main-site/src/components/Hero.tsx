@@ -42,7 +42,6 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-3 px-5 py-2 bg-green-50 text-green-700 rounded-full mb-8 border border-green-100 shadow-sm"
             >
-              {/* Logo is now exactly 48px (h-12), which is a clean 3x size */}
               <img src="/Shopify.png" alt="Shopify" className="h-12 w-auto object-contain" />
               <div className="flex flex-col leading-tight">
                 <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Official</span>
@@ -114,15 +113,24 @@ export default function Hero() {
           transition={{ delay: 0.5 }}
           className="pt-12 border-t border-gray-100 text-center"
         >
-          <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-8">More platforms coming soon</p>
-          <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-12 opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
+          <p className="text-sm font-bold text-gray-400 uppercase tracking-[0.2em] mb-10">More platforms coming soon</p>
+          <div className="flex flex-wrap justify-center items-end gap-x-10 gap-y-12">
             {upcomingPlatforms.map((platform) => (
-              <div key={platform.name} className="h-8 lg:h-10 w-auto flex items-center group relative" title={platform.name}>
-                <img 
-                  src={platform.src} 
-                  alt={platform.name} 
-                  className="h-full w-auto object-contain transition-transform group-hover:scale-110" 
-                />
+              <div key={platform.name} className="flex flex-col items-center gap-3 group">
+                <div className="h-8 lg:h-10 w-auto flex items-center opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500">
+                  <img 
+                    src={platform.src} 
+                    alt={platform.name} 
+                    className="h-full w-auto object-contain transition-transform group-hover:scale-110" 
+                  />
+                </div>
+                {/* Platform Name in #E7E7E7 */}
+                <span 
+                  className="text-[11px] font-bold tracking-tight uppercase transition-colors group-hover:text-gray-400"
+                  style={{ color: '#E7E7E7' }}
+                >
+                  {platform.name}
+                </span>
               </div>
             ))}
           </div>
