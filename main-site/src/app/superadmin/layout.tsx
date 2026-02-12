@@ -14,10 +14,11 @@ export default function SuperAdminLayout({
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
     const checkAuth = async () => {
+      const supabase = createClient() // Create inside useEffect
+      
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
@@ -43,7 +44,7 @@ export default function SuperAdminLayout({
     }
     
     checkAuth()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (
