@@ -11,37 +11,51 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [debug, setDebug] = useState<string>('')
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setLoading(true)
+    setDebug('Creating Supabase client...')
 
     try {
       const supabase = createClient()
+      setDebug('Client created. Calling signInWithPassword...')
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Add timeout to prevent infinite hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login timeout after 10 seconds')), 10000)
+      })
+      
+      const loginPromise = supabase.auth.signInWithPassword({
         email,
         password,
       })
+      
+      const { data, error } = await Promise.race([loginPromise, timeoutPromise]) as any
 
       if (error) {
+        setDebug('Error: ' + error.message)
         setError(error.message)
         setLoading(false)
         return
       }
 
       if (!data.user) {
+        setDebug('No user returned')
         setError('Login failed')
         setLoading(false)
         return
       }
 
-      // Success - just go to dashboard (role check will happen in layouts)
+      setDebug('Success! Redirecting...')
+      // Success - just go to dashboard
       window.location.href = '/dashboard'
       
     } catch (err: any) {
-      setError('An error occurred')
+      setDebug('Catch error: ' + err.message)
+      setError(err.message || 'An error occurred')
       setLoading(false)
     }
   }
@@ -62,6 +76,12 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm font-bold">
                 ⚠️ {error}
+              </div>
+            )}
+
+            {debug && (
+              <div className="bg-blue-50 border border-blue-300 text-blue-700 px-4 py-3 rounded-lg text-sm">
+                🔍 {debug}
               </div>
             )}
 
