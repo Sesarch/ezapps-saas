@@ -14,22 +14,22 @@ export default function Hero() {
   ]
 
   const upcomingPlatforms = [
-    { name: 'WooCommerce', src: '/platforms/wooCommerce.png' },
-    { name: 'Wix', src: '/platforms/Wix.png' },
-    { name: 'BigCommerce', src: '/platforms/BigCommerce.png' },
-    { name: 'Squarespace', src: '/platforms/squarespace.png' },
-    { name: 'Magento', src: '/platforms/MagentoCommerce.png' },
-    { name: 'OpenCart', src: '/platforms/opencart.png' },
-    { name: 'Etsy', src: '/platforms/etsy.png' },
-    { name: 'Amazon', src: '/platforms/amazon.png' }
+    { name: 'WooCommerce', src: '/wooCommerce.png' },
+    { name: 'Wix', src: '/Wix.png' },
+    { name: 'BigCommerce', src: '/BigCommerce.png' },
+    { name: 'Squarespace', src: '/squarespace.png' },
+    { name: 'Magento', src: '/MagentoCommerce.png' },
+    { name: 'OpenCart', src: '/opencart.png' },
+    { name: 'Etsy', src: '/etsy.png' },
+    { name: 'Amazon', src: '/amazon.png' }
   ]
 
   return (
     <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-white">
       {/* Background Subtle Gradient Blobs */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-100/50 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-secondary-100/50 rounded-full blur-[120px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-50 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-5%] w-[30%] h-[30%] bg-purple-50 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,7 +42,7 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full mb-6 border border-green-100"
             >
-              <img src="/platforms/Shopify.png" alt="Shopify" className="h-5 w-5 object-contain" />
+              <img src="/Shopify.png" alt="Shopify" className="h-5 w-5 object-contain" />
               <span className="text-sm font-bold tracking-wide uppercase">Official Shopify App Suite</span>
             </motion.div>
 
@@ -50,9 +50,9 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-5xl lg:text-7xl font-display font-extrabold text-gray-900 leading-[1.1] mb-6"
+              className="text-5xl lg:text-7xl font-bold text-gray-900 leading-[1.1] mb-6"
             >
-              The Ultimate <span className="text-gradient-primary">ERP & CRM</span> for Shopify.
+              The Ultimate <span className="text-teal-600">ERP & CRM</span> for Shopify.
             </motion.h1>
 
             <motion.p 
@@ -70,7 +70,7 @@ export default function Hero() {
               transition={{ delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
             >
-              <Link href="/signup" className="px-8 py-4 bg-primary-500 text-white rounded-2xl font-bold text-lg hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/25 hover:scale-105 active:scale-95">
+              <Link href="/signup" className="px-8 py-4 bg-teal-500 text-white rounded-2xl font-bold text-lg hover:bg-teal-600 transition-all shadow-xl shadow-teal-500/25 hover:scale-105 active:scale-95">
                 Start Free Trial
               </Link>
               <Link href="#pricing" className="px-8 py-4 bg-gray-50 text-gray-700 border-2 border-gray-200 rounded-2xl font-bold text-lg hover:bg-gray-100 transition-all">
@@ -99,7 +99,7 @@ export default function Hero() {
                 </motion.div>
               ))}
             </div>
-            <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-500/10 rounded-full blur-3xl" />
+            <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl" />
           </div>
         </div>
 
