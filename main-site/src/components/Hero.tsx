@@ -33,7 +33,6 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           <div className="lg:col-span-7 text-center lg:text-left">
-            {/* 2. Centered Badge for Mobile */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -75,7 +74,7 @@ export default function Hero() {
                   >
                     <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{app.icon}</div>
                     <h3 className="font-bold text-slate-900 text-lg mb-1">{app.name}</h3>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest group-hover:text-slate-900">Explore Solution →</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest group-hover:text-slate-900 transition-colors">Explore Solution →</p>
                   </motion.div>
                 </Link>
               ))}
@@ -83,7 +82,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* 3. Platforms Coming Soon Section */}
+        {/* TRUST ROW: Platforms Section with Unified Slate Colors */}
         <div className="mt-32 pt-16 border-t border-slate-200">
           <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-12">More Platforms Coming Soon</p>
           <div className="flex flex-wrap justify-center items-end gap-x-12 gap-y-16">
@@ -92,7 +91,10 @@ export default function Hero() {
                 <div className="h-8 lg:h-10 w-auto flex items-center grayscale opacity-20 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
                   <img src={platform.src} alt={platform.name} className="h-full w-auto object-contain" />
                 </div>
-                <span style={{ color: '#E7E7E7' }} className="text-[10px] font-black uppercase tracking-widest">{platform.name}</span>
+                {/* Platform Name matched to text-slate-400 (#94a3b8) */}
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
+                  {platform.name}
+                </span>
               </div>
             ))}
           </div>
