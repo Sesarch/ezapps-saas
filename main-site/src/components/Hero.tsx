@@ -33,14 +33,14 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           <div className="lg:col-span-7 text-center lg:text-left">
-            {/* UPDATED: Top Badge now uses your logo.png instead of text/Shopify icon */}
+            {/* CORRECTED: Using YOUR logo.png here, NOT Shopify */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col sm:flex-row items-center gap-6 mb-12 justify-center lg:justify-start"
             >
-              <img src="/logo.png" alt="EZ APPS" className="h-12 w-auto object-contain" />
-              <div className="hidden sm:block h-10 w-[2px] bg-slate-300 mx-2" />
+              <img src="/logo.png" alt="EZ APPS" className="h-14 w-auto object-contain" />
+              <div className="hidden sm:block h-12 w-[2px] bg-slate-300 mx-2" />
               <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight text-center">
                 Enterprise Solutions Partner
               </span>
@@ -52,7 +52,7 @@ export default function Hero() {
             </motion.h1>
 
             <motion.p className="text-lg lg:text-xl text-slate-600 mb-12 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
-              EZ Apps provides the mission-critical infrastructure for high-volume Shopify merchants. Integrate ERP, CRM, and automated marketing into a single, secure ecosystem.
+              EZ Apps provides the mission-critical infrastructure for high-volume merchants. Integrate ERP, CRM, and automated marketing into a single, secure ecosystem.
             </motion.p>
 
             <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
@@ -83,7 +83,7 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* TRUST ROW: Platforms Section with Unified Slate Colors */}
+        {/* TRUST ROW */}
         <div className="mt-32 pt-16 border-t border-slate-200">
           <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-12">More Platforms Coming Soon</p>
           <div className="flex flex-wrap justify-center items-end gap-x-12 gap-y-16">
