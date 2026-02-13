@@ -13,72 +13,108 @@ export default function Hero() {
     { name: 'Data Intelligence', icon: '📝', path: '/products/forms' }
   ]
 
-  return (
-    <section className="relative pt-32 pb-24 lg:pt-52 lg:pb-40 overflow-hidden bg-white">
-      {/* Background: Clean, minimal grid to match Case Studies */}
-      <div className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#0f172a 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+  const upcomingPlatforms = [
+    { name: 'WooCommerce', src: '/wooCommerce.png' },
+    { name: 'Wix', src: '/Wix.png' },
+    { name: 'BigCommerce', src: '/BigCommerce.png' },
+    { name: 'Squarespace', src: '/squarespace.png' },
+    { name: 'Magento', src: '/MagentoCommerce.png' },
+    { name: 'OpenCart', src: '/opencart.png' },
+    { name: 'Etsy', src: '/etsy.png' },
+    { name: 'Amazon', src: '/amazon.png' }
+  ]
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-24 items-center">
+  return (
+    <section className="relative pt-32 pb-24 lg:pt-52 lg:pb-40 overflow-hidden bg-[#f8fafc]">
+      {/* Institutional background grid matching Case Studies */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
-          <div className="lg:col-span-7">
-            {/* TRUST BADGE: Minimalist Corporate Style */}
+          {/* LEFT CONTENT */}
+          <div className="lg:col-span-7 text-center lg:text-left">
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex flex-col gap-6 mb-16"
+              className="mb-12"
             >
-              <div className="flex items-center gap-6">
-                <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto grayscale brightness-50 contrast-125" />
-                <div className="h-10 w-[1px] bg-slate-200" />
-                <span className="text-xs font-black text-slate-400 uppercase tracking-[0.3em]">Enterprise Partner</span>
+              {/* SHOPIFY LOGO & SLOGAN: Centered on Mobile, Left-aligned on Desktop */}
+              <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start">
+                <img 
+                  src="/Shopify.png" 
+                  alt="Shopify" 
+                  className="h-20 w-auto object-contain" 
+                />
+                <div className="hidden sm:block h-14 w-[2px] bg-slate-300 mx-2" />
+                <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight">
+                  Enterprise Solutions Partner
+                </span>
               </div>
 
-              {/* UNIFIED APP STRIP: Glass-morphism to match Navbar */}
-              <div className="flex gap-2 p-1.5 bg-slate-50 border border-slate-100 rounded-2xl w-fit">
+              {/* 6 App Icons cluster under Shopify */}
+              <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-3">
                 {apps.map((app) => (
-                  <div key={app.name} className="w-10 h-10 flex items-center justify-center bg-white rounded-xl shadow-sm border border-slate-100/50 text-lg grayscale hover:grayscale-0 transition-all cursor-help" title={app.name}>
+                  <div key={app.name} className="w-10 h-10 bg-white border border-slate-100 rounded-xl shadow-sm flex items-center justify-center text-xl grayscale hover:grayscale-0 transition-all cursor-help" title={app.name}>
                     {app.icon}
                   </div>
                 ))}
               </div>
             </motion.div>
 
-            <motion.h1 className="text-6xl lg:text-9xl font-black text-slate-900 leading-[0.85] mb-10 tracking-tighter uppercase">
-              Unified <br/>
-              <span className="text-slate-300">Commerce.</span>
+            <motion.h1 className="text-5xl lg:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter uppercase">
+              Unified Commerce. <br/>
+              <span className="text-slate-500">Global Scale.</span>
             </motion.h1>
 
-            <p className="text-xl text-slate-500 mb-12 leading-relaxed max-w-xl font-medium">
-              EZ Apps provides mission-critical infrastructure for the world's most demanding Shopify merchants.
-            </p>
+            <motion.p className="text-lg lg:text-xl text-slate-600 mb-12 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-medium">
+              EZ Apps provides the mission-critical infrastructure for high-volume merchants. Integrate ERP, CRM, and automated marketing into a single ecosystem.
+            </motion.p>
 
-            <div className="flex flex-wrap gap-6">
-              <Link href="/signup" className="px-12 py-6 bg-slate-900 text-white rounded-2xl font-black text-lg uppercase tracking-tighter hover:bg-black transition-all shadow-2xl shadow-slate-900/20">
+            <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
+              <Link href="/signup" className="px-10 py-5 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 uppercase tracking-widest">
                 Book Enterprise Demo
               </Link>
-              <Link href="/case-studies" className="px-12 py-6 bg-white text-slate-900 border border-slate-200 rounded-2xl font-black text-lg uppercase tracking-tighter hover:bg-slate-50 transition-all">
-                Case Studies
+              <Link href="/case-studies" className="px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all uppercase tracking-widest">
+                Read Case Studies
               </Link>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Minimalist feature cards */}
-          <div className="lg:col-span-5 hidden lg:block">
-            <div className="grid grid-cols-1 gap-6">
-              {apps.slice(0, 3).map((app) => (
-                <div key={app.name} className="p-8 border border-slate-100 rounded-[2.5rem] bg-slate-50/30 backdrop-blur-sm group hover:border-slate-300 transition-all">
-                  <div className="flex items-center gap-6">
-                    <span className="text-4xl grayscale group-hover:grayscale-0 transition-all">{app.icon}</span>
-                    <div>
-                      <h3 className="font-black text-slate-900 uppercase tracking-tight">{app.name}</h3>
-                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Enterprise Ready →</p>
-                    </div>
-                  </div>
-                </div>
+          {/* RIGHT COLUMN: THE 6 APP CARDS */}
+          <div className="lg:col-span-5">
+            <div className="grid grid-cols-2 gap-4">
+              {apps.map((app) => (
+                <Link href={app.path} key={app.name}>
+                  <motion.div
+                    whileHover={{ scale: 1.02, backgroundColor: '#ffffff' }}
+                    className="group p-8 rounded-3xl border border-slate-100 bg-slate-50/50 shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="text-3xl mb-4 group-hover:scale-110 transition-transform">{app.icon}</div>
+                    <h3 className="font-black text-slate-900 text-lg mb-1 uppercase tracking-tight leading-none">{app.name}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] group-hover:text-slate-900 transition-colors mt-2">Explore →</p>
+                  </motion.div>
+                </Link>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* BOTTOM SECTION: UPCOMING PLATFORMS */}
+        <div className="mt-32 pt-16 border-t border-slate-200">
+          <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-12">More Platforms Coming Soon</p>
+          <div className="flex flex-wrap justify-center items-end gap-x-12 gap-y-16">
+            {upcomingPlatforms.map((platform) => (
+              <div key={platform.name} className="flex flex-col items-center gap-4 group">
+                <div className="h-8 lg:h-10 w-auto flex items-center grayscale opacity-20 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
+                  <img src={platform.src} alt={platform.name} className="h-full w-auto object-contain" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
+                  {platform.name}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
