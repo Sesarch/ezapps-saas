@@ -10,7 +10,7 @@ export default function CaseStudiesPage() {
       result: '+340% Growth',
       desc: 'How switching to EZ Apps Inventory ERP solved their multi-warehouse syncing issues in 48 hours.',
       tag: 'Logistics',
-      // High-end institutional fashion logistics imagery
+      // High-end retail/fashion store imagery to match slate theme
       image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop',
       isSlate: true
     },
@@ -19,8 +19,8 @@ export default function CaseStudiesPage() {
       result: '2.5x Retention',
       desc: 'A deep dive into the Loyalty CRM strategies that increased repeat purchases by 150%.',
       tag: 'CRM',
-      // Using your provided luxury watch image
-      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7u6vY2nBv8N7v8N7v8N7v8N7v8N7v8.png', 
+      // Guaranteed high-resolution luxury watch image
+      image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=2080&auto=format&fit=crop', 
       isSlate: false
     }
   ]
@@ -61,6 +61,11 @@ export default function CaseStudiesPage() {
                   src={c.image} 
                   alt={c.company}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  // Fallback to ensure it never looks "empty"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = "https://images.unsplash.com/photo-1547996160-81dfa63595ee?q=80&w=1974&auto=format&fit=crop";
+                  }}
                 />
                 <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors duration-500" />
                 
@@ -78,7 +83,9 @@ export default function CaseStudiesPage() {
                     {c.company}
                 </h3>
                 <p className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">{c.result}</p>
-                <p className="text-slate-500 text-lg leading-relaxed mb-6 font-medium">{c.desc}</p>
+                <p className="text-slate-500 text-lg leading-relaxed mb-6 font-medium text-balance">
+                    {c.desc}
+                </p>
                 <span className="text-slate-900 font-black uppercase text-xs tracking-widest group-hover:underline inline-flex items-center gap-2">
                   Read Full Report <span className="text-[10px]">→</span>
                 </span>
