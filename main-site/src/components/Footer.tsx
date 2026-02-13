@@ -1,86 +1,67 @@
 import Link from 'next/link'
 
 export default function Footer() {
+  const sections = [
+    {
+      title: 'Platform',
+      links: [
+        { name: 'Inventory ERP', href: '/products/inventory' },
+        { name: 'Loyalty CRM', href: '/products/loyalty' },
+        { name: 'Social Reviews', href: '/products/reviews' },
+        { name: 'Marketing Automation', href: '/products/marketing' }
+      ]
+    },
+    {
+      title: 'Solutions',
+      links: [
+        { name: 'For Shopify Plus', href: '#' },
+        { name: 'Global Logistics', href: '#' },
+        { name: 'Enterprise Scale', href: '#' },
+        { name: 'B2B Wholesale', href: '#' }
+      ]
+    },
+    {
+      title: 'Company',
+      links: [
+        { name: 'About Us', href: '#' },
+        { name: 'Case Studies', href: '/case-studies' },
+        { name: 'Contact Sales', href: '#' },
+        { name: 'Developer API', href: '#' }
+      ]
+    }
+  ]
+
   return (
-    <footer className="bg-gray-900 text-gray-300 py-16">
+    <footer className="bg-slate-900 text-white pt-24 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
-            <Link href="/" className="flex items-center mb-4">
-              <img 
-                src="/logo.png" 
-                alt="EZ Apps" 
-                className="h-8 w-auto object-contain"
-              />
-            </Link>
-            <p className="text-gray-400 max-w-md">
-              Powerful e-commerce apps that work across all major platforms. Manage inventory, boost loyalty, collect reviews, and grow your business.
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+          <div className="col-span-2">
+            <span className="text-2xl font-black tracking-tighter uppercase">EZ APPS</span>
+            <p className="mt-6 text-slate-400 max-w-sm leading-relaxed">
+              Providing the mission-critical infrastructure for the world's fastest-growing Shopify merchants.
             </p>
           </div>
-
-          {/* Product Links */}
-          <div>
-            <h4 className="text-white font-semibold mb-4">Product</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/#features" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Features
-                </Link>
-              </li>
-              <li>
-                <Link href="/#pricing" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Pricing
-                </Link>
-              </li>
-              <li>
-                <Link href="/#platforms" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Platforms
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Company Links */}
-          <div>
-            <h4 className="text-white font-semibold mb-4">Company</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/about" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Contact
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-400 hover:text-teal-400 transition-colors">
-                  Terms
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {sections.map((section) => (
+            <div key={section.title}>
+              <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-500">{section.title}</h4>
+              <ul className="space-y-4">
+                {section.links.map((link) => (
+                  <li key={link.name}>
+                    <Link href={link.href} className="text-slate-300 hover:text-white transition-colors text-sm font-medium">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">
-            © 2024 EZ Apps. All rights reserved.
-          </p>
-          <div className="flex space-x-6 mt-4 md:mt-0">
-            <Link href="/privacy" className="text-gray-400 hover:text-teal-400 text-sm transition-colors">
-              Privacy Policy
-            </Link>
-            <Link href="/terms" className="text-gray-400 hover:text-teal-400 text-sm transition-colors">
-              Terms of Service
-            </Link>
+        <div className="pt-12 border-t border-slate-800 flex flex-col md:row justify-between items-center gap-6">
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">© 2026 EZ APPS ENTERPRISE SOLUTIONS. ALL RIGHTS RESERVED.</p>
+          <div className="flex gap-8 text-xs font-bold text-slate-500 uppercase tracking-widest">
+            <Link href="#">Privacy Policy</Link>
+            <Link href="#">Terms of Service</Link>
+            <Link href="#">GDPR</Link>
           </div>
         </div>
       </div>
