@@ -33,13 +33,14 @@ export default function Hero() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           <div className="lg:col-span-7 text-center lg:text-left">
+            {/* UPDATED: Top Badge now uses your logo.png instead of text/Shopify icon */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col sm:flex-row items-center gap-6 mb-12 justify-center lg:justify-start"
             >
-              <img src="/Shopify.png" alt="Shopify" className="h-16 w-auto object-contain" />
-              <div className="hidden sm:block h-12 w-[2px] bg-slate-300 mx-2" />
+              <img src="/logo.png" alt="EZ APPS" className="h-12 w-auto object-contain" />
+              <div className="hidden sm:block h-10 w-[2px] bg-slate-300 mx-2" />
               <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight text-center">
                 Enterprise Solutions Partner
               </span>
@@ -91,7 +92,6 @@ export default function Hero() {
                 <div className="h-8 lg:h-10 w-auto flex items-center grayscale opacity-20 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
                   <img src={platform.src} alt={platform.name} className="h-full w-auto object-contain" />
                 </div>
-                {/* Platform Name matched to text-slate-400 (#94a3b8) */}
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
                   {platform.name}
                 </span>
