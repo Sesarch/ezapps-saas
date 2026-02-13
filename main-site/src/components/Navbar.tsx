@@ -4,10 +4,19 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// MUST BE 'export default'
+// Using 'export default' to fix the Vercel "Attempted import error"
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
+
+  // Close mobile menu on resize to prevent layout issues
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setIsMobileMenuOpen(false)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const products = [
     { name: 'Inventory ERP', desc: 'Global warehouse & stock control.', icon: '📦', slug: 'inventory' },
@@ -23,21 +32,26 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex justify-between items-center h-full">
           
-          {/* LOGO: Using your logo.png */}
+          {/* LOGO SECTION: Responsive sizing to prevent pushing out the hamburger */}
           <Link href="/" className="flex items-center group shrink-0">
-            <img src="/logo.png" alt="EZ APPS" className="h-8 w-auto object-contain" />
+            <img 
+              src="/logo.png" 
+              alt="EZ APPS" 
+              className="h-6 md:h-9 w-auto object-contain transition-all" 
+              // h-6 is approx 66-69% of h-9 (desktop), fixing the mobile overflow
+            />
             <div className="hidden sm:block h-4 w-[2px] bg-slate-300 mx-4" />
             <span className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise</span>
           </Link>
 
-          {/* DESKTOP NAV */}
+          {/* DESKTOP NAVIGATION (Hidden on Mobile) */}
           <div className="hidden md:flex items-center gap-10">
             <div 
               className="relative py-8 cursor-pointer"
               onMouseEnter={() => setIsMegaMenuOpen(true)}
               onMouseLeave={() => setIsMegaMenuOpen(false)}
             >
-              <span className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest transition-colors">
+              <span className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest transition-colors flex items-center gap-1">
                 Products <span className="text-[10px] opacity-50">▼</span>
               </span>
 
@@ -68,15 +82,63 @@ export default function Navbar() {
             <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest">Pricing</Link>
           </div>
 
-          {/* ACTIONS */}
+          {/* DESKTOP ACTIONS */}
           <div className="hidden md:flex items-center gap-4">
             <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-slate-900 px-4 uppercase tracking-widest">Log In</Link>
             <Link href="/signup" className="bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 uppercase tracking-widest">
               Get Started
             </Link>
           </div>
+
+          {/* HAMBURGER BUTTON (Visible on Mobile) */}
+          <div className="md:hidden flex items-center">
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+              className="p-2 text-slate-900 focus:outline-none"
+              aria-label="Toggle menu"
+            >
+              <div className={`w-6 h-0.5 bg-slate-900 mb-1.5 transition-all ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+              <div className={`w-6 h-0.5 bg-slate-900 mb-1.5 transition-all ${isMobileMenuOpen ? 'opacity-0' : ''}`}></div>
+              <div className={`w-6 h-0.5 bg-slate-900 transition-all ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* MOBILE FULL-SCREEN MENU */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="absolute top-20 left-0 w-full bg-white border-b border-slate-200 overflow-hidden md:hidden shadow-2xl"
+          >
+            <div className="p-6 space-y-8">
+              <div className="grid grid-cols-1 gap-4">
+                {products.map((item) => (
+                  <Link 
+                    key={item.slug} 
+                    href={`/products/${item.slug}`} 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl"
+                  >
+                    <span className="text-2xl">{item.icon}</span>
+                    <span className="font-bold text-slate-900 uppercase text-xs tracking-wider">{item.name}</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-col gap-6 pt-6 border-t border-slate-100">
+                <Link href="/case-studies" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Case Studies</Link>
+                <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Pricing</Link>
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="block w-full bg-slate-900 text-white text-center py-5 rounded-2xl font-black uppercase text-xl">
+                  Get Started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }
