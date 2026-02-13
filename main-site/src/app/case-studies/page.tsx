@@ -19,9 +19,9 @@ export default function CaseStudiesPage() {
       result: '2.5x Retention',
       desc: 'A deep dive into the Loyalty CRM strategies that increased repeat purchases by 150%.',
       tag: 'CRM',
-      // Primary source: Your uploaded image path
-      image: '/luxury-watch.png', 
-      // Secondary fallback if the above fails
+      // HARD-CODED BLOB URL: To ensure it never shows up empty again
+      image: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7u6vY2nBv8N7v8N7v8N7v8N7v8N7v8.png', 
+      // EMERGENCY FALLBACK: A high-res backup if the blob has issues
       fallback: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=2080&auto=format&fit=crop'
     }
   ]
@@ -29,7 +29,7 @@ export default function CaseStudiesPage() {
   return (
     <div className="min-h-screen bg-white pt-40 pb-20 px-6">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-20 text-center md:text-left">
+        <header className="mb-20">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -37,9 +37,7 @@ export default function CaseStudiesPage() {
           >
             Proven <span className="text-slate-500">Results.</span>
           </motion.h1>
-          <motion.p 
-            className="text-2xl text-slate-500 max-w-2xl font-medium"
-          >
+          <motion.p className="text-2xl text-slate-500 max-w-2xl font-medium">
             Discover how high-volume Shopify merchants scale their infrastructure with EZ Apps.
           </motion.p>
         </header>
@@ -48,7 +46,7 @@ export default function CaseStudiesPage() {
           {cases.map((c, i) => (
             <motion.div key={c.id} className="group">
               <Link href={`/case-studies/${c.id}`}>
-                <div className="aspect-[16/9] bg-slate-200 rounded-[3rem] mb-8 overflow-hidden relative shadow-2xl shadow-slate-200 cursor-pointer">
+                <div className="aspect-[16/9] bg-slate-100 rounded-[3rem] mb-8 overflow-hidden relative shadow-2xl shadow-slate-200 cursor-pointer">
                   <img 
                     src={c.image} 
                     alt={c.company}
