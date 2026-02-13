@@ -10,14 +10,16 @@ export default function CaseStudiesPage() {
       result: '+340% Growth',
       desc: 'How switching to EZ Apps Inventory ERP solved their multi-warehouse syncing issues in 48 hours.',
       tag: 'Logistics',
-      gradient: 'from-slate-900 via-slate-800 to-slate-900'
+      // High-end warehouse/logistics imagery
+      image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop'
     },
     {
       company: 'Luxury Watch Lab',
       result: '2.5x Retention',
       desc: 'A deep dive into the Loyalty CRM strategies that increased repeat purchases by 150%.',
       tag: 'CRM',
-      gradient: 'from-slate-800 via-slate-700 to-slate-800'
+      // Luxury retail/tech interface imagery
+      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop'
     }
   ]
 
@@ -42,7 +44,7 @@ export default function CaseStudiesPage() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
           {cases.map((c, i) => (
             <motion.div 
               key={c.company}
@@ -51,24 +53,27 @@ export default function CaseStudiesPage() {
               transition={{ delay: i * 0.1 }}
               className="group cursor-pointer"
             >
-              {/* REPLACED GREY BOX WITH GRADIENT */}
-              <div className={`aspect-[16/9] bg-gradient-to-br ${c.gradient} rounded-[3rem] mb-8 overflow-hidden relative shadow-2xl shadow-slate-200`}>
-                <div className="absolute inset-0 flex items-center justify-center">
-                   <div className="flex flex-col items-center gap-4">
-                      <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center backdrop-blur-sm">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                      </div>
-                      <span className="text-white/30 font-black text-2xl uppercase tracking-tighter">Enterprise Client</span>
+              {/* IMAGE CONTAINER */}
+              <div className="aspect-[16/9] bg-slate-100 rounded-[3rem] mb-8 overflow-hidden relative shadow-2xl shadow-slate-200">
+                <img 
+                  src={c.image} 
+                  alt={c.company}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                {/* Overlay for text readability */}
+                <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-transparent transition-colors duration-500" />
+                
+                <div className="absolute bottom-8 left-8">
+                   <div className="px-4 py-2 bg-white/90 backdrop-blur-md rounded-full">
+                      <span className="text-slate-900 font-black text-[10px] uppercase tracking-widest">Enterprise Case 0{i + 1}</span>
                    </div>
                 </div>
-                {/* Animated Light Sweep Effect */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
               </div>
 
               <div className="px-4">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{c.tag}</span>
                 <h3 className="text-3xl font-black text-slate-900 mt-2 mb-4 uppercase tracking-tighter">{c.company}</h3>
-                <p className="text-4xl font-black text-slate-900 mb-4">{c.result}</p>
+                <p className="text-4xl font-black text-slate-900 mb-4 tracking-tighter">{c.result}</p>
                 <p className="text-slate-500 text-lg leading-relaxed mb-6 font-medium">{c.desc}</p>
                 <span className="text-slate-900 font-black uppercase text-xs tracking-widest group-hover:underline inline-flex items-center gap-2">
                   Read Full Report <span className="text-[10px]">→</span>
