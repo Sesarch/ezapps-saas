@@ -4,12 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// Using 'export default' to fix the Vercel "Attempted import error"
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
 
-  // Close mobile menu on resize to prevent layout issues
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) setIsMobileMenuOpen(false)
@@ -20,7 +18,7 @@ export default function Navbar() {
 
   const products = [
     { name: 'Inventory ERP', desc: 'Global warehouse & stock control.', icon: '📦', slug: 'inventory' },
-    { name: 'Loyalty CRM', desc: 'Retention & customer lifecycle.', icon: '🎁', slug: 'loyalty' },
+    { name: 'Loyalty CRM', icon: '🎁', slug: 'loyalty' },
     { name: 'Social Reviews', icon: '⭐', slug: 'reviews' },
     { name: 'Revenue Upsell', icon: '📈', slug: 'upsell' },
     { name: 'Growth Marketing', icon: '📧', slug: 'marketing' },
@@ -32,19 +30,18 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex justify-between items-center h-full">
           
-          {/* LOGO SECTION: Responsive sizing to prevent pushing out the hamburger */}
+          {/* LOGO SECTION */}
           <Link href="/" className="flex items-center group shrink-0">
             <img 
               src="/logo.png" 
               alt="EZ APPS" 
               className="h-6 md:h-9 w-auto object-contain transition-all" 
-              // h-6 is approx 66-69% of h-9 (desktop), fixing the mobile overflow
             />
             <div className="hidden sm:block h-4 w-[2px] bg-slate-300 mx-4" />
             <span className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise</span>
           </Link>
 
-          {/* DESKTOP NAVIGATION (Hidden on Mobile) */}
+          {/* DESKTOP NAVIGATION */}
           <div className="hidden md:flex items-center gap-10">
             <div 
               className="relative py-8 cursor-pointer"
@@ -90,7 +87,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* HAMBURGER BUTTON (Visible on Mobile) */}
+          {/* HAMBURGER BUTTON */}
           <div className="md:hidden flex items-center">
             <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -114,24 +111,36 @@ export default function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="absolute top-20 left-0 w-full bg-white border-b border-slate-200 overflow-hidden md:hidden shadow-2xl"
           >
-            <div className="p-6 space-y-8">
-              <div className="grid grid-cols-1 gap-4">
+            <div className="p-6 space-y-6">
+              {/* FIXED: Added Log In at the first line with icon */}
+              <Link 
+                href="/login" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-4 p-4 bg-slate-900 text-white rounded-2xl"
+              >
+                <span className="text-xl">👤</span>
+                <span className="font-bold uppercase text-xs tracking-[0.2em]">Client Log In</span>
+              </Link>
+
+              <div className="grid grid-cols-1 gap-3">
+                <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest pl-2">Solutions</p>
                 {products.map((item) => (
                   <Link 
                     key={item.slug} 
                     href={`/products/${item.slug}`} 
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl"
+                    className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100"
                   >
                     <span className="text-2xl">{item.icon}</span>
                     <span className="font-bold text-slate-900 uppercase text-xs tracking-wider">{item.name}</span>
                   </Link>
                 ))}
               </div>
-              <div className="flex flex-col gap-6 pt-6 border-t border-slate-100">
-                <Link href="/case-studies" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Case Studies</Link>
-                <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Pricing</Link>
-                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="block w-full bg-slate-900 text-white text-center py-5 rounded-2xl font-black uppercase text-xl">
+
+              <div className="flex flex-col gap-5 pt-6 border-t border-slate-100">
+                <Link href="/case-studies" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight pl-2">Case Studies</Link>
+                <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight pl-2">Pricing</Link>
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="block w-full bg-slate-50 text-slate-900 border border-slate-200 text-center py-5 rounded-2xl font-black uppercase text-xl">
                   Get Started
                 </Link>
               </div>
