@@ -8,7 +8,6 @@ export default function Navbar() {
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
-  // Close menus on resize to prevent layout glitches
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) setIsMobileMenuOpen(false)
@@ -27,19 +26,18 @@ export default function Navbar() {
   ]
 
   return (
-    // 'sticky top-0' ensures the header stays fixed on all pages
     <nav className="sticky top-0 w-full z-[100] bg-white/90 backdrop-blur-md border-b border-slate-100 h-20 flex items-center">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="flex justify-between items-center h-full">
           
-          {/* LOGO SECTION */}
+          {/* 1. Clickable Home Logo for Mobile & Desktop */}
           <Link href="/" className="flex items-center gap-2 group shrink-0">
             <span className="text-2xl font-black text-slate-900 tracking-tighter uppercase">EZ APPS</span>
             <div className="hidden sm:block h-4 w-[2px] bg-slate-300" />
             <span className="hidden sm:block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Enterprise</span>
           </Link>
 
-          {/* DESKTOP NAVIGATION (Hidden on Mobile) */}
+          {/* DESKTOP NAVIGATION */}
           <div className="hidden md:flex items-center gap-10">
             <div 
               className="relative py-8 cursor-pointer"
@@ -73,12 +71,10 @@ export default function Navbar() {
                 )}
               </AnimatePresence>
             </div>
-
-            <Link href="/case-studies" className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest transition-colors">Case Studies</Link>
-            <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest transition-colors">Pricing</Link>
+            <Link href="/case-studies" className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest">Case Studies</Link>
+            <Link href="/pricing" className="text-sm font-bold text-slate-600 hover:text-slate-900 uppercase tracking-widest">Pricing</Link>
           </div>
 
-          {/* DESKTOP ACTIONS */}
           <div className="hidden md:flex items-center gap-4">
             <Link href="/login" className="text-sm font-bold text-slate-600 hover:text-slate-900 px-4 uppercase tracking-widest">Log In</Link>
             <Link href="/signup" className="bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 uppercase tracking-widest">
@@ -86,21 +82,16 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* HAMBURGER BUTTON (Mobile Only) */}
           <div className="md:hidden">
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 text-slate-900 focus:outline-none"
-            >
-              <div className="w-6 h-0.5 bg-slate-900 mb-1.5 transition-all"></div>
-              <div className="w-6 h-0.5 bg-slate-900 mb-1.5 transition-all"></div>
-              <div className="w-6 h-0.5 bg-slate-900 transition-all"></div>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-900">
+              <div className="w-6 h-0.5 bg-slate-900 mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-slate-900 mb-1.5"></div>
+              <div className="w-6 h-0.5 bg-slate-900"></div>
             </button>
           </div>
         </div>
       </div>
 
-      {/* MOBILE FULL-SCREEN MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -110,37 +101,23 @@ export default function Navbar() {
             className="absolute top-20 left-0 w-full bg-white border-b border-slate-200 overflow-hidden md:hidden shadow-2xl"
           >
             <div className="p-6 space-y-8">
-              {/* Mobile Products List */}
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Our Ecosystem</p>
                 <div className="grid grid-cols-1 gap-4">
                   {products.map((item) => (
-                    <Link 
-                      key={item.slug} 
-                      href={`/products/${item.slug}`} 
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl"
-                    >
+                    <Link key={item.slug} href={`/products/${item.slug}`} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
                       <span className="text-2xl">{item.icon}</span>
                       <span className="font-bold text-slate-900 uppercase text-xs tracking-wider">{item.name}</span>
                     </Link>
                   ))}
                 </div>
               </div>
-
-              {/* Mobile Links */}
               <div className="flex flex-col gap-4 pt-4 border-t border-slate-100">
                 <Link href="/case-studies" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Case Studies</Link>
                 <Link href="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Pricing</Link>
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-bold text-slate-900 uppercase tracking-tight">Log In</Link>
               </div>
-
-              {/* Mobile CTA */}
-              <Link 
-                href="/signup" 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full bg-slate-900 text-white text-center py-5 rounded-2xl font-black uppercase tracking-tighter text-xl shadow-xl shadow-slate-900/20"
-              >
+              <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)} className="block w-full bg-slate-900 text-white text-center py-5 rounded-2xl font-black uppercase tracking-tighter text-xl shadow-xl shadow-slate-900/20">
                 Get Started Now
               </Link>
             </div>
