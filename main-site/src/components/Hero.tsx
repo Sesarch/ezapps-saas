@@ -36,20 +36,35 @@ export default function Hero() {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex flex-col sm:flex-row items-center gap-6 mb-12 justify-center lg:justify-start"
+              className="mb-12"
             >
-              {/* SHOPIFY LOGO: Increased to h-20 (70% larger than previous h-12) */}
-              <img 
-                src="/Shopify.png" 
-                alt="Shopify" 
-                className="h-20 md:h-20 w-auto object-contain" 
-              />
-              
-              <div className="hidden sm:block h-14 w-[2px] bg-slate-300 mx-2" />
-              
-              <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight text-center">
-                Enterprise Solutions Partner
-              </span>
+              <div className="flex flex-col sm:flex-row items-center gap-6 justify-center lg:justify-start">
+                {/* SHOPIFY LOGO (70% Larger) */}
+                <img 
+                  src="/Shopify.png" 
+                  alt="Shopify" 
+                  className="h-20 w-auto object-contain" 
+                />
+                
+                <div className="hidden sm:block h-14 w-[2px] bg-slate-300 mx-2" />
+                
+                <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight text-center">
+                  Enterprise Solutions Partner
+                </span>
+              </div>
+
+              {/* 6 APP ICONS ADDED HERE */}
+              <div className="mt-6 flex flex-wrap justify-center lg:justify-start gap-4">
+                {apps.map((app) => (
+                  <div 
+                    key={app.name} 
+                    className="w-10 h-10 bg-white border border-slate-100 rounded-lg shadow-sm flex items-center justify-center text-xl"
+                    title={app.name}
+                  >
+                    {app.icon}
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             <motion.h1 className="text-5xl lg:text-8xl font-black text-slate-900 leading-[0.95] mb-8 tracking-tighter">
@@ -62,10 +77,10 @@ export default function Hero() {
             </motion.p>
 
             <div className="flex flex-col sm:flex-row gap-5 justify-center lg:justify-start">
-              <Link href="/signup" className="px-10 py-5 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20">
+              <Link href="/signup" className="px-10 py-5 bg-slate-900 text-white rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 uppercase tracking-widest">
                 Book Enterprise Demo
               </Link>
-              <Link href="/case-studies" className="px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all">
+              <Link href="/case-studies" className="px-10 py-5 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all uppercase tracking-widest">
                 Read Case Studies
               </Link>
             </div>
