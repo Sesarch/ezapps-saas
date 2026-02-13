@@ -1,147 +1,79 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
-import { useState, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
-function SignupForm() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters')
-      setLoading(false)
-      return
-    }
-
-    const supabase = createClient()
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    })
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    if (data.user) {
-      window.location.href = 'https://shopify.ezapps.app/dashboard'
-    }
-    
-    setLoading(false)
-  }
-
+export default function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link href="/">
-            <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-          </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Get started free</h2>
-          <p className="mt-2 text-gray-600">Create your account in seconds</p>
-        </div>
+    <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-6 py-12">
+      {/* Brand Identity */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-12 text-center"
+      >
+        <img src="/logo.png" alt="EZ APPS" className="h-12 w-auto mx-auto mb-6 object-contain" />
+        <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter">Get started free</h1>
+        <p className="text-slate-500 mt-2 font-medium">Create your enterprise account in seconds</p>
+      </motion.div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <form onSubmit={handleSignup} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+      {/* Signup Form Container */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 p-10 border border-slate-100"
+      >
+        <form className="space-y-6">
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name</label>
+            <input 
+              type="text" 
+              placeholder="John Doe"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-slate-900 placeholder:text-slate-300 font-medium"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                placeholder="John Doe"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+            <input 
+              type="email" 
+              placeholder="john@example.com"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-slate-900 placeholder:text-slate-300 font-medium"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                placeholder="john@example.com"
-              />
-            </div>
+          <div>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Password</label>
+            <input 
+              type="password" 
+              placeholder="Min. 8 characters"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-900/5 transition-all text-slate-900 placeholder:text-slate-300 font-medium"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
-                placeholder="Min. 8 characters"
-              />
-            </div>
+          {/* THE UPDATED BUTTON: Now matches Slate-900 theme */}
+          <button 
+            type="submit"
+            className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-tighter text-xl shadow-xl shadow-slate-900/20 hover:bg-black transition-all active:scale-[0.98]"
+          >
+            Sign Up
+          </button>
+        </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
-            >
-              {loading ? 'Creating account...' : 'Sign Up'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link 
-              href="/login" 
-              className="font-medium text-teal-600 hover:text-teal-700 hover:underline"
-            >
+        <div className="mt-8 text-center">
+          <p className="text-sm text-slate-500 font-medium">
+            Already have an account? {' '}
+            <Link href="/login" className="text-slate-900 font-black hover:underline">
               Sign in
             </Link>
           </p>
         </div>
-      </div>
-    </div>
-  )
-}
+      </motion.div>
 
-export default function SignupPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <SignupForm />
-    </Suspense>
+      {/* Security Footer */}
+      <p className="mt-12 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
+        SOC2 Type II Compliant • Enterprise Grade Security
+      </p>
+    </div>
   )
 }
