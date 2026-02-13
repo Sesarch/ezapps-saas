@@ -13,34 +13,20 @@ export default function Hero() {
     { name: 'Data Intelligence', icon: '📝', path: '/products/forms' }
   ]
 
-  const upcomingPlatforms = [
-    { name: 'WooCommerce', src: '/wooCommerce.png' },
-    { name: 'Wix', src: '/Wix.png' },
-    { name: 'BigCommerce', src: '/BigCommerce.png' },
-    { name: 'Squarespace', src: '/squarespace.png' },
-    { name: 'Magento', src: '/MagentoCommerce.png' },
-    { name: 'OpenCart', src: '/opencart.png' },
-    { name: 'Etsy', src: '/etsy.png' },
-    { name: 'Amazon', src: '/amazon.png' }
-  ]
-
   return (
     <section className="relative pt-32 pb-24 lg:pt-52 lg:pb-40 overflow-hidden bg-[#f8fafc]">
-      <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(#1e293b 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
           
           <div className="lg:col-span-7 text-center lg:text-left">
-            {/* CORRECTED: Using YOUR logo.png here, NOT Shopify */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex flex-col sm:flex-row items-center gap-6 mb-12 justify-center lg:justify-start"
             >
-              <img src="/logo.png" alt="EZ APPS" className="h-14 w-auto object-contain" />
-              <div className="hidden sm:block h-12 w-[2px] bg-slate-300 mx-2" />
+              {/* RESTORED: Shopify Logo for Partnership Credibility */}
+              <img src="/Shopify.png" alt="Shopify" className="h-12 w-auto object-contain" />
+              <div className="hidden sm:block h-10 w-[2px] bg-slate-300 mx-2" />
               <span className="text-xl lg:text-2xl font-black text-slate-800 uppercase tracking-tight text-center">
                 Enterprise Solutions Partner
               </span>
@@ -80,23 +66,6 @@ export default function Hero() {
                 </Link>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* TRUST ROW */}
-        <div className="mt-32 pt-16 border-t border-slate-200">
-          <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mb-12">More Platforms Coming Soon</p>
-          <div className="flex flex-wrap justify-center items-end gap-x-12 gap-y-16">
-            {upcomingPlatforms.map((platform) => (
-              <div key={platform.name} className="flex flex-col items-center gap-4 group">
-                <div className="h-8 lg:h-10 w-auto flex items-center grayscale opacity-20 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-500">
-                  <img src={platform.src} alt={platform.name} className="h-full w-auto object-contain" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-slate-600 transition-colors">
-                  {platform.name}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
