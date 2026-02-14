@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// 1. Define the exact structure TypeScript is looking for
+interface SupabaseCookie {
+  name: string
+  value: string
+  [key: string]: any // This covers path, domain, maxAge, etc.
+}
+
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const hostname = request.headers.get('host') || ''
@@ -16,15 +23,12 @@ export async function middleware(request: NextRequest) {
         getAll() { 
           return request.cookies.getAll() 
         },
-        setAll(cookiesToSet) {
-          // 1. Update request cookies for the current session
+        // 2. Explicitly type the parameter here
+        setAll(cookiesToSet: SupabaseCookie[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           
-          // 2. Refresh the response object
           supabaseResponse = NextResponse.next({ request })
           
-          // 3. Set the cookies on the response for the browser
-          // We spread the rest of the properties directly into the options object
           cookiesToSet.forEach(({ name, value, ...options }) => {
             supabaseResponse.cookies.set(name, value, { 
               ...options, 
@@ -44,17 +48,23 @@ export async function middleware(request: NextRequest) {
   if (isMainDomain && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin'))) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
     
-    // Security Fix: Manual Identity Check
+    // Security Fix: Identity Verification bypasses database latency
     const isSuperAdminEmail = user.email === 'sesarch@yahoo.com'
-    const { data: profile } = await supabase.from('profiles').select('role, is_admin').eq('id', user.id).single()
+    
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, is_admin')
+      .eq('id', user.id)
+      .single()
+
     const isAdmin = isSuperAdminEmail || profile?.is_admin || profile?.role === 'super_admin'
 
-    // Prevent non-admins from entering /superadmin
+    // Block non-admins from /superadmin
     if (!isAdmin && url.pathname.startsWith('/superadmin')) {
       return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
     }
 
-    // Redirect base /dashboard to inventory
+    // Redirect base /dashboard to specific app
     if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
       return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
     }
