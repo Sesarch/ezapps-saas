@@ -1,9 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 export default function ForgotPasswordPage() {
@@ -17,20 +14,27 @@ export default function ForgotPasswordPage() {
     setError(null)
     setLoading(true)
 
-    const supabase = createClient()
+    try {
+      const response = await fetch('/api/send-reset-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.toLowerCase().trim() }),
+      })
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://ezapps.app/reset-password',
-    })
+      const data = await response.json()
 
-    if (error) {
-      setError(error.message)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send reset email')
+      }
+
+      setSuccess(true)
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email')
+    } finally {
       setLoading(false)
-      return
     }
-
-    setSuccess(true)
-    setLoading(false)
   }
 
   return (
@@ -86,7 +90,8 @@ export default function ForgotPasswordPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
+                  disabled={loading}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
                   placeholder="john@example.com"
                 />
               </div>
@@ -94,8 +99,11 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50"
+                className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
+                {loading && (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                )}
                 {loading ? 'Sending...' : 'Send Reset Link'}
               </button>
             </form>
