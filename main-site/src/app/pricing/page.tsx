@@ -11,32 +11,32 @@ export default function PricingPage() {
     {
       name: 'Inventory ERP',
       icon: '📦',
-      features: ['Multi-warehouse Sync', 'Real-time Stock Tracking', 'Automated Purchase Orders', 'SKU Management']
+      features: ['Multi-warehouse Sync', 'Real-time Stock Tracking', 'Automated POs', 'Barcode Scanning', 'Landed Cost Calc']
     },
     {
       name: 'Loyalty CRM',
       icon: '🎁',
-      features: ['VIP Tiering System', 'Points-to-Discount Engine', 'Customer Segmenting', 'Birthday Automations']
+      features: ['VIP Tiering', 'Points Engine', 'Referral Tracking', 'Birthday Rewards', 'POS Integration']
     },
     {
       name: 'Social Reviews',
       icon: '⭐',
-      features: ['Photo & Video Reviews', 'Automatic Review Requests', 'Google Shopping Integration', 'SEO Snippets']
+      features: ['Photo & Video Reviews', 'Q&A Sections', 'Google Shopping', 'SEO Snippets', 'Review Incentives']
     },
     {
       name: 'Revenue Upsell',
       icon: '📈',
-      features: ['In-Cart Recommendations', 'Post-Purchase Upsells', 'Bundle & Save Logic', 'A/B Testing']
+      features: ['In-Cart Recommendations', 'Post-Purchase Upsells', 'Bundle Logic', 'A/B Testing', 'Smart Discounts']
     },
     {
       name: 'Growth Marketing',
       icon: '📧',
-      features: ['Sms & Email Flows', 'Abandoned Cart Recovery', 'Win-back Campaigns', 'Subscriber Pop-ups']
+      features: ['SMS & Email Flows', 'Cart Recovery', 'Win-back Campaigns', 'Pop-up Builder', 'Omnichannel Sync']
     },
     {
       name: 'Data Intelligence',
       icon: '📝',
-      features: ['Custom Post-Purchase Surveys', 'Form Builder', 'Zero-party Data Tracking', 'Export to CSV/Klaviyo']
+      features: ['Post-Purchase Surveys', 'Form Builder', 'Zero-party Data', 'Klaviyo Sync', 'Advanced Analytics']
     }
   ]
 
@@ -46,12 +46,19 @@ export default function PricingPage() {
         
         {/* HEADER & TOGGLE */}
         <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-block px-4 py-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-[0.3em] rounded-full mb-6"
+          >
+            Limited Time: 14-Day Free Trial
+          </motion.div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="text-6xl lg:text-8xl font-black text-slate-900 mb-6 uppercase tracking-tighter"
           >
-            One Price. <span className="text-slate-500">All Apps.</span>
+            Unified <span className="text-slate-500">Value.</span>
           </motion.h1>
           
           <div className="flex items-center justify-center gap-6 mt-12">
@@ -75,9 +82,6 @@ export default function PricingPage() {
         {/* MAIN PRICING CARD */}
         <div className="relative p-1 bg-gradient-to-b from-slate-200 to-transparent rounded-[3.5rem] mb-24">
           <div className="bg-white rounded-[3.4rem] p-12 lg:p-16 text-center shadow-2xl">
-            <span className="inline-block px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] rounded-full mb-8">
-              The Enterprise Bundle
-            </span>
             <h2 className="text-4xl font-black text-slate-900 uppercase tracking-tight mb-4">Complete Commerce Suite</h2>
             <div className="flex items-center justify-center gap-2 mb-8">
               <span className="text-7xl lg:text-9xl font-black text-slate-900 tracking-tighter">
@@ -85,37 +89,51 @@ export default function PricingPage() {
               </span>
               <div className="text-left">
                 <p className="text-2xl font-black text-slate-400 uppercase leading-none">/{isYearly ? 'Year' : 'Month'}</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">for all 6 apps</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Full Access to 6 Apps</p>
               </div>
             </div>
             
             <Link href="/signup" className="block w-full max-w-md mx-auto py-6 bg-slate-900 text-white rounded-2xl font-black uppercase text-xl tracking-tighter shadow-xl shadow-slate-900/20 hover:bg-black transition-all">
-              Start Your Free Trial
+              Start Free Trial
             </Link>
+            <p className="mt-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">No credit card required to start</p>
+          </div>
+        </div>
+
+        {/* NEW: ADD-ON / ENTERPRISE OPTION */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+          <div className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">White-Glove Migration</h4>
+            <p className="text-slate-500 text-sm mb-6">Moving from another platform? Our team will migrate all your reviews, inventory, and CRM data for you.</p>
+            <span className="text-xs font-black text-slate-900 uppercase">Included in Annual Plan →</span>
+          </div>
+          <div className="p-10 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+            <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-4">API & Webhooks</h4>
+            <p className="text-slate-500 text-sm mb-6">Build custom integrations with our robust REST API and real-time webhooks for your headless store.</p>
+            <span className="text-xs font-black text-slate-900 uppercase">Enterprise Standard →</span>
           </div>
         </div>
 
         {/* DETAILED FEATURE EXPLANATION */}
         <div className="border-t border-slate-100 pt-20">
-            <h3 className="text-center text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-20">Included Enterprise Infrastructure</h3>
+            <h3 className="text-center text-xs font-black text-slate-400 uppercase tracking-[0.4em] mb-20">Full Feature Breakdown</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-20">
               {appFeatures.map((app) => (
-                <div key={app.name} className="flex flex-col">
-                  <div className="flex items-center gap-4 mb-6">
+                <div key={app.name} className="flex flex-col group">
+                  <div className="flex items-center gap-4 mb-6 transition-transform group-hover:translate-x-2">
                     <span className="text-4xl">{app.icon}</span>
                     <h4 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">{app.name}</h4>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     {app.features.map((feature) => (
                       <div key={feature} className="flex items-center gap-3">
-                        {/* Green Checkmark */}
                         <div className="flex-shrink-0 w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
                           <svg className="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                           </svg>
                         </div>
-                        <span className="text-slate-600 font-medium">{feature}</span>
+                        <span className="text-slate-600 font-medium text-sm">{feature}</span>
                       </div>
                     ))}
                   </div>
@@ -124,10 +142,23 @@ export default function PricingPage() {
             </div>
         </div>
 
-        {/* TRUST FOOTER */}
-        <div className="mt-32 text-center p-12 bg-slate-50 rounded-[3rem] border border-slate-100">
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Enterprise Security</p>
-           <p className="text-slate-500 font-medium">All plans include 256-bit encryption, SOC2 Type II compliance, and 24/7 priority support for high-volume merchants.</p>
+        {/* EXPANDED TRUST SECTION */}
+        <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-12 text-center border-t border-slate-100 pt-20">
+           <div>
+             <p className="text-3xl mb-4">🛡️</p>
+             <h5 className="font-black text-slate-900 uppercase text-xs tracking-widest mb-2">SOC2 Type II</h5>
+             <p className="text-slate-500 text-xs font-medium uppercase tracking-tighter">Enterprise Grade Security</p>
+           </div>
+           <div>
+             <p className="text-3xl mb-4">📞</p>
+             <h5 className="font-black text-slate-900 uppercase text-xs tracking-widest mb-2">24/7 Support</h5>
+             <p className="text-slate-500 text-xs font-medium uppercase tracking-tighter">Avg. Response: 12 Mins</p>
+           </div>
+           <div>
+             <p className="text-3xl mb-4">⚡</p>
+             <h5 className="font-black text-slate-900 uppercase text-xs tracking-widest mb-2">Global CDN</h5>
+             <p className="text-slate-500 text-xs font-medium uppercase tracking-tighter">Zero Impact on Load Times</p>
+           </div>
         </div>
       </div>
     </div>
