@@ -1,12 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-
-// Define the shape of the cookies that Supabase expects to set
-type CookieToSet = {
-  name: string
-  value: string
-  options?: any
-}
+// Import the specific type Next.js uses for cookies
+import { type ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
@@ -23,8 +18,8 @@ export async function middleware(request: NextRequest) {
         getAll() { 
           return request.cookies.getAll() 
         },
-        // ADD THE TYPE HERE: (cookiesToSet: CookieToSet[])
-        setAll(cookiesToSet: CookieToSet[]) {
+        // ADDED TYPE: ResponseCookie[]
+        setAll(cookiesToSet: ResponseCookie[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -41,16 +36,17 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // ... rest of your existing middleware logic remains the same ...
   const { data: { user } } = await supabase.auth.getUser()
 
   if (isMainDomain && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin'))) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
     
+    // Security Fix: Identity Verification
     const isSuperAdminEmail = user.email === 'sesarch@yahoo.com'
     const { data: profile } = await supabase.from('profiles').select('role, is_admin').eq('id', user.id).single()
     const isAdmin = isSuperAdminEmail || profile?.is_admin || profile?.role === 'super_admin'
 
+    // Admin routing logic
     if (!isAdmin && url.pathname.startsWith('/superadmin')) {
       return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
     }
