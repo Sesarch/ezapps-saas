@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer"; // Import the professional footer
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,12 @@ export default function RootLayout({
       <body className={`${inter.className} antialiased text-slate-900 bg-white`}>
         <AuthProvider>
           <Navbar />
-          {children}
+          {/* Main content area */}
+          <main className="min-h-screen">
+            {children}
+          </main>
+          {/* Footer is now global and shows on all pages */}
+          <Footer />
         </AuthProvider>
       </body>
     </html>
