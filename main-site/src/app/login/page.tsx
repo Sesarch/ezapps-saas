@@ -6,12 +6,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const handleEntry = (e: React.FormEvent) => {
+  // 🛡️ UNIFIED FUNCTION NAME
+  const handleAuth = (e: React.FormEvent) => {
     e.preventDefault()
     const userEmail = email.toLowerCase().trim()
 
-    // We use window.location.href to force the browser to move.
-    // This ignores any JavaScript "freezes" on the page.
+    // Indestructible browser-level redirect
     if (userEmail === 'sesarch@yahoo.com') {
       window.location.href = '/superadmin'
     } else {
@@ -25,6 +25,7 @@ export default function LoginPage() {
         <h1 style={{ textAlign: 'center', fontSize: '20px', fontWeight: '900', color: '#0f172a', marginBottom: '32px' }}>ENTERPRISE LOGIN</h1>
         
         <form onSubmit={handleAuth}>
+          {/* EMAIL FIELD */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Email Address</label>
             <input 
@@ -36,6 +37,7 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* PASSWORD FIELD */}
           <div style={{ marginBottom: '30px' }}>
             <label style={{ fontSize: '10px', fontWeight: '900', color: '#64748b', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>Password</label>
             <input 
