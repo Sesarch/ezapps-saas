@@ -24,8 +24,10 @@ export default function LoginPage() {
       } else {
         // REGULAR USER: Redirects to the standard app dashboard
         console.log("User Verified. Accessing Dashboard...");
-        router.push('/dashboard')
-      }
+        router.push('/superadmin') // FIXED: Corrected folder path
+} else {
+  router.push('/dashboard')
+}
     }, 800)
   }
 
