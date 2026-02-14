@@ -1,255 +1,131 @@
-'use client'
+// Custom Forgot Password Implementation
+// Use this if Supabase SMTP continues to be flagged as dangerous
 
-export const dynamic = 'force-dynamic'
+// 1. Create API route: /api/forgot-password/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { Resend } from 'resend'
+import { createClient } from '@/lib/supabase/server'
 
-import { useEffect, useState, Suspense } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+const resend = new Resend(process.env.RESEND_API_KEY!)
 
-function ResetPasswordContent() {
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [initializing, setInitializing] = useState(true)
+export async function POST(request: NextRequest) {
+  try {
+    const { email } = await request.json()
 
-  const searchParams = useSearchParams()
-
-  useEffect(() => {
-    const initializePasswordReset = async () => {
-      try {
-        const supabase = createClient()
-        
-        // Get the current session to verify the reset token is valid
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          setError('Invalid or expired reset link. Please request a new password reset.')
-          setInitializing(false)
-          return
-        }
-
-        // If no session, check for hash parameters (from email link)
-        if (!session) {
-          const hashParams = new URLSearchParams(window.location.hash.substring(1))
-          const accessToken = hashParams.get('access_token')
-          const refreshToken = hashParams.get('refresh_token')
-          
-          if (accessToken && refreshToken) {
-            // Set the session from the hash parameters
-            const { error: setSessionError } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            })
-            
-            if (setSessionError) {
-              console.error('Set session error:', setSessionError)
-              setError('Invalid or expired reset link. Please request a new password reset.')
-              setInitializing(false)
-              return
-            }
-          } else {
-            setError('Invalid reset link. Please request a new password reset.')
-            setInitializing(false)
-            return
-          }
-        }
-
-        setInitializing(false)
-      } catch (err) {
-        console.error('Initialization error:', err)
-        setError('Something went wrong. Please try again.')
-        setInitializing(false)
-      }
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    initializePasswordReset()
-  }, [])
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault()
+    // Use Supabase's built-in password reset but ensure it uses our custom redirect
+    const supabase = createClient()
     
-    if (loading || initializing) return
-    
-    setLoading(true)
-    setError(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+    })
 
-    try {
-      if (newPassword !== confirmPassword) {
-        throw new Error('Passwords do not match')
-      }
-
-      if (newPassword.length < 8) {
-        throw new Error('Password must be at least 8 characters')
-      }
-
-      const supabase = createClient()
-
-      // 🛡️ FIXED: Proper password update with session verification
-      const { data, error } = await supabase.auth.updateUser({
-        password: newPassword
-      })
-
-      if (error) {
-        console.error('Password update error:', error)
-        throw new Error(error.message || 'Failed to update password')
-      }
-
-      if (!data.user) {
-        throw new Error('Failed to update password - no user returned')
-      }
-
-      console.log('Password updated successfully:', data.user.email)
-      setSuccess(true)
-      
-      // Sign out to force fresh login with new password
-      setTimeout(async () => {
-        await supabase.auth.signOut()
-        window.location.href = '/login'
-      }, 3000)
-
-    } catch (error: any) {
-      console.error('Password reset error:', error)
-      setError(error.message || 'Failed to reset password')
-    } finally {
-      setLoading(false)
+    if (error) {
+      console.error('Supabase reset error:', error)
+      return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 })
     }
+
+    return NextResponse.json({ success: true })
+    
+  } catch (error) {
+    console.error('Forgot password error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  if (initializing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <Link href="/">
-              <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-            </Link>
-            <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Reset Link...</h2>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-        <div className="max-w-md w-full">
-          <div className="text-center mb-8">
-            <Link href="/">
-              <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-            </Link>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">✅</span>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Password Reset Successful!</h2>
-          </div>
-
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm mb-6">
-              Your password has been successfully updated. You can now login with your new password.
-            </div>
-
-            <p className="text-gray-600 text-sm mb-6 text-center">
-              Signing out and redirecting to login page...
-            </p>
-
-            <Link
-              href="/login"
-              className="block w-full py-3 bg-teal-500 text-white rounded-xl font-semibold text-center hover:bg-teal-600 transition-colors"
-            >
-              Go to Login Now
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <Link href="/">
-            <img src="/logo.png" alt="EZ Apps" className="h-10 mx-auto mb-4" />
-          </Link>
-          <h2 className="text-3xl font-bold text-gray-900">Reset Your Password</h2>
-          <p className="mt-2 text-gray-600">Enter your new password below</p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
-                placeholder="Min. 8 characters"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={loading}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none disabled:opacity-50"
-                placeholder="Confirm your new password"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || !newPassword || !confirmPassword}
-              className="w-full py-3 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {loading && (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              )}
-              {loading ? 'Updating Password...' : 'Reset Password'}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-teal-600 hover:text-teal-700 hover:underline">
-              Back to Login
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }
 
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    }>
-      <ResetPasswordContent />
-    </Suspense>
-  )
+// 2. Alternative: Full custom implementation with Resend
+export async function POST_CUSTOM(request: NextRequest) {
+  try {
+    const { email } = await request.json()
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    // Generate secure reset token
+    const resetToken = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+    // Store token in your database (you'll need to create a password_reset_tokens table)
+    const supabase = createClient()
+    
+    // Check if user exists
+    const { data: user } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .eq('email', email)
+      .single()
+
+    if (!user) {
+      // Don't reveal if user exists or not for security
+      return NextResponse.json({ success: true })
+    }
+
+    // Store reset token (create this table in Supabase)
+    await supabase
+      .from('password_reset_tokens')
+      .insert({
+        email,
+        token: resetToken,
+        expires_at: expiresAt.toISOString(),
+        used: false
+      })
+
+    // Send email via Resend
+    await resend.emails.send({
+      from: 'EZ Apps Security <noreply@ezapps.app>',
+      to: email,
+      subject: 'Reset Your EZ Apps Password',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>EZ Apps - Password Reset</title>
+        </head>
+        <body style="font-family: Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 16px; padding: 40px;">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h1 style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 0;">EZ APPS</h1>
+                    <p style="color: #64748b; font-size: 12px; margin: 8px 0 0 0;">Enterprise Solutions</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h2 style="color: #0f172a; font-size: 20px; margin: 0 0 16px 0;">Reset Your Password</h2>
+                    <p style="color: #64748b; font-size: 14px; line-height: 1.5;">You requested to reset your password. Click the secure link below to create a new password.</p>
+                </div>
+
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <a href="${process.env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${resetToken}" 
+                       style="display: inline-block; background-color: #0f172a; color: white; text-decoration: none; padding: 16px 32px; border-radius: 12px; font-weight: 700;">
+                        RESET PASSWORD
+                    </a>
+                </div>
+
+                <div style="background-color: #f1f5f9; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
+                    <p style="color: #475569; font-size: 12px; margin: 0;">
+                        <strong>Security Notice:</strong> This link expires in 1 hour. If you didn't request this, ignore this email.
+                    </p>
+                </div>
+
+                <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center;">
+                    <p style="color: #94a3b8; font-size: 11px; margin: 0;">
+                        © 2026 EZ Apps | Enterprise E-commerce Solutions
+                    </p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+    })
+
+    return NextResponse.json({ success: true })
+    
+  } catch (error) {
+    console.error('Custom forgot password error:', error)
+    return NextResponse.json({ error: 'Failed to send reset email' }, { status: 500 })
+  }
 }
