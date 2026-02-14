@@ -15,38 +15,44 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // 🛡️ ROLE-BASED REDIRECT LOGIC
+    // Role-based authentication logic
+    // Simulating a network delay for a professional feel
     setTimeout(() => {
       if (email === 'sesarch@yahoo.com') {
-        // SUPER ADMIN: Redirects to the master management backend
-        console.log("Super Admin Verified. Accessing Backend...");
-        router.push('/admin/backend') 
+        // SUPER ADMIN: Redirects to the master management panel
+        // This follows your established folder structure
+        console.log("Super Admin Verified. Redirecting to SuperAdmin panel...");
+        router.push('/superadmin') 
       } else {
-        // REGULAR USER: Redirects to the standard app dashboard
-        console.log("User Verified. Accessing Dashboard...");
-        router.push('/superadmin') // FIXED: Corrected folder path
-} else {
-  router.push('/dashboard')
-}
+        // REGULAR USER: Redirects to the merchant application dashboard
+        console.log("Merchant Verified. Redirecting to Dashboard...");
+        router.push('/dashboard')
+      }
     }, 800)
   }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col items-center justify-center px-6 py-12">
+      {/* Branding Section */}
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-12 text-center"
       >
-        <img src="/logo.png" alt="EZ APPS" className="h-12 w-auto mx-auto mb-6 object-contain" />
+        <img 
+          src="/logo.png" 
+          alt="EZ APPS" 
+          className="h-12 w-auto mx-auto mb-6 object-contain" 
+        />
         <h1 className="text-4xl font-black text-slate-900 uppercase tracking-tighter leading-none">
             Enterprise Portal
         </h1>
-        <p className="text-slate-500 mt-4 font-medium uppercase text-[10px] tracking-widest">
-            Secure Auth Gateway
+        <p className="text-slate-500 mt-4 font-black uppercase text-[10px] tracking-[0.3em]">
+            Secure Authentication Gateway
         </p>
       </motion.div>
 
+      {/* Login Card */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -54,7 +60,9 @@ export default function LoginPage() {
       >
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
+            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">
+                Email Address
+            </label>
             <input 
               type="email" 
               required
@@ -67,8 +75,12 @@ export default function LoginPage() {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">Password</label>
-              <Link href="#" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-slate-400 hover:text-slate-900">Forgot?</Link>
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-widest">
+                  Password
+              </label>
+              <Link href="#" className="text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-900">
+                  Forgot?
+              </Link>
             </div>
             <input 
               type="password" 
@@ -85,13 +97,16 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase tracking-tighter text-xl shadow-xl shadow-slate-900/20 hover:bg-black transition-all active:scale-[0.98] disabled:opacity-70"
           >
-            {isLoading ? 'Authenticating...' : 'Sign In'}
+            {isLoading ? 'Processing...' : 'Sign In'}
           </button>
         </form>
       </motion.div>
 
-      <div className="mt-12 flex items-center gap-4">
-        <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Validated Gateway</span>
+      {/* Trust Footer */}
+      <div className="mt-12 text-center">
+        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            Validated Enterprise Access Only
+        </p>
       </div>
     </div>
   )
