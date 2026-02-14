@@ -16,8 +16,8 @@ export async function middleware(request: NextRequest) {
         getAll() { 
           return request.cookies.getAll() 
         },
-        // 🛡️ THE FIX: We use 'any[]' to bypass the TypeScript strictness
-        setAll(cookiesToSet: any[]) {
+        // 🛡️ FIXED: Explicit typing to prevent Vercel build errors
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: any }>) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           
           supabaseResponse = NextResponse.next({ request })
@@ -38,33 +38,59 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Handle protected routes
   if (isMainDomain && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin'))) {
-    if (!user) return NextResponse.redirect(new URL('/login', request.url))
+    if (!user) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
     
-    // Security Fix: Identity Verification bypasses database latency
+    // 🛡️ FIXED: Super admin email bypass - allow immediate access
     const isSuperAdminEmail = user?.email === 'sesarch@yahoo.com'
     
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role, is_admin')
-      .eq('id', user.id)
-      .single()
-
-    const isAdmin = isSuperAdminEmail || profile?.is_admin || profile?.role === 'super_admin'
-
-    // If you are the admin, NEVER let the middleware kick you to dashboard
-    if (isSuperAdminEmail && url.pathname.startsWith('/superadmin')) {
-        return supabaseResponse 
+    // For super admin email, bypass database check entirely
+    if (isSuperAdminEmail) {
+      // Allow access to /superadmin routes
+      if (url.pathname.startsWith('/superadmin')) {
+        return supabaseResponse
+      }
+      // Redirect from /dashboard to /superadmin for super admin
+      if (url.pathname.startsWith('/dashboard')) {
+        return NextResponse.redirect(new URL('/superadmin', request.url))
+      }
     }
 
-    // Block non-admins from /superadmin
-    if (!isAdmin && url.pathname.startsWith('/superadmin')) {
-      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
-    }
+    // For non-super admin users, check database permissions
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role, is_admin')
+        .eq('id', user.id)
+        .single()
 
-    // Redirect base /dashboard to specific app
-    if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
-      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      const isAdmin = profile?.is_admin || profile?.role === 'super_admin'
+
+      // Block non-admins from /superadmin
+      if (!isAdmin && url.pathname.startsWith('/superadmin')) {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
+
+      // Redirect base /dashboard to specific app
+      if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
+    } catch (error) {
+      // If database query fails, fall back to basic user access
+      console.error('Profile lookup failed:', error)
+      
+      // Block from superadmin if not the super admin email
+      if (url.pathname.startsWith('/superadmin')) {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
+      
+      // Allow dashboard access
+      if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
+        return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+      }
     }
   }
 
