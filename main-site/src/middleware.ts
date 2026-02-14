@@ -1,7 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-// Import the specific type Next.js uses for cookies
-import { type ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies'
 
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl
@@ -18,11 +16,16 @@ export async function middleware(request: NextRequest) {
         getAll() { 
           return request.cookies.getAll() 
         },
-        // ADDED TYPE: ResponseCookie[]
-        setAll(cookiesToSet: ResponseCookie[]) {
+        setAll(cookiesToSet) {
+          // 1. Update request cookies for the current session
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          
+          // 2. Refresh the response object
           supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) => {
+          
+          // 3. Set the cookies on the response for the browser
+          // We spread the rest of the properties directly into the options object
+          cookiesToSet.forEach(({ name, value, ...options }) => {
             supabaseResponse.cookies.set(name, value, { 
               ...options, 
               domain: '.ezapps.app', 
@@ -41,16 +44,17 @@ export async function middleware(request: NextRequest) {
   if (isMainDomain && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin'))) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
     
-    // Security Fix: Identity Verification
+    // Security Fix: Manual Identity Check
     const isSuperAdminEmail = user.email === 'sesarch@yahoo.com'
     const { data: profile } = await supabase.from('profiles').select('role, is_admin').eq('id', user.id).single()
     const isAdmin = isSuperAdminEmail || profile?.is_admin || profile?.role === 'super_admin'
 
-    // Admin routing logic
+    // Prevent non-admins from entering /superadmin
     if (!isAdmin && url.pathname.startsWith('/superadmin')) {
       return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
     }
 
+    // Redirect base /dashboard to inventory
     if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
       return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
     }
