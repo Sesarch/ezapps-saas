@@ -1,38 +1,37 @@
-import type { Metadata } from "next";
+'use client' // Added to allow path checking
+
 import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer"; // Import the professional footer
+import Footer from "@/components/Footer";
+import { usePathname } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "EZ Apps | Enterprise E-commerce Solutions",
-  description: "Unified ERP and CRM infrastructure for global Shopify merchants.",
-  icons: {
-    // Points to your uploaded favicon.png in /public
-    icon: '/favicon.png', 
-    apple: '/favicon.png',
-  },
-};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  
+  // Define pages where we want a "Clean" look with no distracting Navbar/Footer
+  const isAuthPage = pathname === "/login" || pathname === "/superadmin";
+
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased text-slate-900 bg-white`}>
         <AuthProvider>
-          <Navbar />
-          {/* Main content area */}
+          {/* Only show Navbar if we are NOT on a secure login/admin page */}
+          {!isAuthPage && <Navbar />}
+          
           <main className="min-h-screen">
             {children}
           </main>
-          {/* Footer is now global and shows on all pages */}
-          <Footer />
+          
+          {/* Only show Footer if we are NOT on a secure login/admin page */}
+          {!isAuthPage && <Footer />}
         </AuthProvider>
       </body>
     </html>
