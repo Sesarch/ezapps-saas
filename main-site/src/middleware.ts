@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
     {
       cookies: {
         getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -30,13 +30,30 @@ export async function middleware(request: NextRequest) {
   if (isMainDomain && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/superadmin'))) {
     if (!user) return NextResponse.redirect(new URL('/login', request.url))
     
-    const { data: profile } = await supabase.from('profiles').select('role, is_admin').eq('id', user.id).single()
-    const isAdmin = profile?.is_admin || profile?.role === 'super_admin'
+    // 🛡️ THE SECURITY FIX
+    // Check if the user is YOU specifically by email
+    const isSuperAdminEmail = user.email === 'sesarch@yahoo.com'
 
-    // Direct Clean Routing
-    if (isAdmin && url.pathname.startsWith('/dashboard')) return NextResponse.redirect(new URL('/superadmin', request.url))
-    if (!isAdmin && url.pathname.startsWith('/superadmin')) return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
-    if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+    // If not you, we check the database for other admins
+    const { data: profile } = await supabase.from('profiles').select('role, is_admin').eq('id', user.id).single()
+    const isAdmin = isSuperAdminEmail || profile?.is_admin || profile?.role === 'super_admin'
+
+    // 🚀 NEW ROUTING LOGIC
+    // 1. If you are the Super Admin and try to go to user dashboard, let you stay or move to admin
+    if (isSuperAdminEmail && url.pathname.startsWith('/dashboard')) {
+       // Optional: Allow admin to see dashboard, or force them to /superadmin
+       // return NextResponse.redirect(new URL('/superadmin', request.url))
+    }
+
+    // 2. If NOT an admin and trying to access /superadmin -> KICK TO DASHBOARD
+    if (!isAdmin && url.pathname.startsWith('/superadmin')) {
+      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+    }
+
+    // 3. Handle the base /dashboard redirect
+    if (url.pathname === '/dashboard' || url.pathname === '/dashboard/') {
+      return NextResponse.redirect(new URL('/dashboard/inventory', request.url))
+    }
   }
 
   return supabaseResponse
