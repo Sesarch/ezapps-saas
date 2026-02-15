@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { createClient } from '@/lib/supabase/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 const resend = new Resend(process.env.RESEND_API_KEY!)
 
@@ -12,11 +13,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // Use Supabase's built-in reset but send our own email
-    const supabase = createClient()
+    // Create Supabase client for API route
+    const supabase = createRouteHandlerClient({ cookies })
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/reset-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://ezapps.app'}/reset-password`,
     })
 
     if (error) {
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       })
     } catch (emailError) {
       console.error('Resend error:', emailError)
+      // Don't fail the request if our email fails
     }
 
     return NextResponse.json({ success: true })
